@@ -1,0 +1,15 @@
+global:
+  environment: development
+  logLevel: DEBUG
+
+gateway:
+  replicaCount: 1
+
+frontend:
+  replicaCount: 1
+
+backend:
+  replicaCount: 1
+
+worker:
+  replicaCount: 1

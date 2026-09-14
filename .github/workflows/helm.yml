@@ -1,0 +1,36 @@
+name: Vermithor Helm Validation Pipeline
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  helm-lint-and-template:
+    name: Helm Lint & Template Validation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v3
+        with:
+          version: v3.14.0
+
+      - name: Helm Lint
+        run: |
+          helm lint infrastructure/helm/vermithor
+
+      - name: Helm Template (Default Values)
+        run: |
+          helm template vermithor infrastructure/helm/vermithor
+
+      - name: Helm Template (Dev Values)
+        run: |
+          helm template vermithor infrastructure/helm/vermithor -f infrastructure/helm/vermithor/values-dev.yaml
+
+      - name: Helm Template (Prod Values)
+        run: |
+          helm template vermithor infrastructure/helm/vermithor -f infrastructure/helm/vermithor/values-prod.yaml

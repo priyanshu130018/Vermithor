@@ -1,0 +1,72 @@
+name: memory_exhaustion
+description: "Simulates memory leak in catalog-api causing JVM heap exhaustion, prolonged GC pauses, and container OOM termination."
+target_service: catalog-api
+severity: CRITICAL
+expected_root_cause: "memory_exhaustion"
+expected_services:
+  - catalog-api
+expected_incident_type: "RESOURCE_EXHAUSTION"
+is_ambiguous: false
+
+timeline:
+  - time_offset_seconds: 0
+    stage: baseline
+    description: "Normal JVM heap usage (45%) and minimal GC pause duration"
+    metrics:
+      - metric_name: memory_usage_bytes
+        service: catalog-api
+        value: 536870912.0
+      - metric_name: jvm_gc_pause_duration_ms
+        service: catalog-api
+        value: 15.0
+      - metric_name: api_request_latency_ms
+        service: catalog-api
+        value: 80.0
+
+  - time_offset_seconds: 30
+    stage: memory_leak_growth
+    description: "Heap utilization reaches 92%, aggressive garbage collection begins"
+    metrics:
+      - metric_name: memory_usage_bytes
+        service: catalog-api
+        value: 1879048192.0
+      - metric_name: jvm_gc_pause_duration_ms
+        service: catalog-api
+        value: 1800.0
+      - metric_name: api_request_latency_ms
+        service: catalog-api
+        value: 950.0
+    logs:
+      - service: catalog-api
+        level: WARN
+        message: "High JVM heap occupancy: 92% (1.75GB/2.0GB) after concurrent mark-sweep collection"
+        trace_id: "9cf92f3577b34da6a3ce929d0e0e2222"
+        attributes:
+          heap_used_pct: 92
+          gc_type: "CMS"
+
+  - time_offset_seconds: 60
+    stage: gc_thrashing_and_oom
+    description: "Stop-the-world GC freeze followed by OutOfMemoryError and container restart"
+    metrics:
+      - metric_name: jvm_gc_pause_duration_ms
+        service: catalog-api
+        value: 8500.0
+      - metric_name: http_5xx_error_rate_ratio
+        service: catalog-api
+        value: 0.70
+    logs:
+      - service: catalog-api
+        level: ERROR
+        message: "java.lang.OutOfMemoryError: Java heap space during ProductSearchIndex cache expansion"
+        trace_id: "9cf92f3577b34da6a3ce929d0e0e2222"
+        attributes:
+          error: "OutOfMemoryError"
+          thread: "SearchWorker-4"
+      - service: catalog-api
+        level: CRITICAL
+        message: "Container terminated with exit code 137 (OOMKilled)"
+        trace_id: "9cf92f3577b34da6a3ce929d0e0e2222"
+        attributes:
+          exit_code: 137
+          reason: "OOMKilled"

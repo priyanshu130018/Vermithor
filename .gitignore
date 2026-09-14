@@ -1,0 +1,51 @@
+# Python bytecode and caches
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+*.egg-info/
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# Environment files and local secrets
+.env
+.env.*
+!.env.example
+
+# Node.js dependencies and build artifacts
+node_modules/
+frontend/node_modules/
+dist/
+frontend/dist/
+build/
+.next/
+.vite/
+
+# IDE and OS files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Logs and runtime artifacts
+*.log
+logs/
+tmp/
+temp/
+
+# Local databases and SQLite artifacts
+*.db
+*.sqlite
+*.sqlite3

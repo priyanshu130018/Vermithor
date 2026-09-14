@@ -1,0 +1,111 @@
+global:
+  namespace: vermithor
+  imageRegistry: ""
+  imagePullPolicy: IfNotPresent
+  imageTag: "0.1.0"
+  environment: production
+  logLevel: INFO
+
+secrets:
+  # In production, specify an existing Kubernetes secret created out-of-band:
+  existingSecret: ""
+
+jwt:
+  issuer: "vermithor"
+  audience: "vermithor-api"
+  secret: "vermithor-dev-secret-key-32-chars-min"
+
+database:
+  host: postgres
+  port: 5432
+  name: vermithor
+  user: vermithor
+  password: "vermithor_db_password"
+  storage:
+    size: 10Gi
+    storageClass: ""
+
+redis:
+  host: redis
+  port: 6379
+
+cors:
+  allowOrigins:
+    - "http://localhost:5173"
+    - "http://vermithor.local"
+
+observability:
+  otelEndpoint: "http://jaeger:4318"
+  prometheus:
+    enabled: true
+    port: 9090
+  grafana:
+    enabled: true
+    port: 3000
+    adminUser: admin
+    adminPassword: "admin_password"
+  jaeger:
+    enabled: true
+    uiPort: 16686
+    otlpHttpPort: 4318
+    otlpGrpcPort: 4317
+
+gateway:
+  replicaCount: 2
+  image:
+    repository: vermithor/gateway
+    tag: ""
+  service:
+    type: ClusterIP
+    port: 80
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 256Mi
+
+frontend:
+  replicaCount: 2
+  image:
+    repository: vermithor/frontend
+    tag: ""
+  service:
+    type: ClusterIP
+    port: 80
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 250m
+      memory: 128Mi
+
+backend:
+  replicaCount: 2
+  image:
+    repository: vermithor/backend
+    tag: ""
+  service:
+    port: 8000
+  resources:
+    requests:
+      cpu: 200m
+      memory: 512Mi
+    limits:
+      cpu: 1000m
+      memory: 2Gi
+
+worker:
+  replicaCount: 2
+  image:
+    repository: vermithor/worker
+    tag: ""
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 1Gi

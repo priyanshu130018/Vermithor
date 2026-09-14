@@ -1,0 +1,72 @@
+name: traffic_spike
+description: "Simulates an abrupt 10x traffic spike on worker-service leading to CPU exhaustion, thread starvation, and job processing backlog."
+target_service: worker-service
+severity: HIGH
+expected_root_cause: "traffic_spike"
+expected_services:
+  - worker-service
+expected_incident_type: "CAPACITY_EXHAUSTION"
+is_ambiguous: false
+
+timeline:
+  - time_offset_seconds: 0
+    stage: baseline
+    description: "Steady background queue ingestion and 35% CPU utilization"
+    metrics:
+      - metric_name: cpu_utilization_ratio
+        service: worker-service
+        value: 0.35
+      - metric_name: queue_depth_messages
+        service: worker-service
+        value: 120.0
+      - metric_name: task_execution_latency_ms
+        service: worker-service
+        value: 45.0
+
+  - time_offset_seconds: 25
+    stage: surge_arrival
+    description: "Sudden ingestion rate surge to 50,000 tasks/min"
+    metrics:
+      - metric_name: queue_depth_messages
+        service: worker-service
+        value: 18500.0
+      - metric_name: cpu_utilization_ratio
+        service: worker-service
+        value: 0.96
+    logs:
+      - service: worker-service
+        level: WARN
+        message: "Ingestion queue depth spike: 18,500 pending jobs exceeding worker pool threshold (2,000)"
+        trace_id: "acf92f3577b34da6a3ce929d0e0e3333"
+        attributes:
+          queue: "tasks.async"
+          pending: 18500
+
+  - time_offset_seconds: 50
+    stage: thread_starvation
+    description: "CPU capped at 99%, worker thread pool exhausted with timeouts"
+    metrics:
+      - metric_name: cpu_utilization_ratio
+        service: worker-service
+        value: 0.99
+      - metric_name: task_execution_latency_ms
+        service: worker-service
+        value: 4200.0
+      - metric_name: http_5xx_error_rate_ratio
+        service: worker-service
+        value: 0.32
+    logs:
+      - service: worker-service
+        level: ERROR
+        message: "Worker pool thread starvation: all 64 threads saturated, task dispatch dropped"
+        trace_id: "acf92f3577b34da6a3ce929d0e0e3333"
+        attributes:
+          active_workers: 64
+          cpu_load: 0.99
+      - service: worker-service
+        level: ERROR
+        message: "TaskTimeoutError: Celery task execution exceeded maximum time limit (30s)"
+        trace_id: "acf92f3577b34da6a3ce929d0e0e3333"
+        attributes:
+          task: "process_event"
+          timeout: 30000

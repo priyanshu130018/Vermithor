@@ -1,0 +1,18 @@
+global:
+  environment: production
+  logLevel: INFO
+
+secrets:
+  existingSecret: "vermithor-production-secrets"
+
+gateway:
+  replicaCount: 3
+
+frontend:
+  replicaCount: 3
+
+backend:
+  replicaCount: 3
+
+worker:
+  replicaCount: 3

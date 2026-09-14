@@ -1,0 +1,33 @@
+name: ambiguous_noise
+description: "Simulates isolated transient network jitter with no upstream anomaly, no deployment, and no correlated topology pattern."
+target_service: booking-api
+severity: LOW
+expected_root_cause: "UNKNOWN"
+expected_services:
+  - booking-api
+expected_incident_type: "TRANSIENT_NOISE"
+is_ambiguous: true
+
+timeline:
+  - time_offset_seconds: 0
+    stage: baseline
+    description: "Healthy steady state"
+    metrics:
+      - metric_name: api_request_latency_ms
+        service: booking-api
+        value: 95.0
+
+  - time_offset_seconds: 20
+    stage: transient_jitter
+    description: "Single isolated packet retransmit and minor log warning"
+    metrics:
+      - metric_name: api_request_latency_ms
+        service: booking-api
+        value: 180.0
+    logs:
+      - service: booking-api
+        level: WARN
+        message: "Transient socket read timeout on client keepalive connection after 5000ms"
+        trace_id: "ccf92f3577b34da6a3ce929d0e0e5555"
+        attributes:
+          reason: "ClientSocketTimeout"

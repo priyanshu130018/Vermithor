@@ -1,0 +1,109 @@
+name: database_saturation
+description: "Simulates database connection pool exhaustion in booking-api causing widespread HTTP 500 error cascade on postgres."
+target_service: booking-api
+severity: CRITICAL
+expected_root_cause: "database_saturation"
+expected_services:
+  - postgres
+  - booking-api
+expected_incident_type: "DATABASE_OUTAGE"
+is_ambiguous: false
+
+timeline:
+  - time_offset_seconds: 0
+    stage: normal
+    description: "Normal steady-state baseline traffic"
+    metrics:
+      - metric_name: db_query_latency_ms
+        service: postgres
+        value: 45.0
+      - metric_name: db_connection_pool_utilization_ratio
+        service: booking-api
+        value: 0.35
+      - metric_name: api_request_latency_ms
+        service: booking-api
+        value: 120.0
+      - metric_name: http_5xx_error_rate_ratio
+        service: booking-api
+        value: 0.001
+
+  - time_offset_seconds: 30
+    stage: degradation_onset
+    description: "Database latency and active connection count rise"
+    metrics:
+      - metric_name: db_query_latency_ms
+        service: postgres
+        value: 480.0
+      - metric_name: db_connection_pool_utilization_ratio
+        service: booking-api
+        value: 0.82
+      - metric_name: api_request_latency_ms
+        service: booking-api
+        value: 650.0
+    logs:
+      - service: booking-api
+        level: WARN
+        message: "Database connection acquisition latency high: 480ms exceeding threshold (200ms)"
+        trace_id: "4bf92f3577b34da6a3ce929d0e0e4736"
+        attributes:
+          pool_active: 41
+          pool_max: 50
+          db_instance: "postgres-primary"
+
+  - time_offset_seconds: 60
+    stage: connection_pool_saturation
+    description: "Connection pool saturates at 98%, query timeouts begin"
+    metrics:
+      - metric_name: db_connection_pool_utilization_ratio
+        service: booking-api
+        value: 0.98
+      - metric_name: db_query_latency_ms
+        service: postgres
+        value: 1450.0
+    logs:
+      - service: booking-api
+        level: ERROR
+        message: "Database connection pool exhausted: 49/50 active connections, queue wait timeout (5000ms)"
+        trace_id: "4bf92f3577b34da6a3ce929d0e0e4736"
+        attributes:
+          pool_active: 49
+          pool_max: 50
+          error: "ConnectionAcquisitionTimeoutError"
+
+  - time_offset_seconds: 90
+    stage: critical_cascade
+    description: "Widespread DB timeout exceptions and HTTP 500 cascade"
+    metrics:
+      - metric_name: api_request_latency_ms
+        service: booking-api
+        value: 2600.0
+      - metric_name: http_5xx_error_rate_ratio
+        service: booking-api
+        value: 0.38
+    logs:
+      - service: booking-api
+        level: ERROR
+        message: "Database connection timeout: failed to acquire connection for transaction in booking-api"
+        trace_id: "4bf92f3577b34da6a3ce929d0e0e4736"
+        attributes:
+          database: postgres
+          endpoint: "/api/v1/checkout"
+          status_code: 500
+      - service: booking-api
+        level: ERROR
+        message: "HTTP 500 Internal Server Error returned to client: DB pool timeout on /api/v1/checkout"
+        trace_id: "4bf92f3577b34da6a3ce929d0e0e4736"
+        attributes:
+          status_code: 500
+          route: "/api/v1/checkout"
+
+  - time_offset_seconds: 120
+    stage: deployment_correlation
+    description: "Deployment event introducing faulty pool configuration"
+    deployment_event:
+      service: booking-api
+      environment: production
+      version: "v2.4.7"
+      previous_version: "v2.4.6"
+      change_summary: "Updated database connection pool max_size from 100 to 50"
+      status: "completed"

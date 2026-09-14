@@ -1,0 +1,71 @@
+name: bad_deployment
+description: "Simulates a faulty application release (v2.4.8) introducing unhandled NullPointerException regressions and 5xx spikes."
+target_service: booking-api
+severity: HIGH
+expected_root_cause: "bad_deployment"
+expected_services:
+  - booking-api
+expected_incident_type: "DEPLOYMENT_REGRESSION"
+is_ambiguous: false
+
+timeline:
+  - time_offset_seconds: 0
+    stage: baseline
+    description: "Healthy production steady-state on v2.4.7"
+    metrics:
+      - metric_name: http_5xx_error_rate_ratio
+        service: booking-api
+        value: 0.002
+      - metric_name: api_request_latency_ms
+        service: booking-api
+        value: 110.0
+
+  - time_offset_seconds: 20
+    stage: deployment_event
+    description: "New release deployment v2.4.8 completed"
+    deployment_event:
+      service: booking-api
+      environment: production
+      version: "v2.4.8"
+      previous_version: "v2.4.7"
+      change_summary: "Refactored payment gateway handler and customer profile lookup"
+      status: "completed"
+
+  - time_offset_seconds: 40
+    stage: error_surge
+    description: "Immediate surge of unhandled NullPointerException in checkout"
+    metrics:
+      - metric_name: http_5xx_error_rate_ratio
+        service: booking-api
+        value: 0.28
+      - metric_name: api_request_latency_ms
+        service: booking-api
+        value: 850.0
+    logs:
+      - service: booking-api
+        level: ERROR
+        message: "NullPointerException in PaymentGatewayHandler.processTransaction: customer_token is null in release v2.4.8"
+        trace_id: "7af92f3577b34da6a3ce929d0e0e9999"
+        attributes:
+          version: "v2.4.8"
+          exception: "NullPointerException"
+          route: "/api/v1/payment"
+
+  - time_offset_seconds: 70
+    stage: critical_cascade
+    description: "API Gateway returns 502 Bad Gateway due to upstream checkout crash"
+    metrics:
+      - metric_name: http_5xx_error_rate_ratio
+        service: booking-api
+        value: 0.65
+      - metric_name: api_request_latency_ms
+        service: booking-api
+        value: 2100.0
+    logs:
+      - service: booking-api
+        level: ERROR
+        message: "Unhandled runtime error in booking-api v2.4.8: payment failure cascade on /api/v1/checkout"
+        trace_id: "7af92f3577b34da6a3ce929d0e0e9999"
+        attributes:
+          version: "v2.4.8"
+          status_code: 500

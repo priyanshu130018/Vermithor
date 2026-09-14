@@ -1,0 +1,63 @@
+name: auth_failure
+description: "Simulates expired signing key rotation in auth-api causing widespread JWT signature invalidation and HTTP 401 spike across API gateway."
+target_service: auth-api
+severity: HIGH
+expected_root_cause: "auth_failure"
+expected_services:
+  - auth-api
+expected_incident_type: "SECURITY_AUTHENTICATION_FAILURE"
+is_ambiguous: false
+
+timeline:
+  - time_offset_seconds: 0
+    stage: baseline
+    description: "Normal authentication validation rate and <0.1% 401 error rate"
+    metrics:
+      - metric_name: auth_401_error_rate_ratio
+        service: auth-api
+        value: 0.001
+      - metric_name: jwt_verification_latency_ms
+        service: auth-api
+        value: 12.0
+
+  - time_offset_seconds: 20
+    stage: key_mismatch
+    description: "JWT public key cache out of sync following key rotation"
+    metrics:
+      - metric_name: auth_401_error_rate_ratio
+        service: auth-api
+        value: 0.45
+      - metric_name: jwt_verification_latency_ms
+        service: auth-api
+        value: 85.0
+    logs:
+      - service: auth-api
+        level: WARN
+        message: "JWT signature verification failed: invalid key ID 'kid-2026-v1' received from client"
+        trace_id: "bcf92f3577b34da6a3ce929d0e0e4444"
+        attributes:
+          key_id: "kid-2026-v1"
+          reason: "SignatureVerificationError"
+
+  - time_offset_seconds: 45
+    stage: widespread_unauthorized
+    description: "API Gateway rejects 85% of incoming user sessions with HTTP 401"
+    metrics:
+      - metric_name: auth_401_error_rate_ratio
+        service: auth-api
+        value: 0.85
+    logs:
+      - service: auth-api
+        level: ERROR
+        message: "Authentication failure cascade: expired or unverified JWKS tokens rejected on all protected endpoints"
+        trace_id: "bcf92f3577b34da6a3ce929d0e0e4444"
+        attributes:
+          rejection_rate: 0.85
+          status_code: 401
+      - service: auth-api
+        level: ERROR
+        message: "HTTP 401 Unauthorized surge: client token claims failed audience validation"
+        trace_id: "bcf92f3577b34da6a3ce929d0e0e4444"
+        attributes:
+          error: "InvalidTokenClaims"
+          status_code: 401

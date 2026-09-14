@@ -1,0 +1,11 @@
+apiVersion: 1
+
+providers:
+  - name: 'Vermithor Dashboards'
+    orgId: 1
+    folder: 'Vermithor'
+    type: file
+    disableDeletion: false
+    editable: true
+    options:
+      path: /var/lib/grafana/dashboards

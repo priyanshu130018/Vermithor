@@ -1,0 +1,434 @@
+{
+  "run_timestamp": "2026-09-14T20:34:06.540615+00:00",
+  "total_scenarios_evaluated": 7,
+  "overall_metrics": {
+    "rca_top_1_accuracy": 1.0,
+    "rca_top_3_accuracy": 1.0,
+    "rca_mean_reciprocal_rank": 1.0,
+    "anomaly_detection_f1": 1.0,
+    "llm_json_validity_rate": 1.0,
+    "avg_unsupported_claim_rate": 0.619,
+    "unknown_scenario_handling_pass": true
+  },
+  "average_latencies": {
+    "detection_ms": 0.12,
+    "clustering_ms": 82.49,
+    "rca_ms": 1.14,
+    "retrieval_ms": 8399.58,
+    "summary_ms": 1.62,
+    "total_e2e_ms": 8484.97
+  },
+  "scenarios": [
+    {
+      "scenario": "ambiguous_noise",
+      "description": "Simulates isolated transient network jitter with no upstream anomaly, no deployment, and no correlated topology pattern.",
+      "target_service": "booking-api",
+      "severity": "LOW",
+      "is_ambiguous": true,
+      "ground_truth": {
+        "expected_root_cause": "UNKNOWN",
+        "expected_services": [
+          "booking-api"
+        ],
+        "expected_incident_type": "TRANSIENT_NOISE"
+      },
+      "anomaly_evaluation": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "signals_detected": 1,
+        "latency_ms": 0.07
+      },
+      "clustering_evaluation": {
+        "clusters_found": 0,
+        "noise_points": 1,
+        "noise_ratio": 1.0,
+        "cluster_purity": 1.0,
+        "latency_ms": 0.5
+      },
+      "rca_evaluation": {
+        "predicted_root_cause": "UNKNOWN",
+        "top_3_candidates": [
+          "UNKNOWN"
+        ],
+        "confidence": 0.25,
+        "top_1_correct": true,
+        "top_3_correct": true,
+        "mrr": 1.0,
+        "latency_ms": 0.37
+      },
+      "rag_evaluation": {
+        "matched_runbook": "RB-000004",
+        "docs_retrieved": 1,
+        "latency_ms": 8438.97
+      },
+      "llm_evaluation": {
+        "json_valid": true,
+        "aligned_root_cause": "Insufficient evidence: isolated symptoms observed without identifiable upstream root cause.",
+        "validated_services": [
+          "booking-api"
+        ],
+        "verified_evidence_items": 0,
+        "unsupported_claim_count": 3,
+        "unsupported_claim_rate": 1.0,
+        "unknown_preserved": true,
+        "latency_ms": 2.89
+      },
+      "total_e2e_latency_ms": 8442.37
+    },
+    {
+      "scenario": "auth_failure",
+      "description": "Simulates expired signing key rotation in auth-api causing widespread JWT signature invalidation and HTTP 401 spike across API gateway.",
+      "target_service": "auth-api",
+      "severity": "HIGH",
+      "is_ambiguous": false,
+      "ground_truth": {
+        "expected_root_cause": "auth_failure",
+        "expected_services": [
+          "auth-api"
+        ],
+        "expected_incident_type": "SECURITY_AUTHENTICATION_FAILURE"
+      },
+      "anomaly_evaluation": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "signals_detected": 7,
+        "latency_ms": 0.11
+      },
+      "clustering_evaluation": {
+        "clusters_found": 0,
+        "noise_points": 3,
+        "noise_ratio": 1.0,
+        "cluster_purity": 0.0,
+        "latency_ms": 112.23
+      },
+      "rca_evaluation": {
+        "predicted_root_cause": "Service degradation on auth-api",
+        "top_3_candidates": [
+          "Service degradation on auth-api"
+        ],
+        "confidence": 0.812,
+        "top_1_correct": true,
+        "top_3_correct": true,
+        "mrr": 1.0,
+        "latency_ms": 0.66
+      },
+      "rag_evaluation": {
+        "matched_runbook": "N/A",
+        "docs_retrieved": 0,
+        "latency_ms": 8411.72
+      },
+      "llm_evaluation": {
+        "json_valid": true,
+        "aligned_root_cause": "Recent deployment on booking-api",
+        "validated_services": [
+          "auth-api"
+        ],
+        "verified_evidence_items": 0,
+        "unsupported_claim_count": 2,
+        "unsupported_claim_rate": 0.667,
+        "unknown_preserved": true,
+        "latency_ms": 2.34
+      },
+      "total_e2e_latency_ms": 8527.16
+    },
+    {
+      "scenario": "bad_deployment",
+      "description": "Simulates a faulty application release (v2.4.8) introducing unhandled NullPointerException regressions and 5xx spikes.",
+      "target_service": "booking-api",
+      "severity": "HIGH",
+      "is_ambiguous": false,
+      "ground_truth": {
+        "expected_root_cause": "bad_deployment",
+        "expected_services": [
+          "booking-api"
+        ],
+        "expected_incident_type": "DEPLOYMENT_REGRESSION"
+      },
+      "anomaly_evaluation": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "signals_detected": 8,
+        "latency_ms": 0.1
+      },
+      "clustering_evaluation": {
+        "clusters_found": 0,
+        "noise_points": 2,
+        "noise_ratio": 1.0,
+        "cluster_purity": 0.0,
+        "latency_ms": 111.85
+      },
+      "rca_evaluation": {
+        "predicted_root_cause": "Service degradation on booking-api",
+        "top_3_candidates": [
+          "Service degradation on booking-api",
+          "Recent deployment on booking-api"
+        ],
+        "confidence": 0.836,
+        "top_1_correct": true,
+        "top_3_correct": true,
+        "mrr": 1.0,
+        "latency_ms": 0.8
+      },
+      "rag_evaluation": {
+        "matched_runbook": "RB-000004",
+        "docs_retrieved": 1,
+        "latency_ms": 8404.23
+      },
+      "llm_evaluation": {
+        "json_valid": true,
+        "aligned_root_cause": "Recent deployment on booking-api",
+        "validated_services": [
+          "booking-api"
+        ],
+        "verified_evidence_items": 0,
+        "unsupported_claim_count": 1,
+        "unsupported_claim_rate": 0.333,
+        "unknown_preserved": true,
+        "latency_ms": 0.93
+      },
+      "total_e2e_latency_ms": 8518.01
+    },
+    {
+      "scenario": "database_saturation",
+      "description": "Simulates database connection pool exhaustion in booking-api causing widespread HTTP 500 error cascade on postgres.",
+      "target_service": "booking-api",
+      "severity": "CRITICAL",
+      "is_ambiguous": false,
+      "ground_truth": {
+        "expected_root_cause": "database_saturation",
+        "expected_services": [
+          "postgres",
+          "booking-api"
+        ],
+        "expected_incident_type": "DATABASE_OUTAGE"
+      },
+      "anomaly_evaluation": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "signals_detected": 14,
+        "latency_ms": 0.15
+      },
+      "clustering_evaluation": {
+        "clusters_found": 2,
+        "noise_points": 0,
+        "noise_ratio": 0.0,
+        "cluster_purity": 1.0,
+        "latency_ms": 96.83
+      },
+      "rca_evaluation": {
+        "predicted_root_cause": "Database degradation on postgres",
+        "top_3_candidates": [
+          "Database degradation on postgres",
+          "Service degradation on booking-api",
+          "Database degradation on booking-api"
+        ],
+        "confidence": 0.803,
+        "top_1_correct": true,
+        "top_3_correct": true,
+        "mrr": 1.0,
+        "latency_ms": 3.39
+      },
+      "rag_evaluation": {
+        "matched_runbook": "RB-000004",
+        "docs_retrieved": 1,
+        "latency_ms": 8364.3
+      },
+      "llm_evaluation": {
+        "json_valid": true,
+        "aligned_root_cause": "Database connection saturation on postgres",
+        "validated_services": [
+          "postgres",
+          "booking-api"
+        ],
+        "verified_evidence_items": 1,
+        "unsupported_claim_count": 0,
+        "unsupported_claim_rate": 0.0,
+        "unknown_preserved": true,
+        "latency_ms": 0.38
+      },
+      "total_e2e_latency_ms": 8465.15
+    },
+    {
+      "scenario": "memory_exhaustion",
+      "description": "Simulates memory leak in catalog-api causing JVM heap exhaustion, prolonged GC pauses, and container OOM termination.",
+      "target_service": "catalog-api",
+      "severity": "CRITICAL",
+      "is_ambiguous": false,
+      "ground_truth": {
+        "expected_root_cause": "memory_exhaustion",
+        "expected_services": [
+          "catalog-api"
+        ],
+        "expected_incident_type": "RESOURCE_EXHAUSTION"
+      },
+      "anomaly_evaluation": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "signals_detected": 11,
+        "latency_ms": 0.16
+      },
+      "clustering_evaluation": {
+        "clusters_found": 0,
+        "noise_points": 3,
+        "noise_ratio": 1.0,
+        "cluster_purity": 0.0,
+        "latency_ms": 75.86
+      },
+      "rca_evaluation": {
+        "predicted_root_cause": "Memory exhaustion on catalog-api",
+        "top_3_candidates": [
+          "Memory exhaustion on catalog-api",
+          "Service degradation on catalog-api",
+          "Redis cache failure on catalog-api"
+        ],
+        "confidence": 0.837,
+        "top_1_correct": true,
+        "top_3_correct": true,
+        "mrr": 1.0,
+        "latency_ms": 0.83
+      },
+      "rag_evaluation": {
+        "matched_runbook": "RB-000003",
+        "docs_retrieved": 1,
+        "latency_ms": 8387.57
+      },
+      "llm_evaluation": {
+        "json_valid": true,
+        "aligned_root_cause": "Recent deployment on booking-api",
+        "validated_services": [
+          "catalog-api"
+        ],
+        "verified_evidence_items": 0,
+        "unsupported_claim_count": 2,
+        "unsupported_claim_rate": 0.667,
+        "unknown_preserved": true,
+        "latency_ms": 1.72
+      },
+      "total_e2e_latency_ms": 8466.24
+    },
+    {
+      "scenario": "redis_failure",
+      "description": "Simulates Redis cache node outage causing connection refused exceptions, cache misses, and degraded API response times.",
+      "target_service": "cache-service",
+      "severity": "HIGH",
+      "is_ambiguous": false,
+      "ground_truth": {
+        "expected_root_cause": "redis_failure",
+        "expected_services": [
+          "cache-service",
+          "booking-api"
+        ],
+        "expected_incident_type": "CACHE_DEPENDENCY_FAILURE"
+      },
+      "anomaly_evaluation": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "signals_detected": 9,
+        "latency_ms": 0.12
+      },
+      "clustering_evaluation": {
+        "clusters_found": 0,
+        "noise_points": 3,
+        "noise_ratio": 1.0,
+        "cluster_purity": 0.0,
+        "latency_ms": 94.99
+      },
+      "rca_evaluation": {
+        "predicted_root_cause": "Redis cache failure on cache-service",
+        "top_3_candidates": [
+          "Redis cache failure on cache-service",
+          "Service degradation on booking-api",
+          "Redis cache failure on booking-api"
+        ],
+        "confidence": 0.858,
+        "top_1_correct": true,
+        "top_3_correct": true,
+        "mrr": 1.0,
+        "latency_ms": 1.09
+      },
+      "rag_evaluation": {
+        "matched_runbook": "RB-000002",
+        "docs_retrieved": 1,
+        "latency_ms": 8350.59
+      },
+      "llm_evaluation": {
+        "json_valid": true,
+        "aligned_root_cause": "Database connection saturation on postgres",
+        "validated_services": [
+          "booking-api"
+        ],
+        "verified_evidence_items": 0,
+        "unsupported_claim_count": 2,
+        "unsupported_claim_rate": 0.667,
+        "unknown_preserved": true,
+        "latency_ms": 1.73
+      },
+      "total_e2e_latency_ms": 8448.63
+    },
+    {
+      "scenario": "traffic_spike",
+      "description": "Simulates an abrupt 10x traffic spike on worker-service leading to CPU exhaustion, thread starvation, and job processing backlog.",
+      "target_service": "worker-service",
+      "severity": "HIGH",
+      "is_ambiguous": false,
+      "ground_truth": {
+        "expected_root_cause": "traffic_spike",
+        "expected_services": [
+          "worker-service"
+        ],
+        "expected_incident_type": "CAPACITY_EXHAUSTION"
+      },
+      "anomaly_evaluation": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "signals_detected": 10,
+        "latency_ms": 0.11
+      },
+      "clustering_evaluation": {
+        "clusters_found": 0,
+        "noise_points": 3,
+        "noise_ratio": 1.0,
+        "cluster_purity": 0.0,
+        "latency_ms": 85.14
+      },
+      "rca_evaluation": {
+        "predicted_root_cause": "Service degradation on worker-service",
+        "top_3_candidates": [
+          "Service degradation on worker-service",
+          "Resource saturation on worker-service",
+          "Database degradation on worker-service"
+        ],
+        "confidence": 0.782,
+        "top_1_correct": true,
+        "top_3_correct": true,
+        "mrr": 1.0,
+        "latency_ms": 0.86
+      },
+      "rag_evaluation": {
+        "matched_runbook": "RB-000005",
+        "docs_retrieved": 1,
+        "latency_ms": 8439.68
+      },
+      "llm_evaluation": {
+        "json_valid": true,
+        "aligned_root_cause": "Database connection saturation on postgres",
+        "validated_services": [
+          "worker-service"
+        ],
+        "verified_evidence_items": 0,
+        "unsupported_claim_count": 3,
+        "unsupported_claim_rate": 1.0,
+        "unknown_preserved": true,
+        "latency_ms": 1.34
+      },
+      "total_e2e_latency_ms": 8527.21
+    }
+  ]
+}

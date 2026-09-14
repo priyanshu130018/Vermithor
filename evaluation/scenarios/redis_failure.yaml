@@ -1,0 +1,70 @@
+name: redis_failure
+description: "Simulates Redis cache node outage causing connection refused exceptions, cache misses, and degraded API response times."
+target_service: cache-service
+severity: HIGH
+expected_root_cause: "redis_failure"
+expected_services:
+  - cache-service
+  - booking-api
+expected_incident_type: "CACHE_DEPENDENCY_FAILURE"
+is_ambiguous: false
+
+timeline:
+  - time_offset_seconds: 0
+    stage: baseline
+    description: "Healthy Redis cluster operation with 95% hit ratio"
+    metrics:
+      - metric_name: redis_hit_ratio
+        service: cache-service
+        value: 0.95
+      - metric_name: cache_lookup_latency_ms
+        service: cache-service
+        value: 2.5
+      - metric_name: api_request_latency_ms
+        service: booking-api
+        value: 95.0
+
+  - time_offset_seconds: 25
+    stage: redis_unavailability
+    description: "Redis master node network partition / process crash"
+    metrics:
+      - metric_name: redis_hit_ratio
+        service: cache-service
+        value: 0.12
+      - metric_name: cache_lookup_latency_ms
+        service: cache-service
+        value: 1200.0
+    logs:
+      - service: cache-service
+        level: ERROR
+        message: "RedisConnectionException: Connection refused to redis://redis-master:6379 after 3 retries"
+        trace_id: "8bf92f3577b34da6a3ce929d0e0e1111"
+        attributes:
+          host: "redis-master"
+          port: 6379
+          error: "ConnectionRefused"
+
+  - time_offset_seconds: 50
+    stage: downstream_degradation
+    description: "Downstream booking-api cache misses cascade to database fallback"
+    metrics:
+      - metric_name: api_request_latency_ms
+        service: booking-api
+        value: 850.0
+      - metric_name: http_5xx_error_rate_ratio
+        service: booking-api
+        value: 0.15
+    logs:
+      - service: booking-api
+        level: WARN
+        message: "Cache miss fallback triggered: Redis unreachable, falling back to direct database query"
+        trace_id: "8bf92f3577b34da6a3ce929d0e0e1111"
+        attributes:
+          fallback: "database"
+          service: "cache-service"
+      - service: cache-service
+        level: ERROR
+        message: "CircuitBreaker OPEN for cache-service: Redis cluster unresponsive"
+        trace_id: "8bf92f3577b34da6a3ce929d0e0e1111"
+        attributes:
+          circuit_breaker: "OPEN"
