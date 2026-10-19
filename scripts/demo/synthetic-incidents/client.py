@@ -7,7 +7,7 @@ import hashlib
 from typing import Any, Dict, Optional
 import httpx
 
-DEV_SECRET = "vermithor-dev-secret-key-32-chars-min"
+DEV_SECRET = os.getenv("JWT_SECRET", "vermithor-dev-secret-key-32-chars-min")
 DEFAULT_GATEWAY_URL = os.getenv("VERMITHOR_API_URL", "http://localhost:8080")
 
 
@@ -41,10 +41,19 @@ def generate_dev_jwt(
 
 
 class VermithorClient:
-    def __init__(self, base_url: str = DEFAULT_GATEWAY_URL, secret: str = DEV_SECRET):
+    def __init__(self, base_url: str = DEFAULT_GATEWAY_URL, secret: Optional[str] = None):
         self.base_url = base_url.rstrip("/")
-        self.secret = secret
-        self.token = generate_dev_jwt(secret=secret)
+        self.secret = secret or os.getenv("JWT_SECRET", DEV_SECRET)
+        # Attempt to acquire from auth endpoint if available, otherwise sign with secret
+        try:
+            with httpx.Client(base_url=self.base_url, timeout=3.0) as client:
+                res = client.post("/api/v1/auth/dev-token", json={"sub": "synthetic-generator-bot"})
+                if res.status_code == 200:
+                    self.token = res.json()["access_token"]
+                else:
+                    self.token = generate_dev_jwt(secret=self.secret)
+        except Exception:
+            self.token = generate_dev_jwt(secret=self.secret)
 
     def _headers(self, trace_id: Optional[str] = None) -> Dict[str, str]:
         headers = {
@@ -77,7 +86,13 @@ class VermithorClient:
 
     def run_correlation(self, correlation_payload: Dict[str, Any]) -> Dict[str, Any]:
         with httpx.Client(base_url=self.base_url, timeout=10.0) as client:
-            resp = client.post("/api/v1/correlation/evaluate", json=correlation_payload, headers=self._headers())
+            resp = client.post("/api/v1/correlations/evaluate", json=correlation_payload, headers=self._headers())
+            resp.raise_for_status()
+            return resp.json()
+
+    def post_group(self, group_payload: Dict[str, Any]) -> Dict[str, Any]:
+        with httpx.Client(base_url=self.base_url, timeout=15.0) as client:
+            resp = client.post("/api/v1/correlations/groups", json=group_payload, headers=self._headers())
             resp.raise_for_status()
             return resp.json()
 
@@ -87,9 +102,16 @@ class VermithorClient:
             resp.raise_for_status()
             return resp.json()
 
-    def generate_summary(self, incident_key: str) -> Dict[str, Any]:
+    def get_rag_context(self, incident_key: str, top_k: int = 10) -> Dict[str, Any]:
+        with httpx.Client(base_url=self.base_url, timeout=15.0) as client:
+            resp = client.post("/api/v1/rag/context", json={"incident_key": incident_key, "top_k": top_k}, headers=self._headers())
+            resp.raise_for_status()
+            return resp.json()
+
+    def generate_summary(self, incident_key: str, regenerate: bool = True) -> Dict[str, Any]:
+        param = "?regenerate=true" if regenerate else ""
         with httpx.Client(base_url=self.base_url, timeout=30.0) as client:
-            resp = client.post(f"/api/v1/summaries/generate/{incident_key}", headers=self._headers())
+            resp = client.post(f"/api/v1/summaries/incident/{incident_key}{param}", headers=self._headers())
             resp.raise_for_status()
             return resp.json()
 

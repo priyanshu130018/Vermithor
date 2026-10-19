@@ -1,7 +1,69 @@
 from functools import lru_cache
-from typing import Optional, Union
+from typing import Optional, Union, Dict, Any, List
 from pydantic import Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from sqlalchemy.engine import make_url
+
+
+def normalize_database_url(url: Optional[str]) -> Optional[str]:
+    """Normalize database connection string for SQLAlchemy 2.0 and psycopg v3.
+
+    Translates legacy schemes ('postgres://', 'postgresql://', 'postgresql+psycopg2://')
+    to 'postgresql+psycopg://' so that the installed psycopg v3 driver is loaded,
+    while preserving all credentials, hostnames, ports, and SSL query parameters.
+    """
+    if not url:
+        return url
+    cleaned = url.strip().strip("'\"")
+    if cleaned.startswith("postgres://"):
+        return "postgresql+psycopg://" + cleaned[len("postgres://"):]
+    elif cleaned.startswith("postgresql+psycopg2://"):
+        return "postgresql+psycopg://" + cleaned[len("postgresql+psycopg2://"):]
+    elif cleaned.startswith("postgresql://") and not cleaned.startswith("postgresql+"):
+        return "postgresql+psycopg://" + cleaned[len("postgresql://"):]
+    return cleaned
+
+
+def get_safe_db_diagnostic(url: Optional[str]) -> Dict[str, Any]:
+    """Extract safe database connection diagnostics without exposing credentials.
+
+    Reports only the URL hostname, username, database name, pooled/unpooled mode,
+    and whether a password is present. Never prints or returns the password,
+    full URL, or query parameters.
+    """
+    if not url:
+        return {
+            "hostname": None,
+            "username": None,
+            "database": None,
+            "mode": "unknown",
+            "password_present": False,
+        }
+    try:
+        norm = normalize_database_url(url)
+        parsed = make_url(norm)
+        hostname = parsed.host
+        username = parsed.username
+        database = parsed.database
+        password_present = bool(parsed.password)
+        is_pooled = bool(hostname and ("-pooler" in hostname or parsed.port == 6543))
+        mode = "pooled" if is_pooled else "unpooled"
+        return {
+            "hostname": hostname,
+            "username": username,
+            "database": database,
+            "mode": mode,
+            "password_present": password_present,
+        }
+    except Exception:
+        return {
+            "hostname": "unparseable",
+            "username": "unparseable",
+            "database": "unparseable",
+            "mode": "unknown",
+            "password_present": False,
+        }
+
 
 
 class Settings(BaseSettings):
@@ -14,13 +76,9 @@ class Settings(BaseSettings):
     PORT: int = 8000
     HOST: str = "0.0.0.0"
 
-    # PostgreSQL Database & pgvector
-    POSTGRES_USER: str = "vermithor"
-    POSTGRES_PASSWORD: str = "vermithor_password"
-    POSTGRES_DB: str = "vermithor"
-    POSTGRES_HOST: str = "localhost"
-    POSTGRES_PORT: int = 5432
+    # Neon Serverless PostgreSQL & pgvector Database Settings
     DATABASE_URL: Optional[str] = None
+    DATABASE_URL_UNPOOLED: Optional[str] = None
     DB_POOL_SIZE: int = 10
     DB_MAX_OVERFLOW: int = 20
     DB_POOL_RECYCLE: int = 1800
@@ -34,6 +92,7 @@ class Settings(BaseSettings):
     JWT_SECRET: str = "vermithor-dev-secret-key-32-chars-min"
     JWT_ISSUER: str = "vermithor"
     JWT_AUDIENCE: str = "vermithor-api"
+    ENABLE_DEV_AUTH: bool = True
 
     # Anomaly Detection Parameters
     STATISTICAL_WARNING_Z: float = 3.0
@@ -67,10 +126,17 @@ class Settings(BaseSettings):
     RCA_WEIGHT_SERVICE_ROLE: float = 0.10
     RCA_WEIGHT_SEVERITY: float = 0.05
 
-    # Log Intelligence & Vector Embeddings
+    # Log Intelligence & Cloud Vector Embeddings
+    EMBEDDING_PROVIDER: str = "huggingface"
     EMBEDDING_MODEL_NAME: str = "sentence-transformers/all-MiniLM-L6-v2"
+    EMBEDDING_MODEL: Optional[str] = None
     EMBEDDING_DIMENSION: int = 384
     EMBEDDING_DEVICE: str = "cpu"
+    HF_EMBEDDING_BASE_URL: str = "https://router.huggingface.co/hf-inference"
+    HF_EMBEDDING_URL: Optional[str] = None
+    EMBEDDING_TIMEOUT_SECONDS: int = Field(30, ge=1)
+    EMBEDDING_MAX_RETRIES: int = Field(2, ge=0)
+    EMBEDDING_BATCH_SIZE: int = Field(32, ge=1)
     MODEL_VERSION: str = "1.0"
     DEFAULT_TOP_K: int = Field(5, ge=1)
     MAX_TOP_K: int = Field(50, ge=1)
@@ -92,19 +158,54 @@ class Settings(BaseSettings):
     RETRIEVAL_WEIGHT_RECENCY: float = 0.15
     RETRIEVAL_WEIGHT_SOURCE: float = 0.15
 
-    # Summary & LLM Synthesis
+    # Summary & LLM Synthesis (Hugging Face Inference Providers & Local Ollama)
     LLM_PROVIDER: str = "ollama"
-    LLM_MODEL: str = "llama3.2:3b"
-    OLLAMA_BASE_URL: str = "http://localhost:11434"
+    HF_TOKEN: Optional[str] = None
+    HF_MODEL: str = "meta-llama/Llama-3.1-8B-Instruct"
+    HF_BASE_URL: str = "https://router.huggingface.co/v1"
+    OLLAMA_BASE_URL: str = Field("http://localhost:11434", description="Ollama API base URL")
+    OLLAMA_MODEL: str = Field("llama3.2", description="Ollama model name (e.g. llama3.2, llama3.1, mistral)")
     SUMMARY_VERSION: str = "1.0"
     LLM_TIMEOUT_SECONDS: int = Field(120, ge=5)
-    LLM_FALLBACK_ENABLED: bool = False
+    LLM_FALLBACK_ENABLED: bool = Field(True, description="Enable deterministic grounded fallback when cloud LLM is unavailable or credits exhausted")
     MAX_PROMPT_CHARS: int = Field(30000, ge=1000)
     MAX_OUTPUT_TOKENS: int = Field(2000, ge=100)
 
     # Observability & Distributed Tracing
     OTEL_EXPORTER_OTLP_ENDPOINT: Optional[str] = "http://localhost:4318"
+    PROMETHEUS_URL: str = Field("http://localhost:9090", description="Prometheus server base URL")
+    JAEGER_QUERY_URL: str = Field("http://localhost:16686", description="Jaeger Query API base URL")
+    OBSERVABILITY_REQUEST_TIMEOUT: float = Field(5.0, ge=0.5, le=30.0, description="Timeout in seconds for external observability queries")
 
+    # Code Repair Agent & Sandbox Parameters
+    AGENT_REPAIR_CONFIDENCE_THRESHOLD: float = Field(
+        0.50,
+        ge=0.0,
+        le=1.0,
+        description="Minimum investigation confidence score required to justify inspecting code and proposing repairs",
+    )
+    AGENT_REPAIR_MAX_PATCH_LINES: int = Field(
+        150,
+        ge=10,
+        le=1000,
+        description="Maximum lines of unified diff allowed in an AI-generated repair patch",
+    )
+    AGENT_REPAIR_MAX_CHANGED_FILES: int = Field(
+        3,
+        ge=1,
+        le=10,
+        description="Maximum number of files allowed to be altered by an AI repair patch",
+    )
+    AGENT_REPAIR_SANDBOX_TIMEOUT_SECONDS: float = Field(
+        30.0,
+        ge=5.0,
+        le=120.0,
+        description="Maximum execution timeout in seconds for isolated test execution in sandbox",
+    )
+    AGENT_REPAIR_ALLOWED_ROLES: List[str] = Field(
+        default_factory=lambda: ["sre", "sre_lead", "admin", "lead_engineer", "maintainer"],
+        description="Authorized roles permitted to review and approve code repairs",
+    )
     # Optional internal fallback URLs (for backwards compatibility if queried)
     INCIDENT_SERVICE_URL: str = "http://localhost:8000"
     CORRELATION_SERVICE_URL: str = "http://localhost:8000"
@@ -120,11 +221,18 @@ class Settings(BaseSettings):
 
     @model_validator(mode="after")
     def validate_weights(self) -> "Settings":
-        if not self.DATABASE_URL:
-            self.DATABASE_URL = (
-                f"postgresql+psycopg://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}"
-                f"@{self.POSTGRES_HOST}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
+        if self.DATABASE_URL and self.DATABASE_URL.strip():
+            self.DATABASE_URL = normalize_database_url(self.DATABASE_URL)
+        else:
+            self.DATABASE_URL = normalize_database_url(
+                "postgresql+psycopg://neondb_owner:your_neon_password@ep-curly-mode-b4ilila7-pooler.c-6.us-east-2.aws.neon.tech/neondb?channel_binding=require&sslmode=require"
             )
+
+        if self.DATABASE_URL_UNPOOLED and self.DATABASE_URL_UNPOOLED.strip():
+            self.DATABASE_URL_UNPOOLED = normalize_database_url(self.DATABASE_URL_UNPOOLED)
+
+        if self.EMBEDDING_MODEL and self.EMBEDDING_MODEL.strip():
+            self.EMBEDDING_MODEL_NAME = self.EMBEDDING_MODEL.strip()
 
         # Validate correlation weights
         corr_total = (
@@ -169,3 +277,24 @@ class Settings(BaseSettings):
 def get_settings() -> Settings:
     """Return cached singleton instance of Settings."""
     return Settings()
+
+
+if __name__ == "__main__":
+    import os
+
+    settings = get_settings()
+    diag_pooled = get_safe_db_diagnostic(os.getenv("DATABASE_URL") or settings.DATABASE_URL)
+    diag_unpooled = get_safe_db_diagnostic(os.getenv("DATABASE_URL_UNPOOLED") or settings.DATABASE_URL_UNPOOLED)
+
+    print("=== Vermithor Database Safe Diagnostic (No Secrets) ===")
+    print(
+        f"DATABASE_URL:          hostname={diag_pooled['hostname']}, "
+        f"username={diag_pooled['username']}, database={diag_pooled['database']}, "
+        f"mode={diag_pooled['mode']}, password_present={diag_pooled['password_present']}"
+    )
+    print(
+        f"DATABASE_URL_UNPOOLED: hostname={diag_unpooled['hostname']}, "
+        f"username={diag_unpooled['username']}, database={diag_unpooled['database']}, "
+        f"mode={diag_unpooled['mode']}, password_present={diag_unpooled['password_present']}"
+    )
+

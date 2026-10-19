@@ -1,0 +1,112 @@
+name: payment_pool_exhaustion
+description: "Simulates database connection pool exhaustion on payment-api following deployment v2.8.4, causing latency spikes and HTTP 500 error cascade."
+target_service: payment-api
+severity: CRITICAL
+expected_root_cause: "database_saturation"
+expected_services:
+  - payment-api
+  - postgres
+expected_incident_type: "DATABASE_OUTAGE"
+is_ambiguous: false
+
+timeline:
+  - time_offset_seconds: 0
+    stage: baseline
+    description: "Healthy production steady-state traffic on payment-api v2.8.3"
+    metrics:
+      - metric_name: db_query_latency_ms
+        service: postgres
+        value: 45.0
+      - metric_name: db_connection_pool_utilization_ratio
+        service: payment-api
+        value: 0.35
+      - metric_name: api_request_latency_ms
+        service: payment-api
+        value: 180.0
+      - metric_name: http_5xx_error_rate_ratio
+        service: payment-api
+        value: 0.004
+
+  - time_offset_seconds: 120
+    stage: deployment_event
+    description: "Deployment of payment-api v2.8.4 completes"
+    deployment_event:
+      service: payment-api
+      environment: production
+      version: "v2.8.4"
+      previous_version: "v2.8.3"
+      change_summary: "Upgrade payment routing engine and enable persistent connection pooling"
+      status: "completed"
+
+  - time_offset_seconds: 240
+    stage: pool_exhaustion_onset
+    description: "Database connection pool utilization reaches 100% (0 idle connections); latency jumps to 4.8s"
+    metrics:
+      - metric_name: db_connection_pool_utilization_ratio
+        service: payment-api
+        value: 1.00
+      - metric_name: api_request_latency_ms
+        service: payment-api
+        value: 4800.0
+      - metric_name: db_query_latency_ms
+        service: postgres
+        value: 3200.0
+    logs:
+      - service: payment-api
+        level: WARN
+        message: "HikariCP pool 'PaymentPool': Active connections 100/100 (idle: 0). Connection acquisition wait time exceeds 2000ms"
+        trace_id: "9bf92f3577b34da6a3ce929d0e0e1042"
+        attributes:
+          pool_name: "PaymentPool"
+          pool_active: 100
+          pool_idle: 0
+          pool_max: 100
+          version: "v2.8.4"
+      - service: payment-api
+        level: ERROR
+        message: "ConnectionAcquisitionTimeoutException: Timeout waiting for connection from pool 'PaymentPool' after 5000ms"
+        trace_id: "9bf92f3577b34da6a3ce929d0e0e1042"
+        attributes:
+          pool_active: 100
+          pool_idle: 0
+          error: "ConnectionAcquisitionTimeoutException"
+          endpoint: "/api/v1/payments/charge"
+
+  - time_offset_seconds: 360
+    stage: critical_cascade
+    description: "Payment error rate spikes from 0.4% to 28% with widespread HTTP 500 and timeout cascade"
+    metrics:
+      - metric_name: http_5xx_error_rate_ratio
+        service: payment-api
+        value: 0.28
+      - metric_name: api_request_latency_ms
+        service: payment-api
+        value: 4950.0
+    logs:
+      - service: payment-api
+        level: ERROR
+        message: "Database transaction aborted: Failed to acquire DB connection for payment transaction charge_94812a"
+        trace_id: "9bf92f3577b34da6a3ce929d0e0e1042"
+        attributes:
+          status_code: 500
+          endpoint: "/api/v1/payments/charge"
+          database: "postgres"
+      - service: payment-api
+        level: ERROR
+        message: "HTTP 500 Internal Server Error returned to client: DB connection pool exhaustion on /api/v1/payments/charge"
+        trace_id: "9bf92f3577b34da6a3ce929d0e0e1042"
+        attributes:
+          status_code: 500
+          route: "/api/v1/payments/charge"
+          version: "v2.8.4"
+
+  - time_offset_seconds: 480
+    stage: rca_analysis_initiation
+    description: "Automated correlation, causal evaluation, and RCA analysis begins"
+    metrics:
+      - metric_name: db_connection_pool_utilization_ratio
+        service: payment-api
+        value: 1.00
+      - metric_name: http_5xx_error_rate_ratio
+        service: payment-api
+        value: 0.28

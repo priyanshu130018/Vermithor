@@ -6,7 +6,7 @@ import httpx
 
 
 def test_gateway_nginx_upstream_timeout_configurations():
-    """Verify OpenResty gateway nginx.conf specifies explicit proxy read and connect timeouts."""
+    """Verify Nginx gateway nginx.conf specifies explicit proxy read and connect timeouts."""
     nginx_conf_path = os.path.abspath("gateway/nginx.conf")
     with open(nginx_conf_path, "r", encoding="utf-8") as f:
         conf = f.read()

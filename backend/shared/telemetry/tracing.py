@@ -7,15 +7,24 @@ from opentelemetry.sdk.trace.export import BatchSpanProcessor, ConsoleSpanExport
 from opentelemetry.trace.propagation.tracecontext import TraceContextTextMapPropagator
 
 
+from opentelemetry.sdk.resources import Resource, SERVICE_NAME as OTEL_SERVICE_NAME
+
+
 def init_tracer(service_name: str) -> trace.Tracer:
     """Initializes OpenTelemetry Tracer with OTLP or fallback exporter."""
-    provider = TracerProvider()
+    resource = Resource.create({
+        OTEL_SERVICE_NAME: service_name,
+        "service.name": service_name,
+        "service.instance.id": os.getenv("HOSTNAME", "localhost"),
+    })
+    provider = TracerProvider(resource=resource)
     otlp_endpoint = os.getenv("OTEL_EXPORTER_OTLP_ENDPOINT")
 
     if otlp_endpoint:
         try:
             from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
-            exporter = OTLPSpanExporter(endpoint=f"{otlp_endpoint}/v1/traces")
+            endpoint = f"{otlp_endpoint.rstrip('/')}/v1/traces"
+            exporter = OTLPSpanExporter(endpoint=endpoint)
             provider.add_span_processor(BatchSpanProcessor(exporter))
         except Exception:
             pass

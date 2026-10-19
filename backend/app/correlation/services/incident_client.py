@@ -21,6 +21,7 @@ class IncidentServiceClient:
 
     def __init__(self, base_url: Optional[str] = None, timeout: float = 5.0):
         settings = get_settings()
+        self.is_custom_url = base_url is not None
         self.base_url = (base_url or settings.INCIDENT_SERVICE_URL).rstrip("/")
         self.timeout = timeout
 
@@ -50,7 +51,27 @@ class IncidentServiceClient:
         }
         incident_severity = sev_map.get(severity.upper(), "SEV3")
 
-        # 1. In-process direct database lookup
+        # 1. HTTP call (supports mocked tests and decoupled microservices)
+        url = f"{self.base_url}/api/v1/incidents"
+        payload = {
+            "title": title[:255],
+            "description": description,
+            "severity": incident_severity,
+            "environment": environment,
+            "started_at": started_at.isoformat() if hasattr(started_at, "isoformat") else started_at,
+            "confidence": round(confidence, 2),
+        }
+        try:
+            with httpx.Client(timeout=self.timeout) as client:
+                response = client.post(url, json=payload)
+                if response.status_code in (200, 201):
+                    return response.json().get("incident_key")
+        except Exception as exc:
+            logger.debug("HTTP call for create_incident failed: %s", exc)
+            if self.is_custom_url:
+                return None
+
+        # 2. In-process direct database lookup fallback
         try:
             db = SessionLocal()
             try:
@@ -68,24 +89,6 @@ class IncidentServiceClient:
                 db.close()
         except Exception:
             pass
-
-        # 2. HTTP call fallback (for mocked tests)
-        url = f"{self.base_url}/api/v1/incidents"
-        payload = {
-            "title": title[:255],
-            "description": description,
-            "severity": incident_severity,
-            "environment": environment,
-            "started_at": started_at.isoformat() if hasattr(started_at, "isoformat") else started_at,
-            "confidence": round(confidence, 2),
-        }
-        try:
-            with httpx.Client(timeout=self.timeout) as client:
-                response = client.post(url, json=payload)
-                if response.status_code == 201:
-                    return response.json().get("incident_key")
-        except Exception as exc:
-            logger.debug("HTTP fallback for create_incident failed: %s", exc)
         return None
 
     def attach_event_evidence(
@@ -96,7 +99,24 @@ class IncidentServiceClient:
         score: Optional[float] = None,
     ) -> bool:
         """Attach an external event ID as evidence to an existing incident."""
-        # 1. In-process direct database lookup
+        # 1. HTTP call (supports mocked tests and decoupled microservices)
+        url = f"{self.base_url}/api/v1/incidents/{incident_key}/events"
+        payload = {
+            "event_id": event_id,
+            "relation_type": relation_type,
+            "score": score,
+        }
+        try:
+            with httpx.Client(timeout=self.timeout) as client:
+                response = client.post(url, json=payload)
+                if response.status_code in [200, 201]:
+                    return True
+        except Exception as exc:
+            logger.debug("HTTP call for attach_event_evidence failed: %s", exc)
+            if self.is_custom_url:
+                return False
+
+        # 2. In-process direct database lookup fallback
         try:
             db = SessionLocal()
             try:
@@ -117,19 +137,4 @@ class IncidentServiceClient:
                 db.close()
         except Exception:
             pass
-
-        # 2. HTTP call fallback
-        url = f"{self.base_url}/api/v1/incidents/{incident_key}/events"
-        payload = {
-            "event_id": event_id,
-            "relation_type": relation_type,
-            "score": score,
-        }
-        try:
-            with httpx.Client(timeout=self.timeout) as client:
-                response = client.post(url, json=payload)
-                if response.status_code in [200, 201]:
-                    return True
-        except Exception as exc:
-            logger.debug("HTTP fallback for attach_event_evidence failed: %s", exc)
         return False

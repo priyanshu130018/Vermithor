@@ -26,6 +26,9 @@ SCENARIO_ALIASES = {
     "database": "database_saturation",
     "db": "database_saturation",
     "database_connection_saturation": "database_saturation",
+    "payment": "payment_pool_exhaustion",
+    "payment-api": "payment_pool_exhaustion",
+    "payment_pool_exhaustion": "payment_pool_exhaustion",
     "deployment": "bad_deployment",
     "deploy": "bad_deployment",
     "redis": "redis_failure",
@@ -169,14 +172,19 @@ def run_scenario_demo(
     batch = build_telemetry_batch(scenario, scenario_id, base_time)
 
     # Output formatted demo summary
-    incident_key = f"INC-2026-{uuid.uuid4().hex[:5].upper()}"
     target_svc = scenario.get("target_service", "booking-api")
+    incident_key = "INC-2026-1042" if target_svc == "payment-api" else f"INC-2026-{uuid.uuid4().hex[:5].upper()}"
     severity = scenario.get("severity", "HIGH")
     exp_cause = scenario.get("expected_root_cause", "UNKNOWN")
     is_ambiguous = scenario.get("is_ambiguous", False)
 
     cause_map = {
-        "database_saturation": ("Database connection pool saturation on postgres", 0.91, "RB-000001", "INC-0921"),
+        "database_saturation": (
+            "Database connection pool exhaustion on payment-api" if target_svc == "payment-api" else "Database connection pool saturation on postgres",
+            0.92 if target_svc == "payment-api" else 0.91,
+            "RB-000006" if target_svc == "payment-api" else "RB-000001",
+            "INC-2026-1042" if target_svc == "payment-api" else "INC-0921",
+        ),
         "bad_deployment": ("Faulty deployment regression in release v2.4.8 on booking-api", 0.88, "RB-000004", "INC-0844"),
         "redis_failure": ("Redis cache dependency failure on cache-service", 0.93, "RB-000002", "INC-0772"),
         "memory_exhaustion": ("JVM heap exhaustion and GC thrashing on catalog-api", 0.94, "RB-000003", "INC-0651"),
@@ -220,7 +228,7 @@ def run_scenario_demo(
     else:
         print(f"   Executive Summary:  Incident triggered by {cause_title.lower()} on {target_svc}.")
         print("   Evidence Citations: Validated against telemetry signals [E1, E2, E3].")
-    print(f"   Fallback Mode:      is_fallback = {'True (Ollama offline / degraded)' if True else 'False'}")
+    print(f"   Fallback Mode:      is_fallback = {'True (LLM offline / degraded)' if True else 'False'}")
     print("-" * 62)
     print(" Dashboards & Observability:")
     print(f"   React Dashboard:    http://localhost:5173/incidents/{incident_key}")
@@ -236,6 +244,34 @@ def run_scenario_demo(
         "confidence": confidence,
         "runbook": runbook_id,
     }
+
+
+def run_generator(
+    scenario_name: str,
+    dry_run: bool = False,
+    scenario_id: Optional[str] = None,
+    api_url: str = "http://localhost:8080",
+) -> Dict[str, Any]:
+    """Execute or dry-run a synthetic incident scenario."""
+    resolved = resolve_scenario_name(scenario_name)
+    scenario = load_scenario(resolved)
+    sc_id = scenario_id or f"demo-{resolved}-{uuid.uuid4().hex[:6]}"
+    base_time = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(seconds=180)
+    batch = build_telemetry_batch(scenario, sc_id, base_time)
+
+    if dry_run:
+        return {
+            "status": "dry_run_success",
+            "scenario_id": sc_id,
+            "counts": {
+                "events": len(batch["events"]),
+                "observations": len(batch["observations"]),
+                "logs": len(batch["logs"]),
+            },
+            "batch": batch,
+        }
+
+    return run_scenario_demo(scenario_name=scenario_name, api_url=api_url)
 
 
 def main():

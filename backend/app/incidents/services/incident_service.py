@@ -55,28 +55,44 @@ class IncidentService:
     def generate_incident_key(db: Session) -> str:
         """
         Generate a unique, human-readable incident key using a PostgreSQL sequence.
-        Falls back to atomic max increment for SQLite test environments.
+        Falls back to atomic max increment if sequence does not exist or for SQLite test environments.
         """
         bind = db.get_bind()
         if bind and bind.dialect.name == "postgresql":
-            val = db.execute(text("SELECT nextval('incident_key_seq')")).scalar()
-            return f"INC-{val:06d}"
-        else:
-            # Fallback for SQLite testing environments
-            max_key = db.execute(select(func.max(Incident.incident_key))).scalar()
-            if max_key and max_key.startswith("INC-"):
-                try:
-                    num = int(max_key.split("-")[1]) + 1
-                except (ValueError, IndexError):
-                    num = 1
-            else:
+            try:
+                val = db.execute(text("SELECT nextval('incident_key_seq')")).scalar()
+                return f"INC-{val:06d}"
+            except Exception:
+                db.rollback()
+
+        # Fallback for SQLite testing environments or when sequence is not yet created
+        max_key = db.execute(select(func.max(Incident.incident_key))).scalar()
+        if max_key and max_key.startswith("INC-"):
+            try:
+                num = int(max_key.split("-")[1]) + 1
+            except (ValueError, IndexError):
                 num = 1
-            return f"INC-{num:06d}"
+        else:
+            num = 1
+        return f"INC-{num:06d}"
 
     @classmethod
     def create_incident(cls, db: Session, incident_in: IncidentCreate) -> Incident:
-        """Create and persist a new operational incident in DETECTED state."""
-        key = cls.generate_incident_key(db)
+        """Create and persist a new operational incident in DETECTED state.
+
+        If an incident with the specified incident_key already exists, returns
+        the existing record idempotently instead of raising IntegrityError.
+        """
+        if incident_in.incident_key:
+            existing = cls.get_incident_by_key(db, incident_in.incident_key)
+            if existing:
+                logger.info(
+                    "Incident with key '%s' already exists; returning existing instance.",
+                    incident_in.incident_key,
+                )
+                return existing
+
+        key = incident_in.incident_key or cls.generate_incident_key(db)
 
         incident = Incident(
             incident_key=key,
@@ -89,9 +105,20 @@ class IncidentService:
             confidence=incident_in.confidence,
         )
 
-        db.add(incident)
-        db.commit()
-        db.refresh(incident)
+        try:
+            db.add(incident)
+            db.commit()
+            db.refresh(incident)
+        except IntegrityError:
+            db.rollback()
+            existing = cls.get_incident_by_key(db, key)
+            if existing:
+                logger.info(
+                    "Incident key '%s' committed concurrently; returning existing instance.",
+                    key,
+                )
+                return existing
+            raise
 
         logger.info(
             "Created incident key='%s', id='%s', severity='%s', status='%s', environment='%s'",

@@ -2,12 +2,18 @@ import os
 from pathlib import Path
 from typing import Generator
 import pytest
+
+os.environ["EMBEDDING_PROVIDER"] = "mock"
+from backend.app.log_intelligence.embedding.service import get_embedding_service
+from backend.app.log_intelligence.embedding.mock_provider import MockEmbeddingProvider
+get_embedding_service(provider=MockEmbeddingProvider())
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 
 import backend.app.common.database as common_db
 from backend.app.common.database import Base, get_db
+from backend.app.common.security import create_access_token
 
 # Import all models to ensure complete metadata registration
 import backend.app.ingestion.db.models
@@ -18,6 +24,7 @@ import backend.app.rca.db.models
 import backend.app.log_intelligence.db.models
 import backend.app.retrieval.db.models
 import backend.app.summary.db.models
+import backend.app.agent.db.models
 
 from backend.app.main import app
 
@@ -61,7 +68,24 @@ def db_session_fixture() -> Generator[Session, None, None]:
 
 @pytest.fixture(name="client")
 def client_fixture() -> Generator[TestClient, None, None]:
-    """TestClient fixture with overridden get_db dependency pointing to test SQLite."""
+    """TestClient fixture with overridden get_db and valid Bearer JWT header."""
+    def override_get_db():
+        session = TestingSessionLocal()
+        try:
+            yield session
+        finally:
+            session.close()
+
+    app.dependency_overrides[get_db] = override_get_db
+    valid_token = create_access_token({"sub": "sre-test-suite-user"})
+    with TestClient(app, headers={"Authorization": f"Bearer {valid_token}"}) as test_client:
+        yield test_client
+    app.dependency_overrides.clear()
+
+
+@pytest.fixture(name="unauthenticated_client")
+def unauthenticated_client_fixture() -> Generator[TestClient, None, None]:
+    """TestClient fixture without default authorization header for testing authentication boundaries."""
     def override_get_db():
         session = TestingSessionLocal()
         try:

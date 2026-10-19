@@ -16,14 +16,8 @@ jwt:
   secret: "vermithor-dev-secret-key-32-chars-min"
 
 database:
-  host: postgres
-  port: 5432
-  name: vermithor
-  user: vermithor
-  password: "vermithor_db_password"
-  storage:
-    size: 10Gi
-    storageClass: ""
+  url: "postgresql+psycopg://neondb_owner:<NEON_PASSWORD>@ep-lingering-scene-49972255-pooler.us-east-2.aws.neon.tech/neondb?sslmode=require"
+  unpooledUrl: "postgresql+psycopg://neondb_owner:<NEON_PASSWORD>@ep-lingering-scene-49972255.us-east-2.aws.neon.tech/neondb?sslmode=require"
 
 redis:
   host: redis

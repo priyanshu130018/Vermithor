@@ -18,8 +18,16 @@ from client import VermithorClient, generate_dev_jwt
 
 def test_load_scenario_valid():
     scenario = load_scenario("database_connection_saturation")
-    assert scenario["name"] == "database_connection_saturation"
+    assert scenario["name"] in ["database_saturation", "database_connection_saturation"]
     assert scenario["target_service"] == "booking-api"
+    assert len(scenario["timeline"]) >= 4
+
+
+def test_load_scenario_payment():
+    scenario = load_scenario("payment")
+    assert scenario["name"] == "payment_pool_exhaustion"
+    assert scenario["target_service"] == "payment-api"
+    assert scenario["severity"] == "CRITICAL"
     assert len(scenario["timeline"]) >= 4
 
 

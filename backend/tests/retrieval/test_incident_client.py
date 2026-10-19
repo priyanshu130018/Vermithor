@@ -24,6 +24,7 @@ def test_incident_client_search_success(monkeypatch):
                 "total": 1,
             }
 
+    monkeypatch.setattr("backend.app.incidents.services.incident_service.IncidentService.list_incidents", lambda **kwargs: ([], 0))
     monkeypatch.setattr("httpx.Client.get", lambda self, url, params=None: MockResponse())
 
     items, warn = client.search_incidents(service="booking-api", top_k=5)
@@ -46,6 +47,7 @@ def test_incident_client_single_get(monkeypatch):
                 "service": "booking-api",
             }
 
+    monkeypatch.setattr("backend.app.incidents.services.incident_service.IncidentService.get_incident_by_key", lambda db, key: None)
     monkeypatch.setattr("httpx.Client.get", lambda self, url, params=None: MockResponse())
 
     inc = client.get_incident("INC-000001")

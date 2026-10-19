@@ -350,3 +350,29 @@ def test_event_association_nonexistent_incident(client: TestClient):
 
     res_get = client.get("/api/v1/incidents/INC-NONEXISTENT/events")
     assert res_get.status_code == 404
+
+
+def test_create_incident_idempotent(client: TestClient):
+    """Test that creating an incident with an existing incident_key returns 200 OK and existing record."""
+    payload = {
+        "incident_key": "INC-999999",
+        "title": "Idempotency Test Incident",
+        "description": "Testing idempotent retry behavior",
+        "severity": "SEV2",
+        "environment": "production",
+        "started_at": "2026-10-18T10:00:00Z",
+        "confidence": 0.85,
+    }
+    # Initial creation
+    res1 = client.post("/api/v1/incidents", json=payload)
+    assert res1.status_code == 201
+    data1 = res1.json()
+    assert data1["incident_key"] == "INC-999999"
+
+    # Idempotent retry with same incident_key
+    res2 = client.post("/api/v1/incidents", json=payload)
+    assert res2.status_code == 200
+    data2 = res2.json()
+    assert data2["incident_key"] == "INC-999999"
+    assert data2["id"] == data1["id"]
+

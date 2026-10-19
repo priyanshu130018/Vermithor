@@ -7,32 +7,15 @@ services:
     restart: unless-stopped
     ports:
       - "8080:80"
-    environment:
-      JWT_SECRET: ${JWT_SECRET:-vermithor-dev-secret-key-32-chars-min}
-      JWT_ISSUER: ${JWT_ISSUER:-vermithor}
-      JWT_AUDIENCE: ${JWT_AUDIENCE:-vermithor-api}
-    depends_on:
-      - backend
-    networks:
-      - vermithor-network
-
-  postgres:
-    image: pgvector/pgvector:pg16
-    container_name: vermithor-postgres
-    restart: unless-stopped
-    environment:
-      POSTGRES_DB: ${POSTGRES_DB:-vermithor}
-      POSTGRES_USER: ${POSTGRES_USER:-vermithor}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-vermithor_password}
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-vermithor} -d ${POSTGRES_DB:-vermithor}"]
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:80/health >/dev/null || exit 1"]
       interval: 5s
-      timeout: 5s
+      timeout: 3s
       retries: 5
+      start_period: 5s
+    depends_on:
+      backend:
+        condition: service_healthy
     networks:
       - vermithor-network
 
@@ -40,8 +23,11 @@ services:
     image: redis:7-alpine
     container_name: vermithor-redis
     restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
     ports:
-      - "6379:6379"
+      - "127.0.0.1:6379:6379"
+    volumes:
+      - redis_data:/data
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
@@ -51,7 +37,7 @@ services:
       - vermithor-network
 
   jaeger:
-    image: jaegertracing/all-in-one:latest
+    image: jaegertracing/all-in-one:1.55.0
     container_name: vermithor-jaeger
     restart: unless-stopped
     ports:
@@ -64,13 +50,14 @@ services:
       - vermithor-network
 
   prometheus:
-    image: prom/prometheus:latest
+    image: prom/prometheus:v2.50.1
     container_name: vermithor-prometheus
     restart: unless-stopped
     ports:
       - "9090:9090"
     volumes:
       - ./infrastructure/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
     command:
       - "--config.file=/etc/prometheus/prometheus.yml"
       - "--storage.tsdb.path=/prometheus"
@@ -83,7 +70,7 @@ services:
       - vermithor-network
 
   grafana:
-    image: grafana/grafana:latest
+    image: grafana/grafana:10.4.0
     container_name: vermithor-grafana
     restart: unless-stopped
     ports:
@@ -96,9 +83,25 @@ services:
       - ./infrastructure/grafana/provisioning/datasources:/etc/grafana/provisioning/datasources:ro
       - ./infrastructure/grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards:ro
       - ./infrastructure/grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana_data:/var/lib/grafana
     depends_on:
       - prometheus
       - jaeger
+    networks:
+      - vermithor-network
+
+  migration:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: vermithor-migration
+    restart: "no"
+    command: ["alembic", "upgrade", "head"]
+    environment:
+      APP_ENV: ${APP_ENV:-development}
+      LOG_LEVEL: INFO
+      DATABASE_URL_UNPOOLED: ${DATABASE_URL_UNPOOLED:-}
+      DATABASE_URL: ${DATABASE_URL_UNPOOLED:-${DATABASE_URL}}
     networks:
       - vermithor-network
 
@@ -110,39 +113,50 @@ services:
     restart: unless-stopped
     ports:
       - "8000:8000"
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
     environment:
-      APP_ENV: production
+      APP_ENV: ${APP_ENV:-development}
       LOG_LEVEL: INFO
       SERVICE_NAME: vermithor-backend
       PORT: 8000
       HOST: 0.0.0.0
-      POSTGRES_USER: ${POSTGRES_USER:-vermithor}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-vermithor_password}
-      POSTGRES_DB: ${POSTGRES_DB:-vermithor}
-      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-vermithor}:${POSTGRES_PASSWORD:-vermithor_password}@postgres:5432/${POSTGRES_DB:-vermithor}
+      DATABASE_URL: ${DATABASE_URL}
       REDIS_URL: redis://redis:6379/0
       CELERY_BROKER_URL: redis://redis:6379/0
       CELERY_RESULT_BACKEND: redis://redis:6379/0
       JWT_SECRET: ${JWT_SECRET:-vermithor-dev-secret-key-32-chars-min}
       JWT_ISSUER: ${JWT_ISSUER:-vermithor}
       JWT_AUDIENCE: ${JWT_AUDIENCE:-vermithor-api}
+      ENABLE_DEV_AUTH: ${ENABLE_DEV_AUTH:-true}
       STATISTICAL_WARNING_Z: 3.0
       STATISTICAL_CRITICAL_Z: 4.0
-      ISOLATION_FOREST_CONTAMINATION: auto
+      EMBEDDING_PROVIDER: huggingface
       EMBEDDING_MODEL_NAME: sentence-transformers/all-MiniLM-L6-v2
       EMBEDDING_DIMENSION: 384
-      EMBEDDING_DEVICE: cpu
-      LLM_PROVIDER: ollama
-      LLM_MODEL: llama3.2:3b
-      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
+      HF_EMBEDDING_BASE_URL: ${HF_EMBEDDING_BASE_URL:-https://router.huggingface.co/hf-inference}
+      LLM_PROVIDER: ${LLM_PROVIDER:-ollama}
+      HF_TOKEN: ${HF_TOKEN:-}
+      HF_MODEL: ${HF_MODEL:-meta-llama/Llama-3.1-8B-Instruct}
+      HF_BASE_URL: ${HF_BASE_URL:-https://router.huggingface.co/v1}
+      OLLAMA_BASE_URL: ${OLLAMA_CONTAINER_BASE_URL:-http://host.docker.internal:11434}
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-llama3.2}
+      LLM_FALLBACK_ENABLED: ${LLM_FALLBACK_ENABLED:-true}
       OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4318
+      OTEL_SERVICE_NAME: vermithor-backend
+      PROMETHEUS_URL: ${PROMETHEUS_URL:-http://prometheus:9090}
+      JAEGER_QUERY_URL: ${JAEGER_QUERY_URL:-http://jaeger:16686}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8000/health || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
     depends_on:
-      postgres:
-        condition: service_healthy
       redis:
         condition: service_healthy
+      migration:
+        condition: service_completed_successfully
     networks:
       - vermithor-network
 
@@ -154,22 +168,39 @@ services:
     restart: unless-stopped
     command: ["celery", "-A", "backend.workers.celery_app", "worker", "--loglevel=info", "--concurrency=2"]
     environment:
-      APP_ENV: production
+      APP_ENV: ${APP_ENV:-development}
       LOG_LEVEL: INFO
       SERVICE_NAME: vermithor-worker
-      POSTGRES_USER: ${POSTGRES_USER:-vermithor}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-vermithor_password}
-      POSTGRES_DB: ${POSTGRES_DB:-vermithor}
-      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-vermithor}:${POSTGRES_PASSWORD:-vermithor_password}@postgres:5432/${POSTGRES_DB:-vermithor}
+      DATABASE_URL: ${DATABASE_URL}
       REDIS_URL: redis://redis:6379/0
       CELERY_BROKER_URL: redis://redis:6379/0
       CELERY_RESULT_BACKEND: redis://redis:6379/0
+      JWT_SECRET: ${JWT_SECRET:-vermithor-dev-secret-key-32-chars-min}
+      JWT_ISSUER: ${JWT_ISSUER:-vermithor}
+      JWT_AUDIENCE: ${JWT_AUDIENCE:-vermithor-api}
+      ENABLE_DEV_AUTH: ${ENABLE_DEV_AUTH:-true}
+      EMBEDDING_PROVIDER: huggingface
+      EMBEDDING_MODEL_NAME: sentence-transformers/all-MiniLM-L6-v2
+      EMBEDDING_DIMENSION: 384
+      HF_EMBEDDING_BASE_URL: ${HF_EMBEDDING_BASE_URL:-https://router.huggingface.co/hf-inference}
+      LLM_PROVIDER: ${LLM_PROVIDER:-ollama}
+      HF_TOKEN: ${HF_TOKEN:-}
+      HF_MODEL: ${HF_MODEL:-meta-llama/Llama-3.1-8B-Instruct}
+      HF_BASE_URL: ${HF_BASE_URL:-https://router.huggingface.co/v1}
+      OLLAMA_BASE_URL: ${OLLAMA_CONTAINER_BASE_URL:-http://host.docker.internal:11434}
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-llama3.2}
+      LLM_FALLBACK_ENABLED: ${LLM_FALLBACK_ENABLED:-true}
       OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4318
+      OTEL_SERVICE_NAME: vermithor-worker
+      PROMETHEUS_URL: ${PROMETHEUS_URL:-http://prometheus:9090}
+      JAEGER_QUERY_URL: ${JAEGER_QUERY_URL:-http://jaeger:16686}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     depends_on:
-      postgres:
-        condition: service_healthy
       redis:
         condition: service_healthy
+      migration:
+        condition: service_completed_successfully
     networks:
       - vermithor-network
 
@@ -177,12 +208,18 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      args:
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:8080}
     container_name: vermithor-frontend
     restart: unless-stopped
     ports:
       - "5173:80"
-    environment:
-      VITE_API_URL: http://localhost:8080
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:80/ >/dev/null || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
     depends_on:
       - gateway
     networks:
@@ -193,4 +230,6 @@ networks:
     driver: bridge
 
 volumes:
-  postgres_data:
+  redis_data:
+  prometheus_data:
+  grafana_data:

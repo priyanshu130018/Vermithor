@@ -1,15 +1,9 @@
-FROM openresty/openresty:alpine
+FROM nginx:alpine
 
-RUN apk add --no-cache git openssl-dev luarocks && \
-    luarocks install lua-resty-string || true && \
-    luarocks install lua-resty-hmac || true
+RUN mkdir -p /var/log/nginx /etc/nginx
 
-RUN mkdir -p /var/log/nginx && \
-    mkdir -p /etc/nginx
-
-COPY nginx.conf /usr/local/openresty/nginx/conf/nginx.conf
-COPY jwt_auth.lua /etc/nginx/jwt_auth.lua
+COPY nginx.conf /etc/nginx/nginx.conf
 
 EXPOSE 80
 
-CMD ["/usr/local/openresty/bin/openresty", "-g", "daemon off;"]
+CMD ["nginx", "-g", "daemon off;"]

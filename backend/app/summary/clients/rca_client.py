@@ -21,7 +21,22 @@ class RCAClient:
 
     def get_rca_reports(self, group_key: Optional[str] = None, top_k: int = 1) -> List[Dict[str, Any]]:
         """Retrieve recent RCA reports."""
-        # 1. In-process direct lookup
+        # 1. HTTP call (supports test mocking and microservices)
+        url = f"{self.base_url}/api/v1/rca"
+        params = {"page": 1, "page_size": top_k}
+        if group_key:
+            params["group_key"] = group_key
+
+        try:
+            with httpx.Client(timeout=self.timeout) as client:
+                res = client.get(url, params=params)
+                if res.status_code == 200:
+                    data = res.json()
+                    return data.get("items", [])
+        except Exception as exc:
+            logger.debug("HTTP call for RCA reports failed, falling back to direct DB: %s", exc)
+
+        # 2. In-process direct lookup fallback
         try:
             db = SessionLocal()
             try:
@@ -81,21 +96,6 @@ class RCAClient:
                 db.close()
         except Exception:
             pass
-
-        # 2. HTTP fallback for mocked tests
-        url = f"{self.base_url}/api/v1/rca"
-        params = {"page": 1, "page_size": top_k}
-        if group_key:
-            params["group_key"] = group_key
-
-        try:
-            with httpx.Client(timeout=self.timeout) as client:
-                res = client.get(url, params=params)
-                if res.status_code == 200:
-                    data = res.json()
-                    return data.get("items", [])
-        except Exception as exc:
-            logger.debug("HTTP fallback for RCA reports failed: %s", exc)
         return []
 
     def get_rca_by_key(self, analysis_key: str) -> Optional[Dict[str, Any]]:

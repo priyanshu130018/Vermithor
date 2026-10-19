@@ -24,3 +24,16 @@ celery_app.conf.update(
 
 # Autodiscover tasks from workers package
 celery_app.autodiscover_tasks(["backend.workers", "backend.workers.tasks", "backend.app.ingestion.workers"])
+
+
+from celery.signals import worker_process_init
+
+@worker_process_init.connect
+def on_worker_init(**kwargs):
+    """Initialize OpenTelemetry tracer provider with vermithor-worker service name when worker starts."""
+    try:
+        from backend.app.common.telemetry import init_tracer
+        init_tracer("vermithor-worker")
+    except Exception:
+        pass
+

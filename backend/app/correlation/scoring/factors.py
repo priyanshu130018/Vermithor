@@ -62,7 +62,7 @@ def evaluate_severity_concordance(s1: SignalInput, s2: SignalInput) -> Tuple[flo
 def evaluate_metric_anomaly_relationship(s1: SignalInput, s2: SignalInput) -> Tuple[float, Optional[str]]:
     """Evaluate temporal relationship between a metric anomaly and service event or alert."""
     types = {s1.signal_type.value, s2.signal_type.value}
-    if "ANOMALY" in types and ("EVENT" in types or "ALERT" in types):
+    if ("ANOMALY" in types or "METRIC" in types) and ("EVENT" in types or "ALERT" in types or "LOG" in types):
         if s1.service.lower() == s2.service.lower():
             return 1.0, "metric anomaly temporally correlated with service error/alert"
     return 0.0, None
@@ -73,13 +73,14 @@ def evaluate_deployment_proximity(s1: SignalInput, s2: SignalInput) -> Tuple[flo
     Evaluate if a deployment event occurred shortly before an anomaly or error signal.
     Explicitly non-causal evidence statement.
     """
-    if s1.signal_type.value == "DEPLOYMENT" and s2.signal_type.value in ["ANOMALY", "EVENT", "ALERT"]:
+    target_types = ["ANOMALY", "EVENT", "ALERT", "LOG", "METRIC"]
+    if s1.signal_type.value == "DEPLOYMENT" and s2.signal_type.value in target_types:
         delta = (s2.timestamp - s1.timestamp).total_seconds()
         if 0 <= delta <= 600:
             mins = int(delta / 60)
             return 1.0, f"deployment occurred {mins} minutes before anomaly/error signal"
 
-    if s2.signal_type.value == "DEPLOYMENT" and s1.signal_type.value in ["ANOMALY", "EVENT", "ALERT"]:
+    if s2.signal_type.value == "DEPLOYMENT" and s1.signal_type.value in target_types:
         delta = (s1.timestamp - s2.timestamp).total_seconds()
         if 0 <= delta <= 600:
             mins = int(delta / 60)

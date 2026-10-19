@@ -14,7 +14,7 @@ This directory contains the production-grade **Kubernetes manifests**, **Helm ch
                  │                                         │
                  ▼ (/)                                     ▼ (/api/v1/*)
          Frontend Deployment                      API Gateway Deployment
-          (Nginx SPA :80)                          (OpenResty :80)
+          (Nginx SPA :80)                          (Nginx :80)
                                                            │
         ┌────────────┬──────────────┬──────────────┬───────┼──────────────┬────────────┐
         ▼            ▼              ▼              ▼       ▼              ▼            ▼

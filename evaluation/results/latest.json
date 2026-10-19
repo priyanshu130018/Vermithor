@@ -1,22 +1,22 @@
 {
-  "run_timestamp": "2026-09-14T20:34:06.540615+00:00",
-  "total_scenarios_evaluated": 7,
+  "run_timestamp": "2026-10-18T08:24:21.199434+00:00",
+  "total_scenarios_evaluated": 8,
   "overall_metrics": {
     "rca_top_1_accuracy": 1.0,
     "rca_top_3_accuracy": 1.0,
     "rca_mean_reciprocal_rank": 1.0,
     "anomaly_detection_f1": 1.0,
     "llm_json_validity_rate": 1.0,
-    "avg_unsupported_claim_rate": 0.619,
+    "avg_unsupported_claim_rate": 0.5,
     "unknown_scenario_handling_pass": true
   },
   "average_latencies": {
-    "detection_ms": 0.12,
-    "clustering_ms": 82.49,
-    "rca_ms": 1.14,
-    "retrieval_ms": 8399.58,
-    "summary_ms": 1.62,
-    "total_e2e_ms": 8484.97
+    "detection_ms": 0.09,
+    "clustering_ms": 9.66,
+    "rca_ms": 1.01,
+    "retrieval_ms": 3644.21,
+    "summary_ms": 1.06,
+    "total_e2e_ms": 3656.07
   },
   "scenarios": [
     {
@@ -37,7 +37,7 @@
         "recall": 1.0,
         "f1": 1.0,
         "signals_detected": 1,
-        "latency_ms": 0.07
+        "latency_ms": 0.04
       },
       "clustering_evaluation": {
         "clusters_found": 0,
@@ -55,12 +55,12 @@
         "top_1_correct": true,
         "top_3_correct": true,
         "mrr": 1.0,
-        "latency_ms": 0.37
+        "latency_ms": 0.19
       },
       "rag_evaluation": {
-        "matched_runbook": "RB-000004",
-        "docs_retrieved": 1,
-        "latency_ms": 8438.97
+        "matched_runbook": "N/A",
+        "docs_retrieved": 5,
+        "latency_ms": 7443.69
       },
       "llm_evaluation": {
         "json_valid": true,
@@ -68,13 +68,13 @@
         "validated_services": [
           "booking-api"
         ],
-        "verified_evidence_items": 0,
-        "unsupported_claim_count": 3,
-        "unsupported_claim_rate": 1.0,
+        "verified_evidence_items": 1,
+        "unsupported_claim_count": 1,
+        "unsupported_claim_rate": 0.333,
         "unknown_preserved": true,
-        "latency_ms": 2.89
+        "latency_ms": 1.79
       },
-      "total_e2e_latency_ms": 8442.37
+      "total_e2e_latency_ms": 7445.79
     },
     {
       "scenario": "auth_failure",
@@ -94,14 +94,16 @@
         "recall": 1.0,
         "f1": 1.0,
         "signals_detected": 7,
-        "latency_ms": 0.11
+        "latency_ms": 0.09
       },
       "clustering_evaluation": {
         "clusters_found": 0,
         "noise_points": 3,
         "noise_ratio": 1.0,
         "cluster_purity": 0.0,
-        "latency_ms": 112.23
+        "cloud_embedding_blocked": false,
+        "cloud_embedding_blocked_reason": null,
+        "latency_ms": 7.1
       },
       "rca_evaluation": {
         "predicted_root_cause": "Service degradation on auth-api",
@@ -112,16 +114,16 @@
         "top_1_correct": true,
         "top_3_correct": true,
         "mrr": 1.0,
-        "latency_ms": 0.66
+        "latency_ms": 0.76
       },
       "rag_evaluation": {
         "matched_runbook": "N/A",
-        "docs_retrieved": 0,
-        "latency_ms": 8411.72
+        "docs_retrieved": 5,
+        "latency_ms": 3466.68
       },
       "llm_evaluation": {
         "json_valid": true,
-        "aligned_root_cause": "Recent deployment on booking-api",
+        "aligned_root_cause": "Insufficient evidence: isolated symptoms observed without identifiable upstream root cause.",
         "validated_services": [
           "auth-api"
         ],
@@ -129,9 +131,9 @@
         "unsupported_claim_count": 2,
         "unsupported_claim_rate": 0.667,
         "unknown_preserved": true,
-        "latency_ms": 2.34
+        "latency_ms": 1.07
       },
-      "total_e2e_latency_ms": 8527.16
+      "total_e2e_latency_ms": 3475.82
     },
     {
       "scenario": "bad_deployment",
@@ -151,14 +153,16 @@
         "recall": 1.0,
         "f1": 1.0,
         "signals_detected": 8,
-        "latency_ms": 0.1
+        "latency_ms": 0.09
       },
       "clustering_evaluation": {
         "clusters_found": 0,
         "noise_points": 2,
         "noise_ratio": 1.0,
         "cluster_purity": 0.0,
-        "latency_ms": 111.85
+        "cloud_embedding_blocked": false,
+        "cloud_embedding_blocked_reason": null,
+        "latency_ms": 4.24
       },
       "rca_evaluation": {
         "predicted_root_cause": "Service degradation on booking-api",
@@ -170,16 +174,16 @@
         "top_1_correct": true,
         "top_3_correct": true,
         "mrr": 1.0,
-        "latency_ms": 0.8
+        "latency_ms": 0.55
       },
       "rag_evaluation": {
-        "matched_runbook": "RB-000004",
-        "docs_retrieved": 1,
-        "latency_ms": 8404.23
+        "matched_runbook": "N/A",
+        "docs_retrieved": 5,
+        "latency_ms": 2881.15
       },
       "llm_evaluation": {
         "json_valid": true,
-        "aligned_root_cause": "Recent deployment on booking-api",
+        "aligned_root_cause": "Insufficient evidence: isolated symptoms observed without identifiable upstream root cause.",
         "validated_services": [
           "booking-api"
         ],
@@ -187,9 +191,9 @@
         "unsupported_claim_count": 1,
         "unsupported_claim_rate": 0.333,
         "unknown_preserved": true,
-        "latency_ms": 0.93
+        "latency_ms": 0.69
       },
-      "total_e2e_latency_ms": 8518.01
+      "total_e2e_latency_ms": 2886.82
     },
     {
       "scenario": "database_saturation",
@@ -210,14 +214,16 @@
         "recall": 1.0,
         "f1": 1.0,
         "signals_detected": 14,
-        "latency_ms": 0.15
+        "latency_ms": 0.12
       },
       "clustering_evaluation": {
-        "clusters_found": 2,
-        "noise_points": 0,
-        "noise_ratio": 0.0,
-        "cluster_purity": 1.0,
-        "latency_ms": 96.83
+        "clusters_found": 0,
+        "noise_points": 4,
+        "noise_ratio": 1.0,
+        "cluster_purity": 0.0,
+        "cloud_embedding_blocked": false,
+        "cloud_embedding_blocked_reason": null,
+        "latency_ms": 7.67
       },
       "rca_evaluation": {
         "predicted_root_cause": "Database degradation on postgres",
@@ -230,27 +236,26 @@
         "top_1_correct": true,
         "top_3_correct": true,
         "mrr": 1.0,
-        "latency_ms": 3.39
+        "latency_ms": 2.39
       },
       "rag_evaluation": {
-        "matched_runbook": "RB-000004",
-        "docs_retrieved": 1,
-        "latency_ms": 8364.3
+        "matched_runbook": "N/A",
+        "docs_retrieved": 5,
+        "latency_ms": 2938.76
       },
       "llm_evaluation": {
         "json_valid": true,
-        "aligned_root_cause": "Database connection saturation on postgres",
+        "aligned_root_cause": "Insufficient evidence: isolated symptoms observed without identifiable upstream root cause.",
         "validated_services": [
-          "postgres",
           "booking-api"
         ],
-        "verified_evidence_items": 1,
-        "unsupported_claim_count": 0,
-        "unsupported_claim_rate": 0.0,
+        "verified_evidence_items": 0,
+        "unsupported_claim_count": 1,
+        "unsupported_claim_rate": 0.333,
         "unknown_preserved": true,
-        "latency_ms": 0.38
+        "latency_ms": 0.97
       },
-      "total_e2e_latency_ms": 8465.15
+      "total_e2e_latency_ms": 2950.03
     },
     {
       "scenario": "memory_exhaustion",
@@ -270,14 +275,16 @@
         "recall": 1.0,
         "f1": 1.0,
         "signals_detected": 11,
-        "latency_ms": 0.16
+        "latency_ms": 0.09
       },
       "clustering_evaluation": {
         "clusters_found": 0,
         "noise_points": 3,
         "noise_ratio": 1.0,
         "cluster_purity": 0.0,
-        "latency_ms": 75.86
+        "cloud_embedding_blocked": false,
+        "cloud_embedding_blocked_reason": null,
+        "latency_ms": 5.23
       },
       "rca_evaluation": {
         "predicted_root_cause": "Memory exhaustion on catalog-api",
@@ -290,16 +297,16 @@
         "top_1_correct": true,
         "top_3_correct": true,
         "mrr": 1.0,
-        "latency_ms": 0.83
+        "latency_ms": 0.56
       },
       "rag_evaluation": {
-        "matched_runbook": "RB-000003",
-        "docs_retrieved": 1,
-        "latency_ms": 8387.57
+        "matched_runbook": "N/A",
+        "docs_retrieved": 5,
+        "latency_ms": 2903.57
       },
       "llm_evaluation": {
         "json_valid": true,
-        "aligned_root_cause": "Recent deployment on booking-api",
+        "aligned_root_cause": "Insufficient evidence: isolated symptoms observed without identifiable upstream root cause.",
         "validated_services": [
           "catalog-api"
         ],
@@ -307,9 +314,71 @@
         "unsupported_claim_count": 2,
         "unsupported_claim_rate": 0.667,
         "unknown_preserved": true,
-        "latency_ms": 1.72
+        "latency_ms": 1.06
       },
-      "total_e2e_latency_ms": 8466.24
+      "total_e2e_latency_ms": 2910.62
+    },
+    {
+      "scenario": "payment_pool_exhaustion",
+      "description": "Simulates database connection pool exhaustion on payment-api following deployment v2.8.4, causing latency spikes and HTTP 500 error cascade.",
+      "target_service": "payment-api",
+      "severity": "CRITICAL",
+      "is_ambiguous": false,
+      "ground_truth": {
+        "expected_root_cause": "database_saturation",
+        "expected_services": [
+          "payment-api",
+          "postgres"
+        ],
+        "expected_incident_type": "DATABASE_OUTAGE"
+      },
+      "anomaly_evaluation": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "signals_detected": 14,
+        "latency_ms": 0.13
+      },
+      "clustering_evaluation": {
+        "clusters_found": 0,
+        "noise_points": 4,
+        "noise_ratio": 1.0,
+        "cluster_purity": 0.0,
+        "cloud_embedding_blocked": false,
+        "cloud_embedding_blocked_reason": null,
+        "latency_ms": 6.36
+      },
+      "rca_evaluation": {
+        "predicted_root_cause": "Database degradation on postgres",
+        "top_3_candidates": [
+          "Database degradation on postgres",
+          "Service degradation on payment-api",
+          "Recent deployment on payment-api"
+        ],
+        "confidence": 0.772,
+        "top_1_correct": true,
+        "top_3_correct": true,
+        "mrr": 1.0,
+        "latency_ms": 1.22
+      },
+      "rag_evaluation": {
+        "matched_runbook": "RB-000006",
+        "docs_retrieved": 5,
+        "latency_ms": 3156.46
+      },
+      "llm_evaluation": {
+        "json_valid": true,
+        "aligned_root_cause": "Insufficient evidence: isolated symptoms observed without identifiable upstream root cause.",
+        "validated_services": [
+          "payment-api"
+        ],
+        "verified_evidence_items": 0,
+        "unsupported_claim_count": 2,
+        "unsupported_claim_rate": 0.667,
+        "unknown_preserved": true,
+        "latency_ms": 1.06
+      },
+      "total_e2e_latency_ms": 3165.31
     },
     {
       "scenario": "redis_failure",
@@ -330,14 +399,16 @@
         "recall": 1.0,
         "f1": 1.0,
         "signals_detected": 9,
-        "latency_ms": 0.12
+        "latency_ms": 0.08
       },
       "clustering_evaluation": {
         "clusters_found": 0,
         "noise_points": 3,
         "noise_ratio": 1.0,
         "cluster_purity": 0.0,
-        "latency_ms": 94.99
+        "cloud_embedding_blocked": false,
+        "cloud_embedding_blocked_reason": null,
+        "latency_ms": 7.45
       },
       "rca_evaluation": {
         "predicted_root_cause": "Redis cache failure on cache-service",
@@ -350,26 +421,26 @@
         "top_1_correct": true,
         "top_3_correct": true,
         "mrr": 1.0,
-        "latency_ms": 1.09
+        "latency_ms": 1.05
       },
       "rag_evaluation": {
         "matched_runbook": "RB-000002",
-        "docs_retrieved": 1,
-        "latency_ms": 8350.59
+        "docs_retrieved": 5,
+        "latency_ms": 2886.83
       },
       "llm_evaluation": {
         "json_valid": true,
-        "aligned_root_cause": "Database connection saturation on postgres",
+        "aligned_root_cause": "Insufficient evidence: isolated symptoms observed without identifiable upstream root cause.",
         "validated_services": [
           "booking-api"
         ],
         "verified_evidence_items": 0,
-        "unsupported_claim_count": 2,
-        "unsupported_claim_rate": 0.667,
+        "unsupported_claim_count": 1,
+        "unsupported_claim_rate": 0.333,
         "unknown_preserved": true,
-        "latency_ms": 1.73
+        "latency_ms": 1.31
       },
-      "total_e2e_latency_ms": 8448.63
+      "total_e2e_latency_ms": 2896.84
     },
     {
       "scenario": "traffic_spike",
@@ -389,14 +460,16 @@
         "recall": 1.0,
         "f1": 1.0,
         "signals_detected": 10,
-        "latency_ms": 0.11
+        "latency_ms": 0.12
       },
       "clustering_evaluation": {
         "clusters_found": 0,
         "noise_points": 3,
         "noise_ratio": 1.0,
         "cluster_purity": 0.0,
-        "latency_ms": 85.14
+        "cloud_embedding_blocked": false,
+        "cloud_embedding_blocked_reason": null,
+        "latency_ms": 38.74
       },
       "rca_evaluation": {
         "predicted_root_cause": "Service degradation on worker-service",
@@ -409,26 +482,26 @@
         "top_1_correct": true,
         "top_3_correct": true,
         "mrr": 1.0,
-        "latency_ms": 0.86
+        "latency_ms": 1.34
       },
       "rag_evaluation": {
-        "matched_runbook": "RB-000005",
-        "docs_retrieved": 1,
-        "latency_ms": 8439.68
+        "matched_runbook": "N/A",
+        "docs_retrieved": 5,
+        "latency_ms": 3476.53
       },
       "llm_evaluation": {
         "json_valid": true,
-        "aligned_root_cause": "Database connection saturation on postgres",
+        "aligned_root_cause": "Insufficient evidence: isolated symptoms observed without identifiable upstream root cause.",
         "validated_services": [
           "worker-service"
         ],
         "verified_evidence_items": 0,
-        "unsupported_claim_count": 3,
-        "unsupported_claim_rate": 1.0,
+        "unsupported_claim_count": 2,
+        "unsupported_claim_rate": 0.667,
         "unknown_preserved": true,
-        "latency_ms": 1.34
+        "latency_ms": 0.49
       },
-      "total_e2e_latency_ms": 8527.21
+      "total_e2e_latency_ms": 3517.32
     }
   ]
 }

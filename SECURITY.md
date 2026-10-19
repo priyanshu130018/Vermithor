@@ -13,11 +13,10 @@ This document defines the security architecture, threat model, trust boundaries,
                       ┌──────────────┴──────────────┐
                       │                             │
                       ▼ (Public UI Assets)          ▼ (Strict JWT Authentication)
-            [ Frontend (React SPA) ]       [ API Gateway (OpenResty :8080) ]
-            - No Secrets / No Keys         - HS256-Only Signature Verification
-            - VITE_API_BASE_URL only       - Rate Limiting (30/10/2 r/s)
-                                           - 10MB Body Cap & Method Restrictions
-                                           - Generic Error Masking
+            [ Frontend (React SPA) ]       [ API Gateway (Nginx :8080) ]
+            - No Secrets / No Keys         - Reverse Proxy & Rate Limiting (30/10/2 r/s)
+            - VITE_API_BASE_URL only       - 10MB Body Cap & Method Restrictions
+                                           - Security Headers & Request-ID Tracing
                                                     │
                       ┌─────────────────────────────┴─────────────────────────────┐
                       ▼ (Internal Private Kubernetes ClusterIP / NetworkPolicies) ▼
@@ -30,7 +29,7 @@ This document defines the security architecture, threat model, trust boundaries,
 
 ## 2. Authentication & Cryptographic JWT Policy
 
-- **Algorithm Pinning**: The API Gateway strictly enforces HMAC-SHA256 (`HS256`). Tokens using `none`, `RS256`, or alternative algorithms are rejected immediately to prevent algorithm confusion attacks.
+- **Algorithm Pinning**: The FastAPI backend natively enforces HMAC-SHA256 (`HS256`) via `backend/app/common/security.py`. Tokens using `none`, `RS256`, or alternative algorithms are rejected immediately to prevent algorithm confusion attacks.
 - **Claim Enforcement**: All tokens must carry valid:
   - `iss` (Issuer, default: `vermithor`)
   - `aud` (Audience, default: `vermithor-api`)
@@ -54,8 +53,8 @@ This document defines the security architecture, threat model, trust boundaries,
   kubectl create secret generic vermithor-production-secrets \
     --namespace vermithor \
     --from-literal=JWT_SECRET='<MIN_32_CHAR_CRYPTO_RANDOM_KEY>' \
-    --from-literal=POSTGRES_PASSWORD='<STRONG_POSTGRES_PASSWORD>' \
-    --from-literal=DATABASE_URL='postgresql+psycopg://vermithor:<STRONG_POSTGRES_PASSWORD>@postgres:5432/vermithor' \
+    --from-literal=DATABASE_URL='postgresql+psycopg://neondb_owner:<NEON_PASSWORD>@ep-lingering-scene-49972255-pooler.us-east-2.aws.neon.tech/neondb?sslmode=require' \
+    --from-literal=DATABASE_URL_UNPOOLED='postgresql+psycopg://neondb_owner:<NEON_PASSWORD>@ep-lingering-scene-49972255.us-east-2.aws.neon.tech/neondb?sslmode=require' \
     --from-literal=REDIS_URL='redis://redis:6379/0'
   ```
 
@@ -82,7 +81,7 @@ This document defines the security architecture, threat model, trust boundaries,
 | :--- | :--- | :--- |
 | **Unauthenticated API Access** | Critical | Gateway HMAC-SHA256 JWT validation with algorithm pinning |
 | **Credential / Secret Leakage** | Critical | Externalized Kubernetes secret injection, automated CI scans |
-| **API Denial of Service (DoS)** | High | Tiered OpenResty rate limiting (30/10/2 r/s) & 10MB body limits |
+| **API Denial of Service (DoS)** | High | Tiered Nginx rate limiting (30/10/2 r/s) & 10MB body limits |
 | **Cross-Site Scripting (XSS)** | High | React automated DOM escaping, Strict CSP & `X-XSS-Protection` |
 | **Clickjacking / Framing** | Medium | `X-Frame-Options: DENY` & `frame-ancestors 'none'` CSP |
 | **MIME-Type Confusion** | Medium | `X-Content-Type-Options: nosniff` header |

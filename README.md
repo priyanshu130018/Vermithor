@@ -1,407 +1,232 @@
 # Vermithor — AI Production Incident Intelligence Platform
 
-Vermithor is an autonomous AI-assisted incident management and root-cause intelligence platform designed for modern SRE and DevOps teams. It automates the end-to-end operational lifecycle: streaming telemetry ingestion, metric anomaly detection, dense vector log embedding with HDBSCAN density clustering, service topology and trace-aware root cause analysis (RCA), vector-indexed runbook retrieval (RAG), structured LLM synthesis with local Ollama (`llama3.2:3b`), and deterministic multi-point evidence validation.
+Vermithor is an AI-assisted incident management and root-cause intelligence platform designed for modern Site Reliability Engineering (SRE) and DevOps teams. It automates the full operational incident lifecycle: streaming telemetry ingestion, metric anomaly detection, dense vector log embedding with unsupervised clustering, service topology and trace-aware Root Cause Analysis (RCA), vector-indexed runbook retrieval (RAG), structured LLM synthesis via Hugging Face Inference Providers, and programmatic evidence validation.
 
 ---
 
-## 1. Project Overview
+## 1. Key Capabilities
 
-Production incident response is frequently slowed down by fragmented log aggregators, noisy alert storms, incomplete topology graphs, and unverified AI hallucinations. Vermithor solves these challenges by combining statistical anomaly detection, unsupervised log clustering, topology-aware causal graph analysis, vector search, and grounded LLM reasoning into a unified FastAPI modular monolith.
-
-### Key Highlights:
-- **Noise Reduction & Clustering**: Groups millions of log streams into representative patterns using MiniLM-L6-v2 vector embeddings and HDBSCAN density clustering.
-- **Topology-Aware RCA**: Evaluates service dependencies using NetworkX directed acyclic graphs (DAGs) and trace propagation to pin down root causes.
-- **Hallucination-Free Synthesis**: Uses multi-point programmatic evidence validation to ensure LLM incident summaries strictly match ingested telemetry.
-- **Ambiguity Preservation**: When incident evidence is insufficient or noisy, Vermithor explicitly retains an `UNKNOWN` state instead of fabricating root cause diagnoses.
-- **Local-First & Privacy-Preserving**: Operates entirely on-premises or in private cloud environments using local vector storage (`pgvector`) and local LLMs (Ollama).
+- **Streaming Telemetry Ingestion**: High-throughput intake of logs, metric points, distributed trace spans, and deployment markers via standard REST endpoints.
+- **Dual-Engine Metric Anomaly Detection**: Combines rolling statistical Z-score thresholds with unsupervised scikit-learn `IsolationForest` models.
+- **Log Intelligence & Noise Reduction**: Regex secret sanitization, Drain template extraction, 384-dimensional dense vector embeddings (`all-MiniLM-L6-v2`), and HDBSCAN density clustering.
+- **Service Topology & Causal RCA**: Builds directed acyclic causal graphs (DAGs) using NetworkX, inferring failure directionality from temporal precedence and architecture hierarchy.
+- **Ambiguity Preservation**: When incident telemetry is noisy or inconclusive, Vermithor explicitly retains an `UNKNOWN` root cause rather than fabricating diagnoses.
+- **Multi-Source RAG Context Assembly**: Hybrid cosine similarity search over operational runbooks and historical postmortems with token budgeting.
+- **Evidence-Grounded LLM Postmortems**: Calls Hugging Face Inference Providers (`meta-llama/Llama-3.1-8B-Instruct`) with low temperature ($0.1$) and structured JSON schema enforcement.
+- **Hallucination Defense**: Programmatic `EvidenceValidator` audits every LLM claim against verified telemetry IDs, stripping ungrounded citations.
+- **Deterministic Resilience Fallback**: Automatically degrades to rule-grounded synthesis directly from verified RCA data if the LLM provider is unavailable or rate-limited.
 
 ---
 
-## 2. Architecture & Pipeline
+## 2. Technology Stack
 
-Vermithor is built as a high-performance **FastAPI Modular Monolith** fronted by an Nginx + Lua API Gateway, backed by PostgreSQL 16 (`pgvector`), Redis 7, and Celery asynchronous task workers.
+| Layer | Technologies |
+|---|---|
+| **API Gateway** | Nginx (`nginx:alpine`), reverse proxy, tiered rate limiting, security headers |
+| **Frontend** | React 18, TypeScript, Vite, Tailwind CSS, TanStack Query |
+| **Backend API** | FastAPI, Uvicorn, Python 3.10/3.12, Pydantic v2, native HS256 JWT auth |
+| **Database & Search** | Neon Serverless PostgreSQL 16, `pgvector`, SQLAlchemy 2.0, `psycopg` v3, Alembic |
+| **AI / Machine Learning** | Hugging Face Cloud Inference Providers (Feature Extraction & LLM), `sentence-transformers/all-MiniLM-L6-v2` (384-D), `scikit-learn`, `HDBSCAN`, NetworkX |
+| **LLM Provider** | Hugging Face Inference Providers (`meta-llama/Llama-3.1-8B-Instruct`) via OpenAI-compatible router |
+| **Vector Embeddings** | Hugging Face Inference Providers (`sentence-transformers/all-MiniLM-L6-v2`, 384-D) + Neon `pgvector` |
+| **Observability** | Prometheus (metrics), Grafana (dashboards), Jaeger (OTLP distributed tracing) |
+| **Orchestration** | Docker Compose (local development), Kubernetes & Helm (production) |
+
+---
+
+## 3. High-Level Architecture
 
 ```mermaid
 graph TD
-    Client[Operator / SRE Browser] -->|HTTP: 5173 / REST| Frontend[React Dashboard]
-    Frontend -->|REST / SSE| Gateway[Nginx + Lua API Gateway :8080]
-    Gateway -->|JWT Auth Boundary| Backend[FastAPI Modular Monolith :8000]
-    
-    subgraph FastAPI Modular Monolith
-        Ingestion[Ingestion Domain /api/v1/events]
-        Anomaly[Anomaly Detection /api/v1/anomalies]
-        Logs[Log Intelligence & HDBSCAN /api/v1/logs]
-        Correlation[Incident Correlation /api/v1/correlations]
-        RCA[RCA Engine /api/v1/rca]
-        Retrieval[Multi-Source RAG /api/v1/retrieval]
-        Summary[LLM Synthesis & Validation /api/v1/summaries]
+    Client["SRE Operator Browser"] -->|"HTTP :5173"| Frontend["React 18 Dashboard<br/>(Vite / Tailwind / Nginx)"]
+    Frontend -->|"HTTP / Bearer JWT (:8080)"| Gateway["Nginx API Gateway<br/>(Reverse Proxy & Rate Limiter)"]
+
+    Gateway -->|"Reverse Proxy (:8000)<br/>Headers: Authorization, X-Request-ID"| Backend["FastAPI Modular Monolith<br/>(Uvicorn :8000 + Native JWT Auth)"]
+
+    subgraph Modular_Monolith_Domains["Backend Domain Modules (/api/v1)"]
+        Ingestion["Ingestion Domain (/events)"]
+        Anomaly["Anomaly Detection (/anomalies)"]
+        Correlation["Correlation Engine (/correlations)"]
+        Incidents["Incident State Machine (/incidents)"]
+        LogIntel["Log Intelligence (/logs)"]
+        RCA["RCA Engine & DAG (/rca)"]
+        Retrieval["Multi-Source RAG (/retrieval, /runbooks)"]
+        Summary["LLM Synthesis & Validator (/summaries)"]
     end
 
-    Backend -->|SQLAlchemy 2.0| DB[(PostgreSQL 16 + pgvector)]
-    Backend -->|Task Delegation| Celery[Celery Worker]
-    Celery -->|Queue / Result| Redis[(Redis 7)]
-    Summary -->|Local Inference| Ollama[Local Ollama / llama3.2:3b]
-```
+    Backend --> Modular_Monolith_Domains
+    Backend -->|"SQLAlchemy 2.0 / psycopg v3"| Neon[("Neon Serverless PostgreSQL 16<br/>+ pgvector extension")]
+    Backend -->|"Task Queue"| Redis[("Redis 7 Cache & Broker")]
+    Redis -->|"Async Consumption"| Worker["Celery Worker"]
+    Worker --> Neon
 
-### End-to-End Data Pipeline
+    Summary -->|"HTTPS / Bearer HF_TOKEN"| HF["Hugging Face Inference Providers<br/>(meta-llama/Llama-3.1-8B-Instruct)"]
 
-```text
-Telemetry / Logs / Metrics / Traces
-      ↓
-Ingestion (/api/v1/events)
-      ↓
-Anomaly Detection (z-score + Isolation Forest)
-      ↓
-Log Intelligence (Normalization, 384-D MiniLM-L6-v2, HDBSCAN)
-      ↓
-Incident Correlation (Sliding Temporal Window, Topology Boundary)
-      ↓
-Service Topology (NetworkX Directed Dependency Graph)
-      ↓
-Root Cause Analysis (Multi-Factor Scoring Engine)
-      ↓
-Retrieval / Runbooks / Historical Incidents (pgvector Cosine Distance)
-      ↓
-LLM Synthesis (Strict JSON Schema, Grounded Prompting)
-      ↓
-Evidence Validation (Telemetry Scope Verification, Hallucination Defense)
-      ↓
-Incident Explanation / RCA Report
+    subgraph Observability["Observability Stack"]
+        Prometheus["Prometheus (:9090)"]
+        Grafana["Grafana (:3000)"]
+        Jaeger["Jaeger (:16686)"]
+    end
+
+    Backend -.->|"/metrics"| Prometheus
+    Backend -.->|"OTLP Spans"| Jaeger
+    Prometheus -.-> Grafana
 ```
 
 ---
 
-## 3. Implemented Features
+## 4. Documentation Index
 
-| Feature Domain | Implementation Details |
-|---|---|
-| **Telemetry Ingestion** | Ingests logs, metrics, traces, and deployment markers via standard HTTP `/api/v1/events` endpoints. |
-| **Anomaly Detection** | Dual-engine metric anomaly detection combining statistical Z-score thresholds and unsupervised `IsolationForest`. |
-| **Log Intelligence** | Automated regex masking, 384-D dense vector embedding (`all-MiniLM-L6-v2`), and `HDBSCAN` density clustering to collapse log noise. |
-| **Incident Correlation** | Dynamic time-window correlation linking related anomalies across microservice topology boundaries. |
-| **Service Topology** | NetworkX causal graph mapping microservice dependencies and downstream error propagation paths. |
-| **Multi-Dimensional RCA** | Weighted scoring engine combining temporal precedence, anomaly severity, topology distance, and deployment correlation. |
-| **Vector RAG Retrieval** | Vector similarity search using PostgreSQL `pgvector` extension to surface relevant runbooks and historical post-mortems. |
-| **LLM Synthesis** | Structured prompt assembly generating root cause summaries, blast radius analysis, and mitigation steps via Ollama (`llama3.2:3b`). |
-| **Evidence Validation** | Programmatic verification ensuring all claims in LLM output map to real telemetry observations. |
-| **`UNKNOWN` Handling** | Preserves `UNKNOWN` root cause classification when correlation scores fall below the confidence threshold ($\le 0.40$). |
-| **Observability** | Prometheus metric scraping endpoints, Grafana dashboard definitions, and OpenTelemetry OTLP tracing integration. |
-| **Evaluation Framework** | Automated evaluation runner benchmarking precision, recall, cluster purity, RCA accuracy, and LLM claim grounding across 7 scenarios. |
+The primary documentation is organized into five focused guides inside `docs/`:
+
+1. [**System Architecture (`docs/architecture.md`)**](docs/architecture.md)
+   Complete system architecture, component responsibilities, request flow, AI/ML pipelines, Neon integration, observability, and evaluation benchmarks.
+2. [**API Reference (`docs/api.md`)**](docs/api.md)
+   Full REST API specification for all `/api/v1/*` endpoints, health probes, JWT auth contract, rate limit tiers, and Curl/PowerShell examples.
+3. [**Developer Guide (`docs/development.md`)**](docs/development.md)
+   Local setup instructions for Windows PowerShell and Linux, virtual environments, Neon configuration, Alembic migrations, testing suites, and troubleshooting.
+4. [**Deployment Guide (`docs/deployment.md`)**](docs/deployment.md)
+   Docker Compose 9-service orchestration, startup ordering, Kubernetes Helm charts, secret management, health probes, backups, and production readiness gaps.
+5. [**Security Architecture (`docs/security.md`)**](docs/security.md)
+   Perimeter JWT verification, rate limiting, DoS defenses, secret isolation, Neon TLS transport, AI prompt injection guardrails, and compliance matrix.
 
 ---
 
-## 4. Technology Stack
+## 5. Prerequisites
 
-| Component | Technology | Version / Specification |
-|---|---|---|
-| **Backend Framework** | Python / FastAPI | Python 3.10+, FastAPI `^0.110.0`, Pydantic `^2.6.0`, Uvicorn |
-| **Database** | PostgreSQL | PostgreSQL 16 with `pgvector` extension (`^0.2.5`), SQLAlchemy 2.0 |
-| **Cache & Task Queue** | Redis & Celery | Redis 7 Alpine, Celery `^5.3.6` |
-| **Frontend** | React / TypeScript | React 18, TypeScript 5, Vite, Tailwind CSS, TanStack Query |
-| **API Gateway** | OpenResty / Nginx | Nginx with Lua JWT (HS256) authentication boundary |
-| **Embeddings** | SentenceTransformers | `sentence-transformers/all-MiniLM-L6-v2` (384-dimensional vector space) |
-| **Machine Learning** | Scikit-Learn / SciPy | Scikit-Learn (HDBSCAN, IsolationForest), NumPy, SciPy |
-| **LLM Engine** | Ollama | Ollama running `llama3.2:3b` with rule-grounded fallback mechanism |
-| **Observability** | OpenTelemetry / Prometheus | OpenTelemetry SDK, Prometheus Client, Jaeger Tracing, Grafana |
-| **Testing & QA** | Pytest | `pytest`, `pytest-asyncio`, `pytest-mock` |
-| **Containerization** | Docker | Docker Compose, Kubernetes manifests, Helm v3 charts |
+Before setting up Vermithor, ensure you have:
+- **Python**: Version `3.10` or higher (verified on 3.10 and 3.12).
+- **Node.js**: Version `18.0` or higher with `npm`.
+- **Git**: Latest release.
+- **Docker Desktop / Compose**: Docker 24.0+ with Compose v2 (or WSL2).
+- **Neon PostgreSQL Project**: Free-tier or production serverless PostgreSQL with `pgvector` enabled (no local PostgreSQL container required).
+- **Hugging Face Account (Optional)**: Free-tier user access token for live LLM synthesis (`HF_TOKEN`).
 
 ---
 
-## 5. Repository Structure
+## 6. Quick-Start Guide (Local Development)
 
-```text
-Vermithor/
-├── .env.example              # Master configuration template
-├── .gitignore                # Comprehensive Git exclusion rules
-├── .dockerignore             # Docker build context exclusions
-├── docker-compose.yml        # Multi-container local orchestration stack
-├── alembic.ini               # Alembic database migration configuration
-├── backend/
-│   ├── Dockerfile            # Container definition for backend API & Celery worker
-│   ├── requirements.txt      # Python backend dependencies
-│   ├── alembic/              # Database migration scripts (001_initial_schema.py)
-│   ├── app/
-│   │   ├── main.py           # FastAPI entry point & lifespan manager
-│   │   ├── common/           # Config, database engine, security, telemetry
-│   │   ├── anomaly/          # Metric anomaly detection module
-│   │   ├── correlation/      # Incident correlation module
-│   │   ├── incidents/        # Incident management module
-│   │   ├── ingestion/        # Telemetry ingestion module
-│   │   ├── log_intelligence/ # Log embedding & HDBSCAN clustering module
-│   │   ├── rca/              # Topology & multi-factor RCA engine
-│   │   ├── retrieval/        # RAG retrieval & runbook management module
-│   │   ├── summary/          # LLM synthesis & evidence validation module
-│   │   └── topology/         # Service graph & dependency topology module
-│   ├── shared/               # Shared telemetry & tracing helpers
-│   └── tests/                # Domain-specific unit & integration tests
-├── frontend/
-│   ├── Dockerfile            # Multi-stage Vite/Nginx frontend container
-│   ├── package.json          # React/TypeScript dependencies
-│   ├── src/                  # React UI components & TanStack query hooks
-│   └── vite.config.ts        # Vite build configuration
-├── gateway/
-│   ├── Dockerfile            # Nginx + Lua gateway container
-│   ├── nginx.conf            # Reverse proxy & routing config
-│   └── jwt_auth.lua          # Lua JWT HS256 verification module
-├── evaluation/
-│   ├── evaluator.py          # Benchmark runner & metrics suite
-│   ├── report.md             # Benchmark evaluation output report
-│   ├── results/              # Machine-readable evaluation JSON artifacts
-│   └── scenarios/            # 7 YAML operational incident scenarios
-├── infrastructure/
-│   ├── docker/               # Container configurations
-│   ├── grafana/              # Pre-provisioned dashboards & data sources
-│   ├── helm/                 # Helm chart specifications
-│   ├── kubernetes/           # Kubernetes manifests & Kind cluster config
-│   └── prometheus/           # Prometheus scraping target configurations
-├── docs/                     # Comprehensive technical documentation suite
-└── scripts/                  # Synthetic incident generation & demo runners
-```
-
----
-
-## 6. Installation & Setup
-
-### Prerequisites
-- **Docker & Docker Compose** (v24.0+)
-- **Python** (v3.10+)
-- **Node.js** (v18+) & **npm** (for frontend development)
-- (Optional) **Ollama** installed with `llama3.2:3b` model pulled (`ollama pull llama3.2:3b`)
-
-### Step-by-Step Local Development Setup
-
-#### 1. Clone Repository & Setup Environment
+### Step 1: Clone Repository & Create `.env`
 ```bash
 git clone https://github.com/vermithor/vermithor.git
 cd Vermithor
 
-# Create local environment configuration
+# Copy configuration template
 cp .env.example .env
 ```
 
-#### 2. Start Supporting Infrastructure
-Start PostgreSQL (with `pgvector`), Redis, Prometheus, Grafana, and Jaeger:
-```bash
-docker compose up -d postgres redis prometheus grafana jaeger
+### Step 2: Configure Neon PostgreSQL
+Add your Neon connection strings to `.env`:
+```env
+# Pooled connection string (used by backend and workers)
+DATABASE_URL=postgresql+psycopg://neondb_owner:<YOUR_PASSWORD>@ep-...-pooler.neon.tech/neondb?sslmode=require
+
+# Direct unpooled connection string (used by Alembic DDL migrations)
+DATABASE_URL_UNPOOLED=postgresql+psycopg://neondb_owner:<YOUR_PASSWORD>@ep-....neon.tech/neondb?sslmode=require
 ```
 
-#### 3. Setup Python Virtual Environment & Install Dependencies
-```bash
+### Step 3: Set Up Python Environment (PowerShell)
+```powershell
 python -m venv .venv
-
-# Linux / macOS
-source .venv/bin/activate
-
-# Windows PowerShell
 .\.venv\Scripts\Activate.ps1
-
-# Install backend dependencies
+python -m pip install --upgrade pip
 pip install -r backend/requirements.txt
 ```
 
-#### 4. Execute Database Migrations
-Apply PostgreSQL database schema and enable `pgvector` extensions:
-```bash
+### Step 4: Run Alembic Database Migrations
+```powershell
 alembic upgrade head
 ```
 
-#### 5. Start Backend API & Celery Worker
-```bash
-# Terminal 1: Uvicorn API Server
-uvicorn backend.app.main:app --host 0.0.0.0 --port 8000 --reload
-
-# Terminal 2: Celery Asynchronous Worker
-celery -A backend.workers.celery_app worker --loglevel=info --concurrency=2
+### Step 5: Start Supporting Services (Docker)
+```powershell
+docker compose up -d redis jaeger prometheus grafana
 ```
 
-#### 6. Setup and Start Frontend Dashboard
-```bash
-# Terminal 3: React Frontend
+### Step 6: Start Applications
+In separate terminal sessions:
+
+```powershell
+# 1. Start FastAPI Backend
+uvicorn backend.app.main:app --host 0.0.0.0 --port 8000 --reload
+
+# 2. Start Celery Worker
+celery -A backend.workers.celery_app worker --loglevel=info --concurrency=2
+
+# 3. Start React Frontend Dashboard
 cd frontend
 npm install
 npm run dev
 ```
-Access the application at `http://localhost:5173`.
+
+- **Frontend SRE Dashboard**: `http://localhost:5173`
+- **FastAPI OpenAPI Docs**: `http://localhost:8000/docs`
+- **Grafana Monitoring**: `http://localhost:3000` (`admin` / `admin_password`)
+- **Jaeger Tracing UI**: `http://localhost:16686`
 
 ---
 
-## 7. Configuration Reference
+## 7. Full Container Stack Startup (Docker Compose)
 
-All application settings are managed via environment variables defined in `backend/app/common/config.py`.
+To run the complete production-like stack using Docker Compose:
 
-| Environment Variable | Required | Default | Description |
-|---|---|---|---|
-| `APP_ENV` | No | `development` | Deployment environment (`development`, `production`, `test`). |
-| `LOG_LEVEL` | No | `INFO` | Logging level (`DEBUG`, `INFO`, `WARNING`, `ERROR`). |
-| `SERVICE_NAME` | No | `vermithor-backend` | Telemetry service identifier. |
-| `PORT` | No | `8000` | Backend API server port. |
-| `HOST` | No | `0.0.0.0` | Backend API bind address. |
-| `POSTGRES_USER` | Yes | `vermithor` | PostgreSQL database user. |
-| `POSTGRES_PASSWORD` | Yes | `vermithor_password` | PostgreSQL database password. |
-| `POSTGRES_DB` | Yes | `vermithor` | PostgreSQL database name. |
-| `POSTGRES_HOST` | No | `localhost` | PostgreSQL database host address. |
-| `POSTGRES_PORT` | No | `5432` | PostgreSQL database port. |
-| `DATABASE_URL` | No | *Computed* | SQLAlchemy database connection string (`postgresql+psycopg://...`). |
-| `REDIS_URL` | No | `redis://localhost:6379/0` | Redis cache connection string. |
-| `CELERY_BROKER_URL` | No | `redis://localhost:6379/0` | Celery broker URL. |
-| `CELERY_RESULT_BACKEND` | No | `redis://localhost:6379/0` | Celery result backend URL. |
-| `JWT_SECRET` | Yes | `vermithor-dev-secret-key-32-chars-min` | HS256 secret key for API Gateway authentication. |
-| `JWT_ISSUER` | No | `vermithor` | Expected JWT issuer token claim. |
-| `JWT_AUDIENCE` | No | `vermithor-api` | Expected JWT audience token claim. |
-| `STATISTICAL_WARNING_Z` | No | `3.0` | Z-score threshold for warning metric anomalies. |
-| `STATISTICAL_CRITICAL_Z` | No | `4.0` | Z-score threshold for critical metric anomalies. |
-| `ISOLATION_FOREST_CONTAMINATION` | No | `auto` | Contamination factor for IsolationForest detector. |
-| `EMBEDDING_MODEL_NAME` | No | `sentence-transformers/all-MiniLM-L6-v2` | Sentence Transformers model for dense log vectors. |
-| `EMBEDDING_DIMENSION` | No | `384` | Vector dimension size of embeddings. |
-| `EMBEDDING_DEVICE` | No | `cpu` | PyTorch execution target (`cpu`, `cuda`). |
-| `LLM_PROVIDER` | No | `ollama` | LLM provider backend (`ollama`). |
-| `LLM_MODEL` | No | `llama3.2:3b` | Local Ollama model tag. |
-| `OLLAMA_BASE_URL` | No | `http://localhost:11434` | Ollama HTTP REST API base URL. |
-| `LLM_TIMEOUT_SECONDS` | No | `120` | Maximum timeout for LLM synthesis requests. |
-| `LLM_FALLBACK_ENABLED` | No | `false` | Enable rule-grounded fallback when LLM is unavailable. |
-| `OTEL_EXPORTER_OTLP_ENDPOINT` | No | `http://localhost:4318` | OpenTelemetry OTLP HTTP exporter collector URL. |
-
----
-
-## 8. API Endpoint Reference
-
-The backend exposes interactive Swagger documentation at `http://localhost:8000/docs` and ReDoc at `http://localhost:8000/redoc`.
-
-### Health & System Status
-- `GET /health` — Liveness probe returning service health status.
-- `GET /ready` — Readiness probe checking database connectivity and subsystem initialization.
-- `GET /` — Root metadata endpoint.
-
-### Core Domain APIs (`/api/v1`)
-- **Telemetry Ingestion**: `POST /api/v1/events` — Submit raw log streams, metric data points, trace spans, or deployment events.
-- **Incidents**: `GET /api/v1/incidents`, `POST /api/v1/incidents`, `GET /api/v1/incidents/{id}` — Manage correlated operational incidents.
-- **Observations & Anomalies**: `GET /api/v1/observations`, `GET /api/v1/anomalies` — Query metric observations and detected anomalies.
-- **Correlations**: `GET /api/v1/correlations`, `POST /api/v1/correlations/evaluate` — Trigger sliding-window incident correlation.
-- **Root Cause Analysis**: `POST /api/v1/rca/analyze` — Run multi-factor topology RCA on an incident.
-- **Log Intelligence**: `POST /api/v1/logs/cluster` — Trigger vector embedding and HDBSCAN log clustering.
-- **Retrieval (RAG)**: `POST /api/v1/retrieval/search` — Perform cosine similarity vector search over runbooks and post-mortems.
-- **Runbooks**: `GET /api/v1/runbooks`, `POST /api/v1/runbooks` — Manage operational runbook repository.
-- **Summaries**: `POST /api/v1/summaries/generate` — Generate structured, validated LLM incident summaries.
-
----
-
-## 9. Running the Application
-
-### Full Docker Compose Stack
-To run the complete system (gateway, backend, worker, frontend, databases, observability) in Docker:
 ```bash
-docker compose up --build -d
+docker compose up -d --build
 ```
 
-### Demonstration Runner
-Execute pre-built synthetic incident scenarios through the end-to-end intelligence pipeline:
+Compose manages 9 orchestrated services: `gateway` (:8080), `frontend` (:5173), `backend` (:8000), `worker`, `migration`, `redis` (:6379), `jaeger` (:16686), `prometheus` (:9090), and `grafana` (:3000). The migration container executes `alembic upgrade head` before the backend and worker start.
 
-**Linux / macOS**:
-```bash
-./scripts/run-demo.sh database
-```
+---
 
-**Windows PowerShell**:
+## 8. Testing & Validation Commands
+
+All test suites can be executed locally without live container dependencies:
+
 ```powershell
-.\scripts\run-demo.ps1 database
-```
+# 1. Run database configuration and migration tests
+python -m pytest backend/tests/test_database_config.py backend/tests/test_migrations.py -v
 
-Available demo scenarios: `database`, `deployment`, `redis`, `memory`, `traffic`, `auth`, `ambiguous`, `all`.
-
----
-
-## 10. Testing & Quality Assurance
-
-Execute the unit, integration, and resilience test suites:
-
-```bash
-# Run all backend unit and domain tests
+# 2. Run backend domain test suite (SQLite in-memory)
 python -m pytest backend/tests/ -v
 
-# Run gateway unit tests
+# 3. Run gateway JWT security boundary tests
 python -m pytest gateway/tests/ -v
 
-# Run resilience tests
+# 4. Run system resilience tests
 python -m pytest tests/resilience/ -v
-```
 
----
-
-## 11. Evaluation Framework
-
-Vermithor includes an automated benchmark suite (`evaluation/evaluator.py`) that evaluates platform performance against 7 synthetic operational scenarios (`database_saturation`, `bad_deployment`, `redis_failure`, `memory_exhaustion`, `traffic_spike`, `auth_failure`, `ambiguous_noise`).
-
-### Run Benchmark Suite:
-```bash
+# 5. Run quantitative evaluation benchmark framework
 python evaluation/evaluator.py
+
+# 6. Run frontend tests
+cd frontend; npm run test; cd ..
+
+# 7. Validate Docker Compose syntax
+docker compose config --quiet
 ```
 
-### Benchmark Metrics & Repository Results:
-| Metric | Result | SLA Target | Status |
+---
+
+## 9. Key Environment Variables
+
+| Variable | Required | Default / Placeholder | Description |
 |---|---|---|---|
-| **RCA Top-1 Accuracy** | **100.0%** (7/7) | $\ge 80.0\%$ | ✅ PASSED |
-| **RCA Top-3 Accuracy** | **100.0%** (7/7) | $\ge 95.0\%$ | ✅ PASSED |
-| **RCA Mean Reciprocal Rank (MRR)** | **1.000** | $\ge 0.850$ | ✅ PASSED |
-| **Anomaly Detection F1 Score** | **1.000** | $\ge 0.950$ | ✅ PASSED |
-| **LLM JSON Schema Validity** | **100.0%** | $100.0\%$ | ✅ PASSED |
-| **`UNKNOWN` Ambiguity Preservation** | **100.0%** | $100.0\%$ | ✅ PASSED |
+| `DATABASE_URL` | **Yes** | `postgresql+psycopg://neondb_owner:<PWD>@ep-...-pooler.neon.tech/neondb?sslmode=require` | Neon pooled PostgreSQL connection string. |
+| `DATABASE_URL_UNPOOLED` | No | `postgresql+psycopg://neondb_owner:<PWD>@ep-....neon.tech/neondb?sslmode=require` | Optional unpooled direct connection string for migrations. |
+| `JWT_SECRET` | **Yes** | `vermithor-dev-secret-key-32-chars-min` | HMAC-SHA256 secret for Gateway JWT validation. |
+| `REDIS_URL` | No | `redis://localhost:6379/0` | Redis connection URL for task queue and cache. |
+| `LLM_PROVIDER` | No | `huggingface` | LLM synthesis provider (`huggingface`). |
+| `HF_TOKEN` | Optional | *(Empty)* | Hugging Face Bearer token for live Llama-3.1-8B generation. |
+| `HF_MODEL` | No | `meta-llama/Llama-3.1-8B-Instruct` | Model identifier for Hugging Face router. |
+| `VITE_API_BASE_URL` | No | `http://localhost:8080` | Gateway URL targeted by frontend SPA. |
 
-Generated evaluation output reports are saved to `evaluation/results/latest.json` and `evaluation/report.md`.
-
----
-
-## 12. Observability
-
-When running the Docker Compose stack, the following observability services are accessible:
-
-| Service | Local URL | Description / Default Credentials |
-|---|---|---|
-| **API Gateway** | `http://localhost:8080` | Reverse proxy entry point with JWT validation. |
-| **Backend API Specs** | `http://localhost:8000/docs` | OpenAPI / Swagger interactive documentation interface. |
-| **React Dashboard** | `http://localhost:5173` | Operator UI for incident timelines, graph visualization, and AI summaries. |
-| **Prometheus UI** | `http://localhost:9090` | Golden signal metrics scraping & query console. |
-| **Grafana Dashboards** | `http://localhost:3000` | Pre-configured dashboard (`admin` / `admin_password`). |
-| **Jaeger UI** | `http://localhost:16686` | Distributed trace waterfall visualization console. |
+For the full list of configuration parameters, see [Developer Guide (`docs/development.md`)](docs/development.md#4-configuration--environment-variables).
 
 ---
 
-## 13. Security Model
+## 10. Security & Troubleshooting Links
 
-- **Gateway Security Boundary**: OpenResty/Nginx enforces HS256 HMAC-SHA256 JWT validation prior to proxying requests to the backend monolith.
-- **Secret Management**: Passwords, secrets, and private keys must be specified via environment variables (`.env`) and never committed to Git.
-- **CORS Policies**: Cross-Origin Resource Sharing is configurable via FastAPI middleware in `backend/app/main.py`.
-- **Local Air-Gapped Execution**: Embeddings and LLM synthesis operate completely locally without leaking telemetry to external third-party cloud APIs.
-
----
-
-## 14. Known Limitations
-
-- **Ollama Hardware Requirements**: Running local LLM inference (`llama3.2:3b`) requires a minimum of 8 GB RAM (or GPU acceleration for low latency).
-- **Synthetic Benchmark Scenarios**: Evaluation dataset results are derived from simulated operational scenarios in `evaluation/scenarios/`.
-- **Single-Node Queue Default**: Default Celery and Redis configurations target single-node execution and require clustering for extreme enterprise scale.
-- **JWT Key Pre-Sharing**: Gateway JWT validation relies on shared symmetric secret keys (`JWT_SECRET`).
-
----
-
-## 15. Technical Documentation Index (`docs/`)
-
-For in-depth technical details, consult the documentation suite in `docs/`:
-
-- [Architecture Overview](docs/architecture.md) — System design, data flow, and domain module breakdown.
-- [Setup Guide](docs/setup.md) — Local installation, database setup, and dependency management.
-- [Configuration Reference](docs/configuration.md) — Full environment variable specification.
-- [API Reference](docs/api.md) — Complete endpoint schemas, request/response models, and error behaviors.
-- [Development Guide](docs/development.md) — Code structure, linting, migrations, and contributing guidelines.
-- [Testing Guide](docs/testing.md) — Running unit, integration, and resilience test suites.
-- [Evaluation Framework](docs/evaluation.md) — Benchmark scenarios, metrics calculation, and evaluation methodology.
-- [Deployment Guide](docs/deployment.md) — Docker Compose, Nginx Gateway, and Kubernetes/Helm setup.
-- [Observability Guide](docs/observability.md) — Prometheus metrics, Grafana dashboards, and Jaeger tracing.
-- [Security Guide](docs/security.md) — Authentication, secret management, and network exposure policies.
-- [Troubleshooting Guide](docs/troubleshooting.md) — Diagnostics for common database, Redis, Celery, and Ollama runtime issues.
-
----
-
-## 16. License & Security Policies
-
-- Refer to [SECURITY.md](SECURITY.md) for security reporting guidelines and vulnerability management procedures.
+- **Security & JWT Specification**: See [Security Architecture (`docs/security.md`)](docs/security.md).
+- **Troubleshooting Common Errors**: See [Developer Guide Troubleshooting (`docs/development.md`)](docs/development.md#9-troubleshooting-common-issues).
+- **API Endpoints & Contracts**: See [API Reference (`docs/api.md`)](docs/api.md).
+- **Production Readiness Assessment**: See [Deployment Guide (`docs/deployment.md`)](docs/deployment.md#6-production-readiness-limitations--unverified-items).

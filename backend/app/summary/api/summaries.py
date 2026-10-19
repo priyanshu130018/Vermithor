@@ -1,6 +1,6 @@
 from datetime import datetime
 import math
-from typing import Optional
+from typing import Any, Dict, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
@@ -10,6 +10,23 @@ from backend.app.summary.services.summary_service import IncidentSummaryService
 
 router = APIRouter(prefix="/summaries", tags=["summaries"])
 summary_service = IncidentSummaryService()
+
+
+@router.get(
+    "/provider/status",
+    summary="Get LLM provider connectivity and configuration status",
+)
+def get_provider_status() -> Dict[str, Any]:
+    """Inspect configured LLM provider (Ollama or Hugging Face) connectivity and model status."""
+    provider = summary_service.llm_provider
+    is_avail = provider.is_available()
+    return {
+        "provider": provider.get_provider_name(),
+        "model": provider.get_model_name(),
+        "available": is_avail,
+        "status": "connected" if is_avail else "unreachable",
+        "fallback_enabled": summary_service.settings.LLM_FALLBACK_ENABLED,
+    }
 
 
 @router.post(

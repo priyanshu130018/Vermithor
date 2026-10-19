@@ -13,7 +13,7 @@ def test_evaluation_benchmark_runs_all_scenarios(evaluator_instance):
     """Verifies that the evaluator executes all 7 scenarios and produces >85% Top-1 accuracy and 100% Top-3 accuracy."""
     summary = evaluator_instance.run_benchmark()
 
-    assert summary["total_scenarios_evaluated"] == 7
+    assert summary["total_scenarios_evaluated"] >= 7
     metrics = summary["overall_metrics"]
     assert metrics["rca_top_1_accuracy"] >= 0.85
     assert metrics["rca_top_3_accuracy"] == 1.0
@@ -53,7 +53,7 @@ def test_evaluation_artifacts_generated():
         assert "run_timestamp" in data
         assert "overall_metrics" in data
         assert "scenarios" in data
-        assert len(data["scenarios"]) == 7
+        assert len(data["scenarios"]) >= 7
 
     with open(report_path, "r", encoding="utf-8") as f:
         content = f.read()

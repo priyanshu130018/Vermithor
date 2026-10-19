@@ -204,6 +204,26 @@ class RunbookRepository:
                 "Profile hot execution paths and introduce asynchronous task offloading."
             ),
         },
+        {
+            "runbook_key": "RB-000006",
+            "title": "Payment API Connection Pool Sizing and Leak Investigation",
+            "description": "Remediation procedures for payment-api database connection pool exhaustion, connection leaks following deployment, and HikariCP tuning.",
+            "service": "payment-api",
+            "category": "DATABASE",
+            "tags": ["payment-api", "postgres", "pool", "exhaustion", "connection_leak", "hikaricp", "rollback", "v2.8.4"],
+            "content": (
+                "## Diagnosis:\n"
+                "1. Verify active connection pool utilization via metrics (db_connection_pool_utilization_ratio=1.00).\n"
+                "2. Check application logs for ConnectionAcquisitionTimeoutException and unclosed transaction leaks.\n"
+                "3. Correlate onset timestamp with recent deployment (v2.8.4).\n"
+                "## Immediate Remediation Actions:\n"
+                "1. If pool exhaustion immediately succeeded release v2.8.4, execute deployment rollback: kubectl rollout undo deployment/payment-api.\n"
+                "2. Restart payment-api worker pods to clear leaked connection handles.\n"
+                "3. Temporarily increase PostgreSQL and HikariCP maximumPoolSize by 25% if database capacity permits.\n"
+                "## Permanent Fix:\n"
+                "Audit transactional connection lifecycle in payment-api handlers to ensure connections return to pool in finally blocks."
+            ),
+        },
     ]
 
     @classmethod
@@ -250,7 +270,10 @@ class RunbookRepository:
         for rb in all_rbs:
             # Metadata filter checks
             if service and rb.service and rb.service.lower() != service.lower():
-                continue
+                from backend.app.topology.service_graph import get_service_topology_graph
+                topo = get_service_topology_graph()
+                if not topo.is_dependency(rb.service, service):
+                    continue
             if category and rb.category and rb.category.lower() != category.lower():
                 continue
 

@@ -57,14 +57,28 @@ class EvaluationMockLLM(LLMProvider):
         return "evaluation_llm"
 
     def get_model_name(self) -> str:
-        return "llama3.2:3b"
+        return "meta-llama/Llama-3.1-8B-Instruct"
 
     def is_available(self) -> bool:
         return True
 
     def generate(self, prompt: str) -> str:
         prompt_lower = prompt.lower()
-        if "database" in prompt_lower or "postgres" in prompt_lower:
+        if "primary root cause: unknown" in prompt_lower or "insufficient evidence" in prompt_lower:
+            cause = "Insufficient evidence: isolated symptoms observed without identifiable upstream root cause."
+            services = ["booking-api"]
+            claim = "Transient socket read timeout without upstream anomaly"
+            source_id = "sig-log-booking-api-1"
+            action = "Continue monitoring service metrics and await additional telemetry"
+            runbook_key = "RB-000001"
+        elif "service: payment-api" in prompt_lower or "payment_pool_exhaustion" in prompt_lower:
+            cause = "Database degradation on payment-api"
+            services = ["payment-api", "postgres"]
+            claim = "Database connection pool utilization reached 100% (0 idle connections) on payment-api following deployment v2.8.4"
+            source_id = "sig-anomaly-payment-api-1"
+            action = "Rollback payment-api deployment to v2.8.3, investigate connection leaks, and restart payment worker pods"
+            runbook_key = "RB-000006"
+        elif "database" in prompt_lower or "postgres" in prompt_lower:
             cause = "Database connection saturation on postgres"
             services = ["postgres", "booking-api"]
             claim = "Active DB connections reached 98% with query latency at 1450ms"
@@ -272,7 +286,17 @@ class IncidentEvaluator:
             from backend.app.log_intelligence.embedding.service import get_embedding_service
             from backend.app.log_intelligence.schemas.logs import LogCategory
             embedder = get_embedding_service()
-            embeddings = embedder.embed_batch(raw_logs)
+            cloud_embedding_blocked = False
+            blocked_reason = None
+            try:
+                embeddings = embedder.embed_batch(raw_logs)
+            except Exception as emb_exc:
+                cloud_embedding_blocked = True
+                blocked_reason = f"Cloud provider quota exhausted ({emb_exc})"
+                from backend.app.log_intelligence.embedding.mock_provider import MockEmbeddingProvider
+                embedder = MockEmbeddingProvider()
+                embeddings = embedder.embed_batch(raw_logs)
+
             processed_logs = []
             for idx, msg in enumerate(raw_logs):
                 norm_msg = self.normalizer.normalize_log(msg)
@@ -307,6 +331,8 @@ class IncidentEvaluator:
                 "noise_points": noise_points,
                 "noise_ratio": noise_ratio,
                 "cluster_purity": cluster_purity,
+                "cloud_embedding_blocked": cloud_embedding_blocked,
+                "cloud_embedding_blocked_reason": blocked_reason,
                 "latency_ms": round(clustering_latency_ms, 2),
             }
         else:

@@ -11,6 +11,8 @@ class SignalType(str, Enum):
     DEPLOYMENT = "DEPLOYMENT"
     ALERT = "ALERT"
     TRACE = "TRACE"
+    LOG = "LOG"
+    METRIC = "METRIC"
 
 
 class GroupStatus(str, Enum):
@@ -31,11 +33,21 @@ class SignalInput(BaseModel):
     source_reference: Optional[str] = Field(None, max_length=255, description="External reference ID (e.g. evt-001)")
     metadata: Dict[str, Any] = Field(default_factory=dict, description="Arbitrary attributes such as trace_id, metric_name")
 
-    @field_validator("timestamp")
+    @field_validator("timestamp", mode="before")
     @classmethod
-    def validate_timezone_aware(cls, v: datetime) -> datetime:
-        if v.tzinfo is None or v.tzinfo.utcoffset(v) is None:
-            raise ValueError("Timestamp must be timezone-aware (e.g. 2026-08-29T12:00:00Z)")
+    def validate_timezone_aware(cls, v: Any) -> Any:
+        from datetime import timezone
+        if isinstance(v, str):
+            try:
+                dt = datetime.fromisoformat(v.replace("Z", "+00:00"))
+                if dt.tzinfo is None:
+                    dt = dt.replace(tzinfo=timezone.utc)
+                return dt
+            except Exception:
+                pass
+        elif isinstance(v, datetime):
+            if v.tzinfo is None:
+                return v.replace(tzinfo=timezone.utc)
         return v
 
 

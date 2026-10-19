@@ -56,7 +56,7 @@ class FailingLLMProvider(LLMProvider):
         return False
 
     def generate(self, prompt: str) -> str:
-        raise TimeoutError("Ollama connection timed out after 30.0s")
+        raise TimeoutError("LLM provider connection timed out after 30.0s")
 
 
 @pytest.fixture
@@ -162,8 +162,8 @@ def test_structured_output_schema_and_properties():
         "incident_key": "INC-000099",
         "status": "COMPLETED",
         "summary_version": "1.0.0",
-        "model_provider": "ollama",
-        "model_name": "qwen2.5-coder:7b",
+        "model_provider": "huggingface",
+        "model_name": "meta-llama/Llama-3.1-8B-Instruct",
         "executive_summary": "Database pool exhaustion caused checkout latency.",
         "what_happened": "High traffic saturated the database connection pool.",
         "probable_root_cause": "Database connection saturation on postgres",

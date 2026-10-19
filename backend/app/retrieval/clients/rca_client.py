@@ -28,7 +28,50 @@ class RCAServiceClient:
         top_k: int = 5,
     ) -> Tuple[List[RetrievalResultItem], Optional[str]]:
         """Retrieve historical RCA reports."""
-        # 1. Try in-process DB search first
+        # 1. HTTP call (supports test monkeypatching and microservices)
+        url = f"{self.base_url}/api/v1/rca"
+        params = {"page": 1, "page_size": top_k}
+        if group_key:
+            params["group_key"] = group_key
+        if min_confidence is not None:
+            params["min_confidence"] = min_confidence
+
+        try:
+            with httpx.Client(timeout=self.timeout) as client:
+                res = client.get(url, params=params)
+                if res.status_code == 200:
+                    data = res.json()
+                    items = []
+                    for report in data.get("items", []):
+                        ts_val = report.get("started_at")
+                        ts = datetime.fromisoformat(str(ts_val).replace("Z", "+00:00")) if ts_val else None
+                        key = report.get("analysis_key", "RCA-UNKNOWN")
+                        root_cause = report.get("primary_root_cause", "")
+                        candidates_summary = ", ".join(
+                            [f"{c.get('candidate_name')} ({c.get('score'):.2f})" for c in report.get("candidates", [])[:3]]
+                        )
+                        content = f"Primary Root Cause: {root_cause}. Top Candidates: {candidates_summary}."
+                        items.append(
+                            RetrievalResultItem(
+                                source_type=SourceType.RCA,
+                                source_id=key,
+                                title=f"RCA: {root_cause}",
+                                content=content,
+                                timestamp=ts,
+                                similarity_score=0.90,
+                                citation=f"[RCA:{key}]",
+                                metadata={
+                                    "group_key": report.get("group_key"),
+                                    "primary_confidence": report.get("primary_confidence"),
+                                    "status": report.get("status"),
+                                },
+                            )
+                        )
+                    return items, None
+        except Exception:
+            pass
+
+        # 2. Try in-process DB search fallback
         try:
             db = SessionLocal()
             try:
@@ -82,49 +125,4 @@ class RCAServiceClient:
         except Exception:
             pass
 
-        # 2. HTTP fallback for mocked tests
-        url = f"{self.base_url}/api/v1/rca"
-        params = {"page": 1, "page_size": top_k}
-        if group_key:
-            params["group_key"] = group_key
-        if min_confidence is not None:
-            params["min_confidence"] = min_confidence
-
-        try:
-            with httpx.Client(timeout=self.timeout) as client:
-                res = client.get(url, params=params)
-                if res.status_code == 200:
-                    data = res.json()
-                    items = []
-                    for report in data.get("items", []):
-                        ts_val = report.get("started_at")
-                        ts = datetime.fromisoformat(str(ts_val).replace("Z", "+00:00")) if ts_val else None
-                        key = report.get("analysis_key", "RCA-UNKNOWN")
-                        root_cause = report.get("primary_root_cause", "")
-                        candidates_summary = ", ".join(
-                            [f"{c.get('candidate_name')} ({c.get('score'):.2f})" for c in report.get("candidates", [])[:3]]
-                        )
-                        content = f"Primary Root Cause: {root_cause}. Top Candidates: {candidates_summary}."
-                        items.append(
-                            RetrievalResultItem(
-                                source_type=SourceType.RCA,
-                                source_id=key,
-                                title=f"RCA: {root_cause}",
-                                content=content,
-                                timestamp=ts,
-                                similarity_score=0.90,
-                                citation=f"[RCA:{key}]",
-                                metadata={
-                                    "group_key": report.get("group_key"),
-                                    "primary_confidence": report.get("primary_confidence"),
-                                    "status": report.get("status"),
-                                },
-                            )
-                        )
-                    return items, None
-                else:
-                    msg = f"RCA Service returned status {res.status_code}"
-                    return [], msg
-        except Exception as exc:
-            msg = f"RCA Service unavailable: {exc}"
-            return [], msg
+        return [], "RCA Service unavailable"

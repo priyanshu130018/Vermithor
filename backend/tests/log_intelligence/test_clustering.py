@@ -348,9 +348,8 @@ def test_cluster_to_correlation_signal_conversion(deterministic_log_dataset):
     assert any("cluster" in r.lower() or "service" in r.lower() for r in reasons)
 
 
-def test_clustering_api_endpoints(db_session, deterministic_log_dataset):
+def test_clustering_api_endpoints(client, db_session, deterministic_log_dataset):
     """Verify API endpoints /api/v1/logs/clusters/run and /api/v1/logs/clusters."""
-    client = TestClient(app)
 
     # Ingest logs into test DB
     ingest_payload = {

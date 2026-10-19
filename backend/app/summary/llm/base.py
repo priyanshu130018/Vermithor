@@ -16,10 +16,10 @@ class LLMProvider(ABC):
 
     @abstractmethod
     def get_provider_name(self) -> str:
-        """Return provider identifier (e.g. 'ollama')."""
+        """Return provider identifier (e.g. 'huggingface')."""
         pass
 
     @abstractmethod
     def get_model_name(self) -> str:
-        """Return model identifier (e.g. 'llama3.2:3b')."""
+        """Return model identifier (e.g. 'meta-llama/Llama-3.1-8B-Instruct')."""
         pass

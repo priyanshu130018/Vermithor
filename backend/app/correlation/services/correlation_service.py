@@ -36,8 +36,13 @@ class CorrelationService:
         """
         dialect = db.get_bind().dialect.name
         if dialect == "postgresql":
-            seq_val = db.execute(text("SELECT nextval('correlation_group_key_seq')")).scalar()
-            return f"GRP-{int(seq_val):06d}"
+            try:
+                seq_val = db.execute(text("SELECT nextval('correlation_group_key_seq')")).scalar()
+                return f"GRP-{int(seq_val):06d}"
+            except Exception:
+                db.rollback()
+                count = db.execute(select(func.count(CorrelationGroup.id))).scalar() or 0
+                return f"GRP-{count + 1:06d}"
         else:
             count = db.execute(select(func.count(CorrelationGroup.id))).scalar() or 0
             return f"GRP-{count + 1:06d}"
@@ -132,7 +137,7 @@ class CorrelationService:
                 # Attach external event signals to the newly created incident
                 for s in signals:
                     ref_id = s.source_reference or s.signal_id
-                    if s.signal_type.value in ["EVENT", "ALERT", "DEPLOYMENT", "TRACE"]:
+                    if s.signal_type.value in ["EVENT", "ALERT", "DEPLOYMENT", "TRACE", "LOG"]:
                         self.incident_client.attach_event_evidence(
                             incident_key=incident_key,
                             event_id=ref_id,

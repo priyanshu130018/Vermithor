@@ -26,8 +26,13 @@ def generate_analysis_key(db: Session) -> str:
     """Generate a database-backed human-readable analysis key (e.g. RCA-000001)."""
     dialect = db.get_bind().dialect.name
     if dialect == "postgresql":
-        seq_val = db.execute(text("SELECT nextval('rca_analysis_key_seq')")).scalar()
-        return f"RCA-{int(seq_val):06d}"
+        try:
+            seq_val = db.execute(text("SELECT nextval('rca_analysis_key_seq')")).scalar()
+            return f"RCA-{int(seq_val):06d}"
+        except Exception:
+            db.rollback()
+            count = db.execute(select(func.count(RCAAnalysis.id))).scalar() or 0
+            return f"RCA-{count + 1:06d}"
     else:
         count = db.execute(select(func.count(RCAAnalysis.id))).scalar() or 0
         return f"RCA-{count + 1:06d}"

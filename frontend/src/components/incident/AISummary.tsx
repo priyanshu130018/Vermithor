@@ -22,7 +22,7 @@ export const AISummary: React.FC<AISummaryProps> = ({
     return (
       <Card className="mb-6 border-indigo-500/30 bg-indigo-950/10">
         <LoadingState
-          message="Synthesizing grounded incident summary with LLM provider (Ollama)..."
+          message="Synthesizing grounded incident summary with LLM provider..."
           size="md"
         />
       </Card>
@@ -66,7 +66,7 @@ export const AISummary: React.FC<AISummaryProps> = ({
           <div className="flex-1">
             <h4 className="text-xs font-semibold font-mono text-red-300">AI Summary Generation Unavailable</h4>
             <p className="text-xs text-slate-400 mt-1">
-              {summary.executive_summary || 'The local LLM provider timed out or returned an unverified format. Underlying telemetry and RCA graphs remain active.'}
+              {summary.executive_summary || 'The LLM provider timed out or returned an unverified format. Underlying telemetry and RCA graphs remain active.'}
             </p>
             <button
               onClick={() => onGenerate(true)}
@@ -107,7 +107,7 @@ export const AISummary: React.FC<AISummaryProps> = ({
         {summary.is_fallback && (
           <div className="flex items-center gap-2 p-2 bg-amber-500/10 border border-amber-500/30 rounded text-xs font-mono text-amber-300">
             <AlertCircle className="w-4 h-4 text-amber-400 shrink-0" />
-            <span>Deterministic Grounded Fallback (Ollama offline / degraded mode)</span>
+            <span>Deterministic Grounded Fallback (LLM offline / degraded mode)</span>
           </div>
         )}
 

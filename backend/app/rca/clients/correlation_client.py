@@ -14,12 +14,27 @@ class CorrelationServiceClient:
 
     def __init__(self, base_url: Optional[str] = None, timeout: float = 5.0):
         settings = get_settings()
+        self.is_custom_url = base_url is not None
         self.base_url = (base_url or settings.CORRELATION_SERVICE_URL).rstrip("/")
         self.timeout = timeout
 
     def get_correlation_group(self, group_key: str) -> Optional[Dict[str, Any]]:
         """Fetch correlation group data and its associated signals."""
-        # 1. In-process direct database lookup
+        # 1. HTTP call (supports test monkeypatching and microservices)
+        url = f"{self.base_url}/api/v1/correlations/groups/{group_key}"
+        try:
+            with httpx.Client(timeout=self.timeout) as client:
+                response = client.get(url)
+                if response.status_code == 200:
+                    return response.json()
+                elif response.status_code == 404:
+                    return None
+        except Exception as exc:
+            logger.debug("HTTP call for correlation group '%s' failed: %s", group_key, exc)
+            if self.is_custom_url:
+                return None
+
+        # 2. In-process direct database lookup fallback
         try:
             db = SessionLocal()
             try:
@@ -54,17 +69,4 @@ class CorrelationServiceClient:
                 db.close()
         except Exception:
             pass
-
-        # 2. HTTP call fallback (supports test monkeypatching)
-        url = f"{self.base_url}/api/v1/correlations/groups/{group_key}"
-        try:
-            with httpx.Client(timeout=self.timeout) as client:
-                response = client.get(url)
-                if response.status_code == 200:
-                    return response.json()
-                elif response.status_code == 404:
-                    return None
-        except Exception as exc:
-            logger.debug("HTTP fallback for correlation group '%s' failed: %s", group_key, exc)
-            return None
         return None

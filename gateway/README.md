@@ -1,6 +1,6 @@
-# Vermithor — Production API Gateway & Security Boundary
+# Vermithor — API Gateway & Reverse Proxy
 
-The **API Gateway** is the single entry point and security boundary for the **Vermithor** AI Production Incident Intelligence Platform, running on port `8080`. It isolates internal backend microservices from direct public exposure and enforces cryptographic JWT validation, tiered rate limiting, CORS policies, security headers, request ID propagation, and timeout budgets.
+The **API Gateway** is the single entry point and perimeter boundary for the **Vermithor** AI Production Incident Intelligence Platform, running on port `8080`. Built on standard **Nginx (`nginx:alpine`)**, it reverse-proxies requests to the FastAPI backend, enforces tiered rate limiting, applies hardened HTTP security headers, propagates request IDs, and configures upstream timeouts without requiring Lua or OpenResty runtime dependencies.
 
 ---
 
@@ -14,73 +14,66 @@ The **API Gateway** is the single entry point and security boundary for the **Ve
                        │
                        ▼
                 ┌──────────────┐
-                │ API Gateway  │ (:8080)
+                │ Nginx Gateway│ (:8080)
                 │              │
-                │ JWT Auth     │
                 │ Rate Limits  │
-                │ CORS Policy  │
+                │ Proxy Pass   │
                 │ Headers      │
+                │ Request-ID   │
                 └──────┬───────┘
-                       │
+                       │ (Authorization: Bearer <token>)
                        ▼
                     TRUSTED (vermithor-network)
                        │
-         ┌─────────────┼─────────────┐
-         ▼             ▼             ▼
-     Incident      Retrieval      Summary
-       :8002         :8007         :8008
+                       ▼
+          ┌───────────────────────────┐
+          │  FastAPI Modular Monolith │ (:8000)
+          │  - JWT Auth Enforcement   │
+          │  - Domain Module Routers  │
+          │  - Hugging Face RAG LLM   │
+          └───────────────────────────┘
 ```
 
 ---
 
 ## Routing Table
 
-| Public Path Pattern | Upstream Microservice | Rate Limit | Timeout | Auth Required |
+| Public Path Pattern | Target Upstream | Rate Limit | Timeout | Auth Required |
 | :--- | :--- | :--- | :--- | :--- |
 | `GET /health` | Gateway Liveness | None | 5s | **No** (Public) |
-| `/api/v1/incidents/*` | `incident-service:8002` | 30 req/s | 15s | **Yes** (JWT) |
-| `/api/v1/observations/*` | `anomaly-service:8003` | 30 req/s | 15s | **Yes** (JWT) |
-| `/api/v1/correlations/*` | `correlation-service:8004` | 30 req/s | 15s | **Yes** (JWT) |
-| `/api/v1/rca/*` | `rca-service:8005` | 30 req/s | 15s | **Yes** (JWT) |
-| `/api/v1/logs/*` | `log-intelligence-service:8006`| 10 req/s | 15s | **Yes** (JWT) |
-| `/api/v1/retrieval/*` | `retrieval-service:8007` | 30 req/s | 15s | **Yes** (JWT) |
-| `/api/v1/rag/*` | `retrieval-service:8007` | 30 req/s | 15s | **Yes** (JWT) |
-| `/api/v1/runbooks/*` | `retrieval-service:8007` | 30 req/s | 15s | **Yes** (JWT) |
-| `/api/v1/summaries/*` | `summary-service:8008` | 2 req/s | 130s | **Yes** (JWT) |
-| `/api/v1/events/*` | `ingestion-service:8001` | 30 req/s | 15s | **Yes** (JWT) |
+| `GET /ready` | Backend Readiness | 30 req/s | 15s | **No** (Public) |
+| `/api/v1/summaries/*` | `vermithor-backend:8000` | 2 req/s | 130s | **Yes** (FastAPI JWT) |
+| `/api/v1/logs/*` | `vermithor-backend:8000` | 10 req/s | 15s | **Yes** (FastAPI JWT) |
+| `/api/v1/*` | `vermithor-backend:8000` | 30 req/s | 15s | **Yes** (FastAPI JWT) |
+| `/` (Docs / Root) | `vermithor-backend:8000` | None | 15s | **No** (Public) |
 
 ---
 
 ## Security & Access Control
 
-1. **JWT Bearer Authentication**:
+1. **FastAPI JWT Authentication**:
    - Header: `Authorization: Bearer <token>`
-   - Validation: HMAC-SHA256 signature against `JWT_SECRET`, issuer (`iss: "vermithor"`), audience (`aud: "vermithor-api"`), and expiration (`exp > now()`).
-   - Unauthenticated requests receive structured JSON `401 Unauthorized`.
+   - Validation: Native Python/FastAPI verification via `backend/app/common/security.py`.
+   - Validates cryptographic HS256 signature, required claims (`sub`, `exp`, `iss`, `aud`), expiration, and 30s clock skew tolerance.
+   - Unauthenticated or invalid requests receive structured JSON `401 Unauthorized`.
 2. **Tiered Rate Limiting**:
    - `api_general`: 30 requests/second (burst 20) for standard telemetry.
-   - `api_summary`: 2 requests/second (burst 5) protecting compute-heavy LLM synthesis.
-   - `api_logs`: 10 requests/second (burst 10) for dense vector search queries.
+   - `api_summary`: 2 requests/second (burst 5, timeout 130s) protecting compute-heavy LLM synthesis.
+   - `api_logs`: 10 requests/second (burst 20) for log search and ingestion.
 3. **Security Headers**:
    - `X-Content-Type-Options: nosniff`
    - `X-Frame-Options: DENY`
    - `Referrer-Policy: strict-origin-when-cross-origin`
    - `Content-Security-Policy`: Strict script/font/connect restrictions.
 4. **Request Tracing**:
-   - `X-Request-ID` is preserved from inbound headers or auto-generated and propagated to all upstream services and response headers.
-5. **CORS**:
-   - Origin-validated for configured frontend origins (`http://localhost:5173`). Preflight `OPTIONS` requests return `204 No Content`.
-6. **Payload Size**:
+   - `X-Request-ID` is preserved from inbound headers or generated as `$request_id` and forwarded upstream.
+5. **Payload Size**:
    - Max body size capped at `10m`.
 
 ---
 
-## Development vs Production Configuration
+## Configuration & Local Testing
 
-- **Development**:
-  - `JWT_SECRET=vermithor-dev-secret-key-32-chars-min`
-  - Frontend automatically provides client development tokens.
-- **Production**:
-  - `JWT_SECRET` injected securely via secret management / environment variables.
-  - Internal microservices, PostgreSQL, and Redis communicate exclusively via `vermithor-network` without exposing host ports.
-  - HTTPS / TLS termination configured at gateway.
+- **Docker Base Image**: `nginx:alpine` (standard Nginx, zero Lua/LuaRocks dependencies).
+- **Backend JWT Settings**: Handled centrally via `backend/app/common/config.py` (`JWT_SECRET`, `JWT_ISSUER`, `JWT_AUDIENCE`).
+- **Gateway Compose Config**: No redundant `JWT_*` environment variables required on the gateway container.

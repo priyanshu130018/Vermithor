@@ -152,15 +152,89 @@ SUMMARY_VALIDATION_FAILURES_TOTAL = _get_or_create_metric(
 )
 
 
+from opentelemetry.sdk.resources import Resource, SERVICE_NAME as OTEL_SERVICE_NAME
+
+CELERY_TASKS_TOTAL = _get_or_create_metric(
+    Counter,
+    "celery_tasks_total",
+    "Total number of Celery tasks processed",
+    ["task_name", "status"],
+)
+
+CELERY_TASK_DURATION_SECONDS = _get_or_create_metric(
+    Histogram,
+    "celery_task_duration_seconds",
+    "Celery task duration in seconds",
+    ["task_name", "status"],
+    buckets=(0.01, 0.05, 0.1, 0.25, 0.5, 1.0, 2.5, 5.0, 10.0),
+)
+
+import re
+from urllib.parse import parse_qsl, urlencode, urlparse, urlunparse
+
+UUID_REGEX = re.compile(r"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$")
+ENTITY_KEY_REGEX = re.compile(r"^(INC|GRP|RCA|RB|OBS|EVT)(-\d+)+$", re.IGNORECASE)
+INT_REGEX = re.compile(r"^\d+$")
+SENSITIVE_PARAM_KEYS = {
+    "token", "password", "secret", "key", "auth", "api_key",
+    "jwt", "access_token", "refresh_token", "client_secret",
+}
+
+
+def sanitize_url(raw_url: str) -> str:
+    """Redacts sensitive query parameter values from URL for tracing."""
+    try:
+        parsed = urlparse(raw_url)
+        if not parsed.query:
+            return raw_url
+        query_params = parse_qsl(parsed.query, keep_blank_values=True)
+        sanitized_params = []
+        for k, v in query_params:
+            if k.lower() in SENSITIVE_PARAM_KEYS or any(s in k.lower() for s in ["token", "secret", "password"]):
+                sanitized_params.append((k, "[REDACTED]"))
+            else:
+                sanitized_params.append((k, v))
+        sanitized_query = urlencode(sanitized_params)
+        return urlunparse(parsed._replace(query=sanitized_query))
+    except Exception:
+        return "[UNPARSEABLE_URL]"
+
+
+def sanitize_metric_endpoint(path: str, route_path: Optional[str] = None) -> str:
+    """Normalize endpoint paths to prevent high-cardinality label explosion in Prometheus."""
+    if route_path:
+        return route_path
+
+    parts = path.strip("/").split("/")
+    sanitized = []
+    for part in parts:
+        if UUID_REGEX.match(part):
+            sanitized.append("{id}")
+        elif ENTITY_KEY_REGEX.match(part):
+            prefix = part.split("-")[0].upper()
+            sanitized.append(f"{{{prefix.lower()}_key}}")
+        elif INT_REGEX.match(part):
+            sanitized.append("{id}")
+        else:
+            sanitized.append(part)
+    return "/" + "/".join(sanitized) if sanitized else "/"
+
+
 def init_tracer(service_name: str) -> trace.Tracer:
-    """Initializes OpenTelemetry Tracer with OTLP HTTP exporter."""
-    provider = TracerProvider()
+    """Initializes OpenTelemetry Tracer with OTLP HTTP exporter and explicit service name resource."""
+    resource = Resource.create({
+        OTEL_SERVICE_NAME: service_name,
+        "service.name": service_name,
+        "service.instance.id": os.getenv("HOSTNAME", "localhost"),
+    })
+    provider = TracerProvider(resource=resource)
     otlp_endpoint = os.getenv("OTEL_EXPORTER_OTLP_ENDPOINT")
 
     if otlp_endpoint:
         try:
             from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
-            exporter = OTLPSpanExporter(endpoint=f"{otlp_endpoint}/v1/traces")
+            endpoint = f"{otlp_endpoint.rstrip('/')}/v1/traces"
+            exporter = OTLPSpanExporter(endpoint=endpoint)
             provider.add_span_processor(BatchSpanProcessor(exporter))
         except Exception:
             pass
@@ -187,7 +261,7 @@ def setup_telemetry(app: FastAPI, service_name: str = "vermithor-backend") -> No
         if request.url.path == "/metrics":
             return await call_next(request)
 
-        endpoint = request.url.path
+        endpoint = sanitize_metric_endpoint(request.url.path)
         method = request.method
         ACTIVE_REQUESTS.labels(service=service_name).inc()
         start_time = time.perf_counter()
@@ -197,11 +271,11 @@ def setup_telemetry(app: FastAPI, service_name: str = "vermithor-backend") -> No
         carrier = {k: v for k, v in request.headers.items()}
         context = propagator.extract(carrier=carrier)
 
-        span_name = f"{request.method} {request.url.path}"
+        span_name = f"{request.method} {endpoint}"
         try:
             with tracer.start_as_current_span(span_name, context=context) as span:
                 span.set_attribute("http.method", request.method)
-                span.set_attribute("http.url", str(request.url))
+                span.set_attribute("http.url", sanitize_url(str(request.url)))
                 span.set_attribute("service.name", service_name)
 
                 req_id = request.headers.get("x-request-id")
@@ -211,6 +285,12 @@ def setup_telemetry(app: FastAPI, service_name: str = "vermithor-backend") -> No
                 response = await call_next(request)
                 status_code = response.status_code
                 span.set_attribute("http.status_code", status_code)
+
+                # Route-level normalization check after routing resolution
+                matched_route = request.scope.get("route")
+                if matched_route and hasattr(matched_route, "path"):
+                    endpoint = sanitize_metric_endpoint(request.url.path, matched_route.path)
+                    span.update_name(f"{request.method} {endpoint}")
 
                 # Traceparent & Trace ID echo in response
                 traceparent = request.headers.get("traceparent")

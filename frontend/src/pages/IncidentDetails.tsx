@@ -14,6 +14,7 @@ import { CorrelationGraph } from '../components/incident/CorrelationGraph';
 import { IncidentEvidence } from '../components/incident/IncidentEvidence';
 import { SimilarIncidents } from '../components/incident/SimilarIncidents';
 import { RunbookPanel } from '../components/incident/RunbookPanel';
+import { CodeRepairPanel } from '../components/incident/CodeRepairPanel';
 import { LoadingState } from '../components/common/LoadingState';
 import { ErrorState } from '../components/common/ErrorState';
 
@@ -102,6 +103,9 @@ export const IncidentDetails: React.FC = () => {
         <SimilarIncidents />
         <RunbookPanel />
       </div>
+
+      {/* 6. CODE REPAIR? (AI Code Repair Agent & Sandboxed Validation) */}
+      <CodeRepairPanel incidentKey={incidentKey || ''} />
     </div>
   );
 };

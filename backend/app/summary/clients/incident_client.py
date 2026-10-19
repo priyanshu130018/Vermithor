@@ -19,7 +19,17 @@ class IncidentClient:
 
     def get_incident(self, incident_key: str) -> Optional[Dict[str, Any]]:
         """Retrieve full incident details by key."""
-        # 1. In-process direct lookup
+        # 1. HTTP call (supports test mocking and microservices)
+        url = f"{self.base_url}/api/v1/incidents/{incident_key}"
+        try:
+            with httpx.Client(timeout=self.timeout) as client:
+                res = client.get(url)
+                if res.status_code == 200:
+                    return res.json()
+        except Exception:
+            pass
+
+        # 2. In-process direct lookup fallback
         try:
             db = SessionLocal()
             try:
@@ -39,16 +49,6 @@ class IncidentClient:
                     }
             finally:
                 db.close()
-        except Exception:
-            pass
-
-        # 2. HTTP fallback for mocked tests
-        url = f"{self.base_url}/api/v1/incidents/{incident_key}"
-        try:
-            with httpx.Client(timeout=self.timeout) as client:
-                res = client.get(url)
-                if res.status_code == 200:
-                    return res.json()
         except Exception:
             pass
         return None

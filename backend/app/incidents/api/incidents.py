@@ -27,9 +27,12 @@ router = APIRouter(prefix="/incidents", tags=["incidents"])
 )
 def create_incident(
     incident_in: IncidentCreate,
+    response: Response,
     db: Session = Depends(get_db),
 ) -> IncidentResponse:
     """Create a new incident."""
+    if incident_in.incident_key and IncidentService.get_incident_by_key(db, incident_in.incident_key):
+        response.status_code = status.HTTP_200_OK
     incident = IncidentService.create_incident(db, incident_in)
     return IncidentResponse.from_orm_model(incident)
 

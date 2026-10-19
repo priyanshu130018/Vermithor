@@ -48,4 +48,5 @@ temp/
 # Local databases and SQLite artifacts
 *.db
 *.sqlite
-*.sqlite3
+*.sqlite3
+.neon

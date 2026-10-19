@@ -55,6 +55,7 @@ class IncidentBase(BaseModel):
 
 class IncidentCreate(IncidentBase):
     """Payload for declaring or reporting a new incident."""
+    incident_key: Optional[str] = Field(None, max_length=32, description="Optional custom key (e.g. INC-2026-1042)")
     model_config = ConfigDict(
         json_schema_extra={
             "example": {

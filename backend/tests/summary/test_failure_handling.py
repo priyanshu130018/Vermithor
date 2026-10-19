@@ -1,5 +1,6 @@
 import json
 from fastapi.testclient import TestClient
+from backend.app.summary.api.summaries import summary_service
 from backend.app.summary.clients.incident_client import IncidentClient
 from backend.app.summary.clients.rca_client import RCAClient
 from backend.app.summary.clients.retrieval_client import RetrievalClient
@@ -15,11 +16,12 @@ def test_incident_not_found_returns_404(client: TestClient, monkeypatch):
 
 
 def test_malformed_json_llm_output_handling(client: TestClient, monkeypatch):
-    """Verify malformed JSON from LLM is caught gracefully and returns 503."""
+    """Verify malformed JSON from LLM is caught gracefully and returns 503 when fallback is disabled."""
     mock_incident = {"incident_key": "INC-MALFORMED", "service": "booking-api"}
     monkeypatch.setattr(IncidentClient, "get_incident", lambda self, key: mock_incident)
     monkeypatch.setattr(RCAClient, "get_rca_reports", lambda self, **kwargs: [])
     monkeypatch.setattr(RetrievalClient, "get_rag_context", lambda self, **kwargs: None)
+    monkeypatch.setattr(summary_service.settings, "LLM_FALLBACK_ENABLED", False)
 
     # Set FakeLLM to return unparseable string
     bad_fake = FakeLLMProvider(response_text="Not valid JSON at all")
@@ -31,11 +33,12 @@ def test_malformed_json_llm_output_handling(client: TestClient, monkeypatch):
 
 
 def test_llm_timeout_handling(client: TestClient, monkeypatch):
-    """Verify LLM timeout raises 504 Gateway Timeout."""
+    """Verify LLM timeout raises 504 Gateway Timeout when fallback is disabled."""
     mock_incident = {"incident_key": "INC-TIMEOUT", "service": "booking-api"}
     monkeypatch.setattr(IncidentClient, "get_incident", lambda self, key: mock_incident)
     monkeypatch.setattr(RCAClient, "get_rca_reports", lambda self, **kwargs: [])
     monkeypatch.setattr(RetrievalClient, "get_rag_context", lambda self, **kwargs: None)
+    monkeypatch.setattr(summary_service.settings, "LLM_FALLBACK_ENABLED", False)
 
     timeout_fake = FakeLLMProvider(exception_to_raise=TimeoutError("Request timed out after 120s"))
     ProviderFactory.set_provider(timeout_fake)
@@ -43,6 +46,44 @@ def test_llm_timeout_handling(client: TestClient, monkeypatch):
     res = client.post("/api/v1/summaries/incident/INC-TIMEOUT")
     assert res.status_code == 504
     assert "timed out" in res.json()["detail"].lower()
+
+
+def test_malformed_json_activates_fallback_when_enabled(client: TestClient, monkeypatch):
+    """Verify malformed JSON from LLM gracefully activates deterministic fallback when enabled."""
+    mock_incident = {"incident_key": "INC-MALFORMED-FALLBACK", "service": "booking-api"}
+    monkeypatch.setattr(IncidentClient, "get_incident", lambda self, key: mock_incident)
+    monkeypatch.setattr(RCAClient, "get_rca_reports", lambda self, **kwargs: [])
+    monkeypatch.setattr(RetrievalClient, "get_rag_context", lambda self, **kwargs: None)
+    monkeypatch.setattr(summary_service.settings, "LLM_FALLBACK_ENABLED", True)
+
+    bad_fake = FakeLLMProvider(response_text="Not valid JSON at all")
+    ProviderFactory.set_provider(bad_fake)
+
+    res = client.post("/api/v1/summaries/incident/INC-MALFORMED-FALLBACK")
+    assert res.status_code == 200
+    data = res.json()
+    assert data["status"] == "COMPLETED"
+    assert data["is_fallback"] is True
+    assert data["model_provider"] == "fallback"
+
+
+def test_llm_timeout_activates_fallback_when_enabled(client: TestClient, monkeypatch):
+    """Verify LLM timeout gracefully activates deterministic fallback when enabled."""
+    mock_incident = {"incident_key": "INC-TIMEOUT-FALLBACK", "service": "booking-api"}
+    monkeypatch.setattr(IncidentClient, "get_incident", lambda self, key: mock_incident)
+    monkeypatch.setattr(RCAClient, "get_rca_reports", lambda self, **kwargs: [])
+    monkeypatch.setattr(RetrievalClient, "get_rag_context", lambda self, **kwargs: None)
+    monkeypatch.setattr(summary_service.settings, "LLM_FALLBACK_ENABLED", True)
+
+    timeout_fake = FakeLLMProvider(exception_to_raise=TimeoutError("Request timed out after 120s"))
+    ProviderFactory.set_provider(timeout_fake)
+
+    res = client.post("/api/v1/summaries/incident/INC-TIMEOUT-FALLBACK")
+    assert res.status_code == 200
+    data = res.json()
+    assert data["status"] == "COMPLETED"
+    assert data["is_fallback"] is True
+    assert data["model_provider"] == "fallback"
 
 
 def test_prompt_injection_safety(client: TestClient, monkeypatch):

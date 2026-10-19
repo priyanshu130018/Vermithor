@@ -1,0 +1,1 @@
+"""Vermithor Authentication Module."""
