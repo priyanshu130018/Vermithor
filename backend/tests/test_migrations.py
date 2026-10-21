@@ -24,7 +24,16 @@ def test_migration_discovery():
     heads = script.get_heads()
 
     assert len(heads) == 1, f"Expected exactly 1 migration head, got {heads}"
-    assert heads[0] in ("001_initial_schema", "002_add_key_sequences")
+    assert heads[0] in (
+        "001_initial_schema",
+        "002_add_key_sequences",
+        "003_add_investigations",
+        "004_add_repairs",
+        "005_add_repository_connections",
+        "006_add_investigation_feedback",
+        "007_add_pilot_onboarding_and_governance",
+        "008_add_org_id_to_investigations_and_repairs",
+    )
 
 
 def test_migration_upgrade_and_idempotency():

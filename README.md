@@ -18,7 +18,42 @@ Vermithor is an AI-assisted incident management and root-cause intelligence plat
 
 ---
 
-## 2. Technology Stack
+## 2. Latest Demonstration Status (Synthetic Incident INC-2026-1042)
+
+> [!IMPORTANT]
+> **Demonstration Verdict: Demo Passed with Limitations**
+> The end-to-end incident intelligence and investigation pipeline was successfully demonstrated on canonical synthetic incident `INC-2026-1042` (`payment-api` v2.8.4 deployment followed by database connection pool saturation).
+> 
+> **Operational Limitations**:
+> 1. **Ollama LLM Provider Offline**: Local Ollama inference (`http://localhost:11434`) was offline during the demonstration. Vermithor automatically engaged its built-in deterministic grounded fallback synthesizer (`is_fallback: true`, `model_provider: "fallback"`), successfully generating complete postmortems and investigation reports with 100% telemetry grounding and zero hallucinations.
+> 2. **Telemetry Scope & Deployment Boundaries**: The demonstration verified synthetic incident injection and supervised read-only pilot execution. **Live customer telemetry** and **automated production deployment** were not verified; repair proposals operate under strict human-approval and read-only pilot guardrails (`is_read_only_pilot: true`).
+
+### Demonstrated End-to-End Workflow Capabilities
+
+| Stage | Demonstrated Behavior & Artifacts | Status |
+|---|---|:---:|
+| **Telemetry Ingestion & Anomaly Detection** | Ingested streaming events, logs, and metric observations. Statistical Z-score and `IsolationForest` detectors flagged 10 metric anomalies: pool utilization (1.00), P95 latency (4800ms), DB query latency (3200ms), and HTTP 5xx error rate ratio (0.28). | ✅ Passed |
+| **Correlation & Incident Registration** | Correlated 14 temporal/topological signals across `payment-api` and `postgres` into correlation group `GRP-000004` (score: 0.53); registered SEV1 incident `INC-2026-1042`. | ✅ Passed |
+| **Ranked Root-Cause Hypotheses** | Multi-dimensional RCA evaluated and ranked 3 causal candidates: <br/>1. **Database degradation on postgres** (Composite Score: `0.909`)<br/>2. **Database connection pool exhaustion on payment-api** (Composite Score: `0.845`)<br/>3. **Service degradation on payment-api** (Composite Score: `0.804`) | ✅ Passed |
+| **LangGraph AI Investigation** | Executed LangGraph agent workflow (`INV-000141`), evaluating 26 observed facts. Confirmed leading hypothesis `[DEPLOYMENT] Recent deployment on payment-api` with **0.98 confidence** based on temporal precedence and HikariCP connection leaks. | ✅ Passed |
+| **Evidence Citations** | Programmatically cataloged 38 telemetry citations (e.g. `EV-EVT-25`, `EV-RCA-1`). The citation validator verified 100% (`38/38`) as `VALID` and grounded in ingested telemetry IDs. | ✅ Passed |
+| **Investigation Persistence & Retrieval** | Persisted complete investigation state to PostgreSQL. Verified via REST endpoints `GET /api/v1/agent/investigations/incident/INC-2026-1042` and `GET /api/v1/agent/investigations/INV-000141`. | ✅ Passed |
+| **Human-Approved Repair Proposals** | Generated patch proposal `REP-000107` proposing `max_pool_size` tuning in `src/config.py`. Enforced safety boundary (`requires_human_approval: true`, `is_read_only_pilot: true`). Supervised approval recorded via `POST /api/v1/agent/repairs/REP-000107/approve` without autonomous git push or deployment (`pull_request_url: null`). | ✅ Passed |
+| **Frontend UI Verification** | Verified live rendering of `IncidentHeader`, `IncidentOverview`, `InvestigationPanel`, `CodeRepairPanel`, `RCAExplanation`, `CorrelationGraph`, and `RunbookPanel` at `http://localhost:5173/incidents/INC-2026-1042`. | ✅ Passed |
+
+### Database Migration Reproducibility & Alembic Version Fix
+
+Alembic's default `alembic_version` schema defines `version_num VARCHAR(32)`. When migration revisions exceed 32 characters (e.g., `007_add_pilot_onboarding_and_governance` at 39 characters and `008_add_org_id_to_investigations_and_repairs` at 44 characters), PostgreSQL throws a `StringDataRightTruncation` error during `alembic upgrade head`.
+
+- **Automated Reproducibility**: Migration `005_add_repository_connections.py` automatically expands `alembic_version.version_num` to `VARCHAR(128)` on PostgreSQL dialects before revisions 007 and 008 execute.
+- **Manual Migration Fix**: If upgrading an existing PostgreSQL instance where revision 005 was already tracked without the expansion, run the following SQL command prior to `alembic upgrade head`:
+  ```sql
+  ALTER TABLE alembic_version ALTER COLUMN version_num TYPE VARCHAR(128);
+  ```
+
+---
+
+## 3. Technology Stack
 
 | Layer | Technologies |
 |---|---|
@@ -34,7 +69,7 @@ Vermithor is an AI-assisted incident management and root-cause intelligence plat
 
 ---
 
-## 3. High-Level Architecture
+## 4. High-Level Architecture
 
 ```mermaid
 graph TD
@@ -75,7 +110,7 @@ graph TD
 
 ---
 
-## 4. Documentation Index
+## 5. Documentation Index
 
 The primary documentation is organized into five focused guides inside `docs/`:
 
@@ -92,7 +127,7 @@ The primary documentation is organized into five focused guides inside `docs/`:
 
 ---
 
-## 5. Prerequisites
+## 6. Prerequisites
 
 Before setting up Vermithor, ensure you have:
 - **Python**: Version `3.10` or higher (verified on 3.10 and 3.12).
@@ -104,7 +139,7 @@ Before setting up Vermithor, ensure you have:
 
 ---
 
-## 6. Quick-Start Guide (Local Development)
+## 7. Quick-Start Guide (Local Development)
 
 ### Step 1: Clone Repository & Create `.env`
 ```bash
@@ -137,6 +172,8 @@ pip install -r backend/requirements.txt
 ```powershell
 alembic upgrade head
 ```
+> [!NOTE]
+> **PostgreSQL Alembic Version Column**: Migration `005_add_repository_connections.py` automatically expands `alembic_version.version_num` from `VARCHAR(32)` to `VARCHAR(128)` to accommodate longer revision names. If updating an existing PostgreSQL database where revision 005 was already applied prior to the fix, execute `ALTER TABLE alembic_version ALTER COLUMN version_num TYPE VARCHAR(128);` before running migrations.
 
 ### Step 5: Start Supporting Services (Docker)
 ```powershell
@@ -166,7 +203,7 @@ npm run dev
 
 ---
 
-## 7. Full Container Stack Startup (Docker Compose)
+## 8. Full Container Stack Startup (Docker Compose)
 
 To run the complete production-like stack using Docker Compose:
 
@@ -178,7 +215,7 @@ Compose manages 9 orchestrated services: `gateway` (:8080), `frontend` (:5173), 
 
 ---
 
-## 8. Testing & Validation Commands
+## 9. Testing & Validation Commands
 
 All test suites can be executed locally without live container dependencies:
 
@@ -207,7 +244,7 @@ docker compose config --quiet
 
 ---
 
-## 9. Key Environment Variables
+## 10. Key Environment Variables
 
 | Variable | Required | Default / Placeholder | Description |
 |---|---|---|---|
@@ -224,7 +261,7 @@ For the full list of configuration parameters, see [Developer Guide (`docs/devel
 
 ---
 
-## 10. Security & Troubleshooting Links
+## 11. Security & Troubleshooting Links
 
 - **Security & JWT Specification**: See [Security Architecture (`docs/security.md`)](docs/security.md).
 - **Troubleshooting Common Errors**: See [Developer Guide Troubleshooting (`docs/development.md`)](docs/development.md#9-troubleshooting-common-issues).
