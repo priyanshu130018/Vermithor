@@ -41,7 +41,8 @@ Thumbs.db
 
 # Logs and runtime artifacts
 *.log
-logs/
+/logs/
+!frontend/src/components/logs/
 tmp/
 temp/
 
