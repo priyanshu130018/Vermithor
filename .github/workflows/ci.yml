@@ -32,7 +32,7 @@ jobs:
 
       - name: Run Pytest Suite
         run: |
-          python -m pytest backend/tests -v
+          python -m pytest backend/tests --ignore=backend/tests/fixtures -v
 
   gateway-and-observability:
     name: Gateway & Observability Tests

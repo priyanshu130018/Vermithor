@@ -204,7 +204,14 @@ class IsolatedTestRunner:
                     timeout=3.0,
                 )
             else:
-                os.killpg(os.getpgid(proc.pid), signal.SIGKILL)
+                try:
+                    pgid = os.getpgid(proc.pid)
+                    if pgid != os.getpgrp():
+                        os.killpg(pgid, signal.SIGKILL)
+                    else:
+                        proc.kill()
+                except (ProcessLookupError, PermissionError):
+                    proc.kill()
         except Exception as term_exc:
             logger.debug("Process tree termination notice: %s", term_exc)
         finally:
@@ -386,6 +393,7 @@ class IsolatedTestRunner:
                         stdout=subprocess.PIPE,
                         stderr=subprocess.PIPE,
                         text=True,
+                        start_new_session=(sys.platform != "win32"),
                     )
 
                     try:
