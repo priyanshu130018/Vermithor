@@ -293,7 +293,7 @@ def extract_scenario_telemetry(scenario: Dict[str, Any]) -> Tuple[List[Dict[str,
     return evidence_items, signals
 
 
-def run_benchmark(trials_per_scenario: int = 3) -> Dict[str, Any]:
+def run_benchmark(trials_per_scenario: int = 3, save_results: bool = True) -> Dict[str, Any]:
     """
     Main benchmark execution function.
     Strictly separates:
@@ -737,18 +737,18 @@ def run_benchmark(trials_per_scenario: int = 3) -> Dict[str, Any]:
         "per_trial_results": trial_results,
     }
 
-    # Write JSON results
-    results_dir = REPO_ROOT / "evaluation" / "results"
-    results_dir.mkdir(parents=True, exist_ok=True)
-    json_path = results_dir / "cloud_benchmark_results.json"
-    with open(json_path, "w", encoding="utf-8") as fp:
-        json.dump(results_data, fp, indent=2)
-    logger.info("Saved machine-readable benchmark results to %s", json_path)
+    # Write JSON results & Markdown Report
+    if save_results:
+        results_dir = REPO_ROOT / "evaluation" / "results"
+        results_dir.mkdir(parents=True, exist_ok=True)
+        json_path = results_dir / "cloud_benchmark_results.json"
+        with open(json_path, "w", encoding="utf-8") as fp:
+            json.dump(results_data, fp, indent=2)
+        logger.info("Saved machine-readable benchmark results to %s", json_path)
 
-    # Write Markdown Report
-    md_path = results_dir / "cloud_benchmark_report.md"
-    generate_markdown_report(md_path, results_data)
-    logger.info("Saved Markdown report to %s", md_path)
+        md_path = results_dir / "cloud_benchmark_report.md"
+        generate_markdown_report(md_path, results_data)
+        logger.info("Saved Markdown report to %s", md_path)
 
     # Print summary
     print("\n" + "=" * 80)
