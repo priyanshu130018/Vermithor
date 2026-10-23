@@ -1,9 +1,10 @@
 # Vermithor Cloud Multi-Model Architecture & Evaluation Report
 
-**Generated At:** 2026-10-23T17:17:32.266600+00:00  
-**Benchmark Version:** 1.0.0  
+**Generated At:** 2026-10-23T18:56:33.829035+00:00  
+**Benchmark Version:** 1.1.0  
 **Reproduction Command:** `py -3.10 evaluation/run_cloud_benchmark.py`  
-**Pipeline Architecture:** Cloud-Only LangGraph Multi-Model Routing (Hugging Face Inference Providers)
+**Pipeline Architecture:** Cloud-Only LangGraph Multi-Model Routing (Hugging Face Inference Providers)  
+**Matching Engine:** `ScenarioCauseMatcher` (Strict Ground-Truth & Negative Controls)
 
 ---
 
@@ -19,7 +20,7 @@ Vermithor implements dedicated task-specific model routing across its LangGraph 
 
 - **Backend Provider:** Hugging Face Inference Providers Router (`https://router.huggingface.co/v1`).
 - **Local Ollama Status:** Completely removed from active runtime configuration and setup runbooks.
-- **Client Latency Timing:** Strict wall-clock request timing (`time.perf_counter()`). No unmeasurable internal reasoning times are claimed.
+- **Client Latency Timing:** Strict wall-clock request timing (`time.perf_counter()`). No unmeasurable internal provider reasoning times are claimed.
 - **Safety Boundaries:** All proposed diagnostic and repair procedures require explicit human approval (`requires_human_approval: true`).
 
 ---
@@ -33,77 +34,91 @@ Vermithor implements dedicated task-specific model routing across its LangGraph 
 
 | Task | Model ID | HTTP Status | Probe Latency | Status & Reason |
 | :--- | :--- | :--- | :--- | :--- |
-| **investigation** | `meta-llama/Llama-3.1-8B-Instruct` | `402` | `435.55 ms` | `BLOCKED`: HTTP 402 Payment Required: You have no remaining credits. Purchase pre-paid credits to continue using Inference Providers. Alternatively, subscribe to PRO to get monthly included credits. |
-| **summary** | `meta-llama/Llama-3.1-8B-Instruct` | `402` | `288.93 ms` | `BLOCKED`: HTTP 402 Payment Required: You have no remaining credits. Purchase pre-paid credits to continue using Inference Providers. Alternatively, subscribe to PRO to get monthly included credits. |
-| **report_review** | `meta-llama/Llama-3.1-8B-Instruct` | `402` | `294.25 ms` | `BLOCKED`: HTTP 402 Payment Required: You have no remaining credits. Purchase pre-paid credits to continue using Inference Providers. Alternatively, subscribe to PRO to get monthly included credits. |
+| **investigation** | `meta-llama/Llama-3.1-8B-Instruct` | `402` | `447.33 ms` | `BLOCKED`: HTTP 402 Payment Required: You have no remaining credits. Purchase pre-paid credits to continue using Inference Providers. Alternatively, subscribe to PRO to get monthly included credits. |
+| **summary** | `meta-llama/Llama-3.1-8B-Instruct` | `402` | `311.57 ms` | `BLOCKED`: HTTP 402 Payment Required: You have no remaining credits. Purchase pre-paid credits to continue using Inference Providers. Alternatively, subscribe to PRO to get monthly included credits. |
+| **report_review** | `meta-llama/Llama-3.1-8B-Instruct` | `402` | `313.6 ms` | `BLOCKED`: HTTP 402 Payment Required: You have no remaining credits. Purchase pre-paid credits to continue using Inference Providers. Alternatively, subscribe to PRO to get monthly included credits. |
 
-> [!IMPORTANT]
-> **Evaluation Rigor Guarantee:**  
-> Per benchmark rigor guidelines, deterministic fallback activations are **NEVER** counted as live cloud model calls. Because the configured Hugging Face Inference Providers account (`apriyanshu13`) returned `HTTP 402 Payment Required: PrepaidCreditsRequired`, live cloud evaluation is formally recorded as **BLOCKED**. No benchmark metrics are fabricated.
+> [!WARNING]
+> **Live Cloud AI Model Evaluation Status: BLOCKED**  
+> Because the configured Hugging Face Inference Providers account returned `HTTP 402 Payment Required: PrepaidCreditsRequired`, live cloud model calls could not be executed.  
+> 
+> **Evaluation Rigor Guarantees:**  
+> 1. **Live Accuracy Metrics:** **`UNAVAILABLE (BLOCKED)`**. Vermithor does NOT claim live AI model accuracy when cloud inference is blocked.  
+> 2. **Actual Model Latency:** **`UNAVAILABLE (BLOCKED)`**. Because 0 live model requests were completed, no model request latency is claimed.  
+> 3. **No Metric Conflation:** Deterministic fallback results are strictly labeled as baseline rules and NEVER reported as live LLM accuracy.
 
 ---
 
 ## 3. Deterministic Baseline Benchmark Results
 
-Tested across a fixed, labeled set of **8 synthetic incident scenarios** (24 repeated trials) including known ground-truth failure families (Database, Deployment, Cache, Memory/OOM, Ingress/Traffic, Auth) and an explicit **ambiguous noise control case** (`ambiguous_noise.yaml`).
+Tested across a fixed, labeled corpus of **8 synthetic incident scenarios** (24 repeated trials) evaluated against ground-truth answer keys using strict domain matching (`ScenarioCauseMatcher`) with negative controls.
 
-### Accuracy & Schema Conformance
+> [!NOTE]
+> **Deterministic Baseline Notice:**  
+> The metrics below measure Vermithor's rule-based candidate generation, scoring, and citation verification fallback engine (`model_name: deterministic-rules (non-LLM)`). These metrics demonstrate that the deterministic baseline achieves 100% telemetry grounding, zero hallucinations, and high diagnostic precision when external AI providers are unavailable.
+
+### Baseline Accuracy & Schema Conformance
 
 | Metric | Measured Baseline | Target Gate | Verification Verdict |
 | :--- | :--- | :--- | :--- |
-| **RCA Top-1 Accuracy** | **100.0%** | ≥ 75.0% | **PASSED** |
-| **RCA Top-3 Accuracy** | **100.0%** | ≥ 85.0% | **PASSED** |
-| **Mean Reciprocal Rank (MRR)** | **1.0000** | ≥ 0.7000 | **PASSED** |
-| **Valid JSON Schema Rate** | **100.0%** | 100.0% | **PASSED** |
-| **Evidence Citation Validity Rate** | **100.0%** | ≥ 95.0% | **PASSED** |
-| **Unsupported-Claim Rate** | **0.0%** | ≤ 5.0% | **PASSED** |
+| **RCA Top-1 Accuracy** | **100.0%** | ≥ 75.0% | **PASSED (BASELINE)** |
+| **RCA Top-3 Accuracy** | **100.0%** | ≥ 85.0% | **PASSED (BASELINE)** |
+| **Mean Reciprocal Rank (MRR)** | **1.0000** | ≥ 0.7000 | **PASSED (BASELINE)** |
+| **Valid JSON Schema Rate** | **100.0%** | 100.0% | **PASSED (BASELINE)** |
+| **Evidence Citation Validity Rate** | **100.0%** | ≥ 95.0% | **PASSED (BASELINE)** |
+| **Unsupported-Claim Rate** | **0.0%** | ≤ 5.0% | **PASSED (BASELINE)** |
 | **Deterministic Fallback Rate** | **100.0%** | 100.0% (Live Blocked) | **VERIFIED (NON-LLM)** |
 
 ---
 
-### Client-Observed Latency Percentiles (End-to-End)
+## 4. Timing Dimension Separation
 
-| Metric | Latency (ms) |
-| :--- | :--- |
-| **Mean Latency** | `942.51 ms` |
-| **p50 Latency** | `834.23 ms` |
-| **p90 Latency** | `1207.39 ms` |
-| **p95 Latency** | `1578.68 ms` |
+Timing metrics are strictly divided into three distinct measurements without fabricating internal reasoning times:
+
+| Timing Dimension | Measured Time | Description |
+| :--- | :--- | :--- |
+| **Provider Health-Check Time** | `1075.77 ms` | Total wall-clock time to probe HF router endpoints. |
+| **Benchmark Pipeline Total Time** | `34.4 ms` | Total execution duration across all 24 scenario trials. |
+| **Deterministic Pipeline Latency (Mean)** | `1.05 ms` | Mean execution time per trial of the deterministic pipeline. |
+| **Deterministic Pipeline Latency (p50)** | `0.91 ms` | Median execution time per trial of the deterministic pipeline. |
+| **Deterministic Pipeline Latency (p90)** | `1.74 ms` | 90th percentile execution time per trial. |
+| **Deterministic Pipeline Latency (p95)** | `1.76 ms` | 95th percentile execution time per trial. |
+| **Actual Model Request Latency** | `UNAVAILABLE (BLOCKED)` | Client-observed HTTP round-trip latency to live LLM. |
 
 ---
 
-## 4. Per-Scenario Trial Breakdown
+## 5. Per-Scenario Trial Breakdown
 
-| Trial | Scenario Name | Target Service | Expected Cause | Top-1 Hit | Top-3 Hit | MRR | Latency | Fallback Mode |
+| Trial | Scenario Name | Target Service | Expected Cause | Top-1 Hit | Top-3 Hit | MRR | Pipeline Latency | Execution Mode |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| #1 | `ambiguous_noise` | `booking-api` | `UNKNOWN` | PASS | PASS | 1.00 | 667.93 ms | `fallback` (deterministic-rules (non-LLM)) |
-| #2 | `ambiguous_noise` | `booking-api` | `UNKNOWN` | PASS | PASS | 1.00 | 987.03 ms | `fallback` (deterministic-rules (non-LLM)) |
-| #3 | `ambiguous_noise` | `booking-api` | `UNKNOWN` | PASS | PASS | 1.00 | 942.57 ms | `fallback` (deterministic-rules (non-LLM)) |
-| #4 | `auth_failure` | `auth-api` | `auth_failure` | PASS | PASS | 1.00 | 1087.43 ms | `fallback` (deterministic-rules (non-LLM)) |
-| #5 | `auth_failure` | `auth-api` | `auth_failure` | PASS | PASS | 1.00 | 1015.29 ms | `fallback` (deterministic-rules (non-LLM)) |
-| #6 | `auth_failure` | `auth-api` | `auth_failure` | PASS | PASS | 1.00 | 936.16 ms | `fallback` (deterministic-rules (non-LLM)) |
-| #7 | `bad_deployment` | `booking-api` | `bad_deployment` | PASS | PASS | 1.00 | 1258.8 ms | `fallback` (deterministic-rules (non-LLM)) |
-| #8 | `bad_deployment` | `booking-api` | `bad_deployment` | PASS | PASS | 1.00 | 841.27 ms | `fallback` (deterministic-rules (non-LLM)) |
-| #9 | `bad_deployment` | `booking-api` | `bad_deployment` | PASS | PASS | 1.00 | 827.19 ms | `fallback` (deterministic-rules (non-LLM)) |
-| #10 | `database_saturation` | `booking-api` | `database_saturation` | PASS | PASS | 1.00 | 843.41 ms | `fallback` (deterministic-rules (non-LLM)) |
-| #11 | `database_saturation` | `booking-api` | `database_saturation` | PASS | PASS | 1.00 | 993.15 ms | `fallback` (deterministic-rules (non-LLM)) |
-| #12 | `database_saturation` | `booking-api` | `database_saturation` | PASS | PASS | 1.00 | 3001.54 ms | `fallback` (deterministic-rules (non-LLM)) |
-| #13 | `memory_exhaustion` | `catalog-api` | `memory_exhaustion` | PASS | PASS | 1.00 | 721.09 ms | `fallback` (deterministic-rules (non-LLM)) |
-| #14 | `memory_exhaustion` | `catalog-api` | `memory_exhaustion` | PASS | PASS | 1.00 | 857.56 ms | `fallback` (deterministic-rules (non-LLM)) |
-| #15 | `memory_exhaustion` | `catalog-api` | `memory_exhaustion` | PASS | PASS | 1.00 | 697.31 ms | `fallback` (deterministic-rules (non-LLM)) |
-| #16 | `payment_pool_exhaustion` | `payment-api` | `database_saturation` | PASS | PASS | 1.00 | 792.41 ms | `fallback` (deterministic-rules (non-LLM)) |
-| #17 | `payment_pool_exhaustion` | `payment-api` | `database_saturation` | PASS | PASS | 1.00 | 660.78 ms | `fallback` (deterministic-rules (non-LLM)) |
-| #18 | `payment_pool_exhaustion` | `payment-api` | `database_saturation` | PASS | PASS | 1.00 | 647.25 ms | `fallback` (deterministic-rules (non-LLM)) |
-| #19 | `redis_failure` | `cache-service` | `redis_failure` | PASS | PASS | 1.00 | 656.56 ms | `fallback` (deterministic-rules (non-LLM)) |
-| #20 | `redis_failure` | `cache-service` | `redis_failure` | PASS | PASS | 1.00 | 647.19 ms | `fallback` (deterministic-rules (non-LLM)) |
-| #21 | `redis_failure` | `cache-service` | `redis_failure` | PASS | PASS | 1.00 | 1635.13 ms | `fallback` (deterministic-rules (non-LLM)) |
-| #22 | `traffic_spike` | `worker-service` | `traffic_spike` | PASS | PASS | 1.00 | 645.78 ms | `fallback` (deterministic-rules (non-LLM)) |
-| #23 | `traffic_spike` | `worker-service` | `traffic_spike` | PASS | PASS | 1.00 | 584.89 ms | `fallback` (deterministic-rules (non-LLM)) |
-| #24 | `traffic_spike` | `worker-service` | `traffic_spike` | PASS | PASS | 1.00 | 672.48 ms | `fallback` (deterministic-rules (non-LLM)) |
+| #1 | `ambiguous_noise` | `booking-api` | `UNKNOWN` | PASS | PASS | 1.00 | 0.81 ms | `fallback` (deterministic-rules (non-LLM)) |
+| #2 | `ambiguous_noise` | `booking-api` | `UNKNOWN` | PASS | PASS | 1.00 | 0.24 ms | `fallback` (deterministic-rules (non-LLM)) |
+| #3 | `ambiguous_noise` | `booking-api` | `UNKNOWN` | PASS | PASS | 1.00 | 0.15 ms | `fallback` (deterministic-rules (non-LLM)) |
+| #4 | `auth_failure` | `auth-api` | `auth_failure` | PASS | PASS | 1.00 | 0.47 ms | `fallback` (deterministic-rules (non-LLM)) |
+| #5 | `auth_failure` | `auth-api` | `auth_failure` | PASS | PASS | 1.00 | 0.4 ms | `fallback` (deterministic-rules (non-LLM)) |
+| #6 | `auth_failure` | `auth-api` | `auth_failure` | PASS | PASS | 1.00 | 0.34 ms | `fallback` (deterministic-rules (non-LLM)) |
+| #7 | `bad_deployment` | `booking-api` | `bad_deployment` | PASS | PASS | 1.00 | 0.94 ms | `fallback` (deterministic-rules (non-LLM)) |
+| #8 | `bad_deployment` | `booking-api` | `bad_deployment` | PASS | PASS | 1.00 | 0.8 ms | `fallback` (deterministic-rules (non-LLM)) |
+| #9 | `bad_deployment` | `booking-api` | `bad_deployment` | PASS | PASS | 1.00 | 0.77 ms | `fallback` (deterministic-rules (non-LLM)) |
+| #10 | `database_saturation` | `booking-api` | `database_saturation` | PASS | PASS | 1.00 | 2.71 ms | `fallback` (deterministic-rules (non-LLM)) |
+| #11 | `database_saturation` | `booking-api` | `database_saturation` | PASS | PASS | 1.00 | 1.72 ms | `fallback` (deterministic-rules (non-LLM)) |
+| #12 | `database_saturation` | `booking-api` | `database_saturation` | PASS | PASS | 1.00 | 1.76 ms | `fallback` (deterministic-rules (non-LLM)) |
+| #13 | `memory_exhaustion` | `catalog-api` | `memory_exhaustion` | PASS | PASS | 1.00 | 1.1 ms | `fallback` (deterministic-rules (non-LLM)) |
+| #14 | `memory_exhaustion` | `catalog-api` | `memory_exhaustion` | PASS | PASS | 1.00 | 0.86 ms | `fallback` (deterministic-rules (non-LLM)) |
+| #15 | `memory_exhaustion` | `catalog-api` | `memory_exhaustion` | PASS | PASS | 1.00 | 0.77 ms | `fallback` (deterministic-rules (non-LLM)) |
+| #16 | `payment_pool_exhaustion` | `payment-api` | `database_saturation` | PASS | PASS | 1.00 | 1.41 ms | `fallback` (deterministic-rules (non-LLM)) |
+| #17 | `payment_pool_exhaustion` | `payment-api` | `database_saturation` | PASS | PASS | 1.00 | 1.75 ms | `fallback` (deterministic-rules (non-LLM)) |
+| #18 | `payment_pool_exhaustion` | `payment-api` | `database_saturation` | PASS | PASS | 1.00 | 1.68 ms | `fallback` (deterministic-rules (non-LLM)) |
+| #19 | `redis_failure` | `cache-service` | `redis_failure` | PASS | PASS | 1.00 | 1.17 ms | `fallback` (deterministic-rules (non-LLM)) |
+| #20 | `redis_failure` | `cache-service` | `redis_failure` | PASS | PASS | 1.00 | 1.35 ms | `fallback` (deterministic-rules (non-LLM)) |
+| #21 | `redis_failure` | `cache-service` | `redis_failure` | PASS | PASS | 1.00 | 1.13 ms | `fallback` (deterministic-rules (non-LLM)) |
+| #22 | `traffic_spike` | `worker-service` | `traffic_spike` | PASS | PASS | 1.00 | 1.16 ms | `fallback` (deterministic-rules (non-LLM)) |
+| #23 | `traffic_spike` | `worker-service` | `traffic_spike` | PASS | PASS | 1.00 | 0.88 ms | `fallback` (deterministic-rules (non-LLM)) |
+| #24 | `traffic_spike` | `worker-service` | `traffic_spike` | PASS | PASS | 1.00 | 0.76 ms | `fallback` (deterministic-rules (non-LLM)) |
 
 ---
 
-## 5. How to Reproduce Benchmark Results
+## 6. How to Reproduce Benchmark Results
 
 Run the standalone benchmark script directly using Python:
 

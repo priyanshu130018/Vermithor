@@ -1,13 +1,14 @@
 {
   "benchmark_metadata": {
-    "version": "1.0.0",
-    "timestamp": "2026-10-23T17:17:32.266600+00:00",
+    "version": "1.1.0",
+    "timestamp": "2026-10-23T18:56:33.829035+00:00",
     "cloud_provider": "huggingface",
     "base_url": "https://router.huggingface.co/v1",
     "reproduce_command": "py -3.10 evaluation/run_cloud_benchmark.py",
     "total_scenarios": 8,
     "trials_per_scenario": 3,
-    "total_trials": 24
+    "total_trials": 24,
+    "matcher": "ScenarioCauseMatcher (Strict Ground-Truth & Negative Controls)"
   },
   "configured_models": {
     "investigation": "meta-llama/Llama-3.1-8B-Instruct",
@@ -24,7 +25,7 @@
         "status": "BLOCKED",
         "http_status": 402,
         "error": "HTTP 402 Payment Required: You have no remaining credits. Purchase pre-paid credits to continue using Inference Providers. Alternatively, subscribe to PRO to get monthly included credits.",
-        "client_latency_ms": 435.55,
+        "client_latency_ms": 447.33,
         "usable": false
       },
       "summary": {
@@ -33,7 +34,7 @@
         "status": "BLOCKED",
         "http_status": 402,
         "error": "HTTP 402 Payment Required: You have no remaining credits. Purchase pre-paid credits to continue using Inference Providers. Alternatively, subscribe to PRO to get monthly included credits.",
-        "client_latency_ms": 288.93,
+        "client_latency_ms": 311.57,
         "usable": false
       },
       "report_review": {
@@ -42,15 +43,23 @@
         "status": "BLOCKED",
         "http_status": 402,
         "error": "HTTP 402 Payment Required: You have no remaining credits. Purchase pre-paid credits to continue using Inference Providers. Alternatively, subscribe to PRO to get monthly included credits.",
-        "client_latency_ms": 294.25,
+        "client_latency_ms": 313.6,
         "usable": false
       }
     },
     "live_success_rate": 0.0,
     "live_trials_run": 0,
-    "note": "Live inference calls are BLOCKED due to HTTP 402 (PrepaidCreditsRequired) on the Hugging Face router. Per benchmark rigor instructions, deterministic fallback runs are strictly marked as non-LLM output and NEVER counted as live model successes."
+    "live_top1_accuracy": null,
+    "live_top3_accuracy": null,
+    "live_mrr": null,
+    "live_valid_json_rate": null,
+    "live_citation_validity_rate": null,
+    "live_unsupported_claim_rate": null,
+    "model_request_latency_ms": null,
+    "note": "Live inference calls are BLOCKED due to HTTP 402 (Payment Required) or unreachable endpoints on Hugging Face router. Per benchmark rigor rules, deterministic fallback runs are strictly marked as non-LLM output and NEVER counted as live model successes. Live model accuracy, citation validity, and model request latencies are NOT CLAIMED and marked UNAVAILABLE."
   },
   "deterministic_baseline_metrics": {
+    "label": "Deterministic Rule-Based Baseline (Non-LLM)",
     "rca_top1_accuracy": 1.0,
     "rca_top3_accuracy": 1.0,
     "mrr": 1.0,
@@ -58,30 +67,40 @@
     "evidence_citation_validity_rate": 1.0,
     "unsupported_claim_rate": 0.0,
     "fallback_rate": 1.0,
-    "e2e_latency_ms": {
-      "mean": 942.51,
-      "p50": 834.23,
-      "p90": 1207.39,
-      "p95": 1578.68
+    "strict_matching_used": true,
+    "pipeline_latency_ms": {
+      "mean": 1.05,
+      "p50": 0.91,
+      "p90": 1.74,
+      "p95": 1.76
     },
-    "per_task_latency_ms": {
+    "per_task_pipeline_latency_ms": {
       "investigation": {
-        "model": "meta-llama/Llama-3.1-8B-Instruct",
-        "count": 24,
         "mean_ms": 0.09,
-        "p50_ms": 0.07,
-        "p90_ms": 0.12,
-        "p95_ms": 0.21
+        "p50_ms": 0.08,
+        "p90_ms": 0.14,
+        "p95_ms": 0.18
       },
       "report_review": {
-        "model": "meta-llama/Llama-3.1-8B-Instruct",
-        "count": 24,
-        "mean_ms": 940.89,
-        "p50_ms": 832.85,
-        "p90_ms": 1206.81,
-        "p95_ms": 1569.63
+        "mean_ms": 0.09,
+        "p50_ms": 0.08,
+        "p90_ms": 0.1,
+        "p95_ms": 0.11
       }
-    }
+    },
+    "note": "These metrics measure the deterministic rule-based baseline engine (CandidateGenerator, Scoring, deterministic evaluation). They represent the fallback guarantee of the system and MUST NOT be conflated with live LLM accuracy."
+  },
+  "timing_breakdown": {
+    "provider_health_check_time_ms": 1075.77,
+    "actual_model_request_time_ms": null,
+    "benchmark_pipeline_total_ms": 34.4,
+    "deterministic_baseline_pipeline_latency_ms": {
+      "mean": 1.05,
+      "p50": 0.91,
+      "p90": 1.74,
+      "p95": 1.76
+    },
+    "timing_methodology": "Client-observed wall-clock request timing measured via time.perf_counter(). Provider health-check probes, pipeline execution time, and model request latencies are strictly separated. No unmeasurable internal provider reasoning time is claimed."
   },
   "per_trial_results": [
     {
@@ -100,10 +119,11 @@
       "is_fallback": true,
       "model_provider": "fallback",
       "model_name": "deterministic-rules (non-LLM)",
-      "e2e_latency_ms": 667.93,
-      "task_latencies_ms": {
-        "investigation": 0.04,
-        "report_review": 667.66
+      "pipeline_latency_ms": 0.81,
+      "task_pipeline_latencies_ms": {
+        "investigation": 0.06,
+        "summary": 0.0,
+        "report_review": 0.39
       },
       "model_call_records": [
         {
@@ -114,7 +134,7 @@
           "request_latency_seconds": 0.0,
           "fallback_status": true,
           "errors": "Deterministic fallback engaged",
-          "timestamp": "2026-10-23T17:17:09.644518+00:00"
+          "timestamp": "2026-10-23T18:56:33.795419+00:00"
         },
         {
           "provider": "fallback",
@@ -123,8 +143,8 @@
           "request_latency_ms": 0.0,
           "request_latency_seconds": 0.0,
           "fallback_status": true,
-          "errors": "Hugging Face Inference Providers requires prepaid credits or PRO subscription (HTTP 402: PrepaidCreditsRequired). Check remaining credits or billing settings at https://huggingface.co/settings/billing. Error: You have no remaining credits. Purchase pre-paid credits to continue using Inference Providers. Alternatively, subscribe to PRO to get monthly included credits.",
-          "timestamp": "2026-10-23T17:17:10.312269+00:00"
+          "errors": "Deterministic verification active (non-LLM)",
+          "timestamp": "2026-10-23T18:56:33.795928+00:00"
         }
       ]
     },
@@ -144,10 +164,11 @@
       "is_fallback": true,
       "model_provider": "fallback",
       "model_name": "deterministic-rules (non-LLM)",
-      "e2e_latency_ms": 987.03,
-      "task_latencies_ms": {
-        "investigation": 0.04,
-        "report_review": 986.89
+      "pipeline_latency_ms": 0.24,
+      "task_pipeline_latencies_ms": {
+        "investigation": 0.05,
+        "summary": 0.0,
+        "report_review": 0.06
       },
       "model_call_records": [
         {
@@ -158,7 +179,7 @@
           "request_latency_seconds": 0.0,
           "fallback_status": true,
           "errors": "Deterministic fallback engaged",
-          "timestamp": "2026-10-23T17:17:10.312269+00:00"
+          "timestamp": "2026-10-23T18:56:33.796947+00:00"
         },
         {
           "provider": "fallback",
@@ -167,8 +188,8 @@
           "request_latency_ms": 0.0,
           "request_latency_seconds": 0.0,
           "fallback_status": true,
-          "errors": "Hugging Face Inference Providers requires prepaid credits or PRO subscription (HTTP 402: PrepaidCreditsRequired). Check remaining credits or billing settings at https://huggingface.co/settings/billing. Error: You have no remaining credits. Purchase pre-paid credits to continue using Inference Providers. Alternatively, subscribe to PRO to get monthly included credits.",
-          "timestamp": "2026-10-23T17:17:11.298862+00:00"
+          "errors": "Deterministic verification active (non-LLM)",
+          "timestamp": "2026-10-23T18:56:33.796947+00:00"
         }
       ]
     },
@@ -188,10 +209,11 @@
       "is_fallback": true,
       "model_provider": "fallback",
       "model_name": "deterministic-rules (non-LLM)",
-      "e2e_latency_ms": 942.57,
-      "task_latencies_ms": {
+      "pipeline_latency_ms": 0.15,
+      "task_pipeline_latencies_ms": {
         "investigation": 0.04,
-        "report_review": 942.44
+        "summary": 0.0,
+        "report_review": 0.04
       },
       "model_call_records": [
         {
@@ -202,7 +224,7 @@
           "request_latency_seconds": 0.0,
           "fallback_status": true,
           "errors": "Deterministic fallback engaged",
-          "timestamp": "2026-10-23T17:17:11.299411+00:00"
+          "timestamp": "2026-10-23T18:56:33.796947+00:00"
         },
         {
           "provider": "fallback",
@@ -211,8 +233,8 @@
           "request_latency_ms": 0.0,
           "request_latency_seconds": 0.0,
           "fallback_status": true,
-          "errors": "Hugging Face Inference Providers requires prepaid credits or PRO subscription (HTTP 402: PrepaidCreditsRequired). Check remaining credits or billing settings at https://huggingface.co/settings/billing. Error: You have no remaining credits. Purchase pre-paid credits to continue using Inference Providers. Alternatively, subscribe to PRO to get monthly included credits.",
-          "timestamp": "2026-10-23T17:17:12.241512+00:00"
+          "errors": "Deterministic verification active (non-LLM)",
+          "timestamp": "2026-10-23T18:56:33.796947+00:00"
         }
       ]
     },
@@ -232,10 +254,11 @@
       "is_fallback": true,
       "model_provider": "fallback",
       "model_name": "deterministic-rules (non-LLM)",
-      "e2e_latency_ms": 1087.43,
-      "task_latencies_ms": {
-        "investigation": 0.04,
-        "report_review": 1087.12
+      "pipeline_latency_ms": 0.47,
+      "task_pipeline_latencies_ms": {
+        "investigation": 0.05,
+        "summary": 0.0,
+        "report_review": 0.07
       },
       "model_call_records": [
         {
@@ -246,7 +269,7 @@
           "request_latency_seconds": 0.0,
           "fallback_status": true,
           "errors": "Deterministic fallback engaged",
-          "timestamp": "2026-10-23T17:17:12.241512+00:00"
+          "timestamp": "2026-10-23T18:56:33.797947+00:00"
         },
         {
           "provider": "fallback",
@@ -255,8 +278,8 @@
           "request_latency_ms": 0.0,
           "request_latency_seconds": 0.0,
           "fallback_status": true,
-          "errors": "Hugging Face Inference Providers requires prepaid credits or PRO subscription (HTTP 402: PrepaidCreditsRequired). Check remaining credits or billing settings at https://huggingface.co/settings/billing. Error: You have no remaining credits. Purchase pre-paid credits to continue using Inference Providers. Alternatively, subscribe to PRO to get monthly included credits.",
-          "timestamp": "2026-10-23T17:17:13.328921+00:00"
+          "errors": "Deterministic verification active (non-LLM)",
+          "timestamp": "2026-10-23T18:56:33.797947+00:00"
         }
       ]
     },
@@ -276,10 +299,11 @@
       "is_fallback": true,
       "model_provider": "fallback",
       "model_name": "deterministic-rules (non-LLM)",
-      "e2e_latency_ms": 1015.29,
-      "task_latencies_ms": {
-        "investigation": 0.09,
-        "report_review": 1014.6
+      "pipeline_latency_ms": 0.4,
+      "task_pipeline_latencies_ms": {
+        "investigation": 0.05,
+        "summary": 0.0,
+        "report_review": 0.06
       },
       "model_call_records": [
         {
@@ -290,7 +314,7 @@
           "request_latency_seconds": 0.0,
           "fallback_status": true,
           "errors": "Deterministic fallback engaged",
-          "timestamp": "2026-10-23T17:17:13.330045+00:00"
+          "timestamp": "2026-10-23T18:56:33.797947+00:00"
         },
         {
           "provider": "fallback",
@@ -299,8 +323,8 @@
           "request_latency_ms": 0.0,
           "request_latency_seconds": 0.0,
           "fallback_status": true,
-          "errors": "Hugging Face Inference Providers requires prepaid credits or PRO subscription (HTTP 402: PrepaidCreditsRequired). Check remaining credits or billing settings at https://huggingface.co/settings/billing. Error: You have no remaining credits. Purchase pre-paid credits to continue using Inference Providers. Alternatively, subscribe to PRO to get monthly included credits.",
-          "timestamp": "2026-10-23T17:17:14.344631+00:00"
+          "errors": "Deterministic verification active (non-LLM)",
+          "timestamp": "2026-10-23T18:56:33.797947+00:00"
         }
       ]
     },
@@ -320,10 +344,11 @@
       "is_fallback": true,
       "model_provider": "fallback",
       "model_name": "deterministic-rules (non-LLM)",
-      "e2e_latency_ms": 936.16,
-      "task_latencies_ms": {
-        "investigation": 0.04,
-        "report_review": 935.79
+      "pipeline_latency_ms": 0.34,
+      "task_pipeline_latencies_ms": {
+        "investigation": 0.05,
+        "summary": 0.0,
+        "report_review": 0.06
       },
       "model_call_records": [
         {
@@ -334,7 +359,7 @@
           "request_latency_seconds": 0.0,
           "fallback_status": true,
           "errors": "Deterministic fallback engaged",
-          "timestamp": "2026-10-23T17:17:14.345197+00:00"
+          "timestamp": "2026-10-23T18:56:33.798946+00:00"
         },
         {
           "provider": "fallback",
@@ -343,8 +368,8 @@
           "request_latency_ms": 0.0,
           "request_latency_seconds": 0.0,
           "fallback_status": true,
-          "errors": "Hugging Face Inference Providers requires prepaid credits or PRO subscription (HTTP 402: PrepaidCreditsRequired). Check remaining credits or billing settings at https://huggingface.co/settings/billing. Error: You have no remaining credits. Purchase pre-paid credits to continue using Inference Providers. Alternatively, subscribe to PRO to get monthly included credits.",
-          "timestamp": "2026-10-23T17:17:15.280937+00:00"
+          "errors": "Deterministic verification active (non-LLM)",
+          "timestamp": "2026-10-23T18:56:33.798946+00:00"
         }
       ]
     },
@@ -364,10 +389,11 @@
       "is_fallback": true,
       "model_provider": "fallback",
       "model_name": "deterministic-rules (non-LLM)",
-      "e2e_latency_ms": 1258.8,
-      "task_latencies_ms": {
-        "investigation": 0.05,
-        "report_review": 1258.1
+      "pipeline_latency_ms": 0.94,
+      "task_pipeline_latencies_ms": {
+        "investigation": 0.07,
+        "summary": 0.0,
+        "report_review": 0.08
       },
       "model_call_records": [
         {
@@ -378,7 +404,7 @@
           "request_latency_seconds": 0.0,
           "fallback_status": true,
           "errors": "Deterministic fallback engaged",
-          "timestamp": "2026-10-23T17:17:15.281495+00:00"
+          "timestamp": "2026-10-23T18:56:33.799943+00:00"
         },
         {
           "provider": "fallback",
@@ -387,8 +413,8 @@
           "request_latency_ms": 0.0,
           "request_latency_seconds": 0.0,
           "fallback_status": true,
-          "errors": "Hugging Face Inference Providers requires prepaid credits or PRO subscription (HTTP 402: PrepaidCreditsRequired). Check remaining credits or billing settings at https://huggingface.co/settings/billing. Error: You have no remaining credits. Purchase pre-paid credits to continue using Inference Providers. Alternatively, subscribe to PRO to get monthly included credits.",
-          "timestamp": "2026-10-23T17:17:16.539542+00:00"
+          "errors": "Deterministic verification active (non-LLM)",
+          "timestamp": "2026-10-23T18:56:33.799943+00:00"
         }
       ]
     },
@@ -408,10 +434,11 @@
       "is_fallback": true,
       "model_provider": "fallback",
       "model_name": "deterministic-rules (non-LLM)",
-      "e2e_latency_ms": 841.27,
-      "task_latencies_ms": {
-        "investigation": 0.07,
-        "report_review": 840.38
+      "pipeline_latency_ms": 0.8,
+      "task_pipeline_latencies_ms": {
+        "investigation": 0.06,
+        "summary": 0.0,
+        "report_review": 0.07
       },
       "model_call_records": [
         {
@@ -422,7 +449,7 @@
           "request_latency_seconds": 0.0,
           "fallback_status": true,
           "errors": "Deterministic fallback engaged",
-          "timestamp": "2026-10-23T17:17:16.540795+00:00"
+          "timestamp": "2026-10-23T18:56:33.801939+00:00"
         },
         {
           "provider": "fallback",
@@ -431,8 +458,8 @@
           "request_latency_ms": 0.0,
           "request_latency_seconds": 0.0,
           "fallback_status": true,
-          "errors": "Hugging Face Inference Providers requires prepaid credits or PRO subscription (HTTP 402: PrepaidCreditsRequired). Check remaining credits or billing settings at https://huggingface.co/settings/billing. Error: You have no remaining credits. Purchase pre-paid credits to continue using Inference Providers. Alternatively, subscribe to PRO to get monthly included credits.",
-          "timestamp": "2026-10-23T17:17:17.381034+00:00"
+          "errors": "Deterministic verification active (non-LLM)",
+          "timestamp": "2026-10-23T18:56:33.801939+00:00"
         }
       ]
     },
@@ -452,10 +479,11 @@
       "is_fallback": true,
       "model_provider": "fallback",
       "model_name": "deterministic-rules (non-LLM)",
-      "e2e_latency_ms": 827.19,
-      "task_latencies_ms": {
-        "investigation": 0.11,
-        "report_review": 826.36
+      "pipeline_latency_ms": 0.77,
+      "task_pipeline_latencies_ms": {
+        "investigation": 0.06,
+        "summary": 0.0,
+        "report_review": 0.06
       },
       "model_call_records": [
         {
@@ -466,7 +494,7 @@
           "request_latency_seconds": 0.0,
           "fallback_status": true,
           "errors": "Deterministic fallback engaged",
-          "timestamp": "2026-10-23T17:17:17.381911+00:00"
+          "timestamp": "2026-10-23T18:56:33.801939+00:00"
         },
         {
           "provider": "fallback",
@@ -475,8 +503,8 @@
           "request_latency_ms": 0.0,
           "request_latency_seconds": 0.0,
           "fallback_status": true,
-          "errors": "Hugging Face Inference Providers requires prepaid credits or PRO subscription (HTTP 402: PrepaidCreditsRequired). Check remaining credits or billing settings at https://huggingface.co/settings/billing. Error: You have no remaining credits. Purchase pre-paid credits to continue using Inference Providers. Alternatively, subscribe to PRO to get monthly included credits.",
-          "timestamp": "2026-10-23T17:17:18.208107+00:00"
+          "errors": "Deterministic verification active (non-LLM)",
+          "timestamp": "2026-10-23T18:56:33.802942+00:00"
         }
       ]
     },
@@ -496,10 +524,11 @@
       "is_fallback": true,
       "model_provider": "fallback",
       "model_name": "deterministic-rules (non-LLM)",
-      "e2e_latency_ms": 843.41,
-      "task_latencies_ms": {
+      "pipeline_latency_ms": 2.71,
+      "task_pipeline_latencies_ms": {
         "investigation": 0.1,
-        "report_review": 839.34
+        "summary": 0.0,
+        "report_review": 0.1
       },
       "model_call_records": [
         {
@@ -510,7 +539,7 @@
           "request_latency_seconds": 0.0,
           "fallback_status": true,
           "errors": "Deterministic fallback engaged",
-          "timestamp": "2026-10-23T17:17:18.212556+00:00"
+          "timestamp": "2026-10-23T18:56:33.804939+00:00"
         },
         {
           "provider": "fallback",
@@ -519,8 +548,8 @@
           "request_latency_ms": 0.0,
           "request_latency_seconds": 0.0,
           "fallback_status": true,
-          "errors": "Hugging Face Inference Providers requires prepaid credits or PRO subscription (HTTP 402: PrepaidCreditsRequired). Check remaining credits or billing settings at https://huggingface.co/settings/billing. Error: You have no remaining credits. Purchase pre-paid credits to continue using Inference Providers. Alternatively, subscribe to PRO to get monthly included credits.",
-          "timestamp": "2026-10-23T17:17:19.051641+00:00"
+          "errors": "Deterministic verification active (non-LLM)",
+          "timestamp": "2026-10-23T18:56:33.804939+00:00"
         }
       ]
     },
@@ -540,10 +569,11 @@
       "is_fallback": true,
       "model_provider": "fallback",
       "model_name": "deterministic-rules (non-LLM)",
-      "e2e_latency_ms": 993.15,
-      "task_latencies_ms": {
-        "investigation": 0.08,
-        "report_review": 991.86
+      "pipeline_latency_ms": 1.72,
+      "task_pipeline_latencies_ms": {
+        "investigation": 0.09,
+        "summary": 0.0,
+        "report_review": 0.1
       },
       "model_call_records": [
         {
@@ -554,7 +584,7 @@
           "request_latency_seconds": 0.0,
           "fallback_status": true,
           "errors": "Deterministic fallback engaged",
-          "timestamp": "2026-10-23T17:17:19.053254+00:00"
+          "timestamp": "2026-10-23T18:56:33.807941+00:00"
         },
         {
           "provider": "fallback",
@@ -563,8 +593,8 @@
           "request_latency_ms": 0.0,
           "request_latency_seconds": 0.0,
           "fallback_status": true,
-          "errors": "Hugging Face Inference Providers requires prepaid credits or PRO subscription (HTTP 402: PrepaidCreditsRequired). Check remaining credits or billing settings at https://huggingface.co/settings/billing. Error: You have no remaining credits. Purchase pre-paid credits to continue using Inference Providers. Alternatively, subscribe to PRO to get monthly included credits.",
-          "timestamp": "2026-10-23T17:17:20.044873+00:00"
+          "errors": "Deterministic verification active (non-LLM)",
+          "timestamp": "2026-10-23T18:56:33.807941+00:00"
         }
       ]
     },
@@ -584,10 +614,11 @@
       "is_fallback": true,
       "model_provider": "fallback",
       "model_name": "deterministic-rules (non-LLM)",
-      "e2e_latency_ms": 3001.54,
-      "task_latencies_ms": {
-        "investigation": 0.1,
-        "report_review": 2999.93
+      "pipeline_latency_ms": 1.76,
+      "task_pipeline_latencies_ms": {
+        "investigation": 0.18,
+        "summary": 0.0,
+        "report_review": 0.11
       },
       "model_call_records": [
         {
@@ -598,7 +629,7 @@
           "request_latency_seconds": 0.0,
           "fallback_status": true,
           "errors": "Deterministic fallback engaged",
-          "timestamp": "2026-10-23T17:17:20.046831+00:00"
+          "timestamp": "2026-10-23T18:56:33.810069+00:00"
         },
         {
           "provider": "fallback",
@@ -607,8 +638,8 @@
           "request_latency_ms": 0.0,
           "request_latency_seconds": 0.0,
           "fallback_status": true,
-          "errors": "Hugging Face Inference Providers requires prepaid credits or PRO subscription (HTTP 402: PrepaidCreditsRequired). Check remaining credits or billing settings at https://huggingface.co/settings/billing. Error: You have no remaining credits. Purchase pre-paid credits to continue using Inference Providers. Alternatively, subscribe to PRO to get monthly included credits.",
-          "timestamp": "2026-10-23T17:17:23.046677+00:00"
+          "errors": "Deterministic verification active (non-LLM)",
+          "timestamp": "2026-10-23T18:56:33.810069+00:00"
         }
       ]
     },
@@ -628,10 +659,11 @@
       "is_fallback": true,
       "model_provider": "fallback",
       "model_name": "deterministic-rules (non-LLM)",
-      "e2e_latency_ms": 721.09,
-      "task_latencies_ms": {
-        "investigation": 0.07,
-        "report_review": 720.19
+      "pipeline_latency_ms": 1.1,
+      "task_pipeline_latencies_ms": {
+        "investigation": 0.08,
+        "summary": 0.0,
+        "report_review": 0.08
       },
       "model_call_records": [
         {
@@ -642,7 +674,7 @@
           "request_latency_seconds": 0.0,
           "fallback_status": true,
           "errors": "Deterministic fallback engaged",
-          "timestamp": "2026-10-23T17:17:23.047770+00:00"
+          "timestamp": "2026-10-23T18:56:33.811042+00:00"
         },
         {
           "provider": "fallback",
@@ -651,8 +683,8 @@
           "request_latency_ms": 0.0,
           "request_latency_seconds": 0.0,
           "fallback_status": true,
-          "errors": "Hugging Face Inference Providers requires prepaid credits or PRO subscription (HTTP 402: PrepaidCreditsRequired). Check remaining credits or billing settings at https://huggingface.co/settings/billing. Error: You have no remaining credits. Purchase pre-paid credits to continue using Inference Providers. Alternatively, subscribe to PRO to get monthly included credits.",
-          "timestamp": "2026-10-23T17:17:23.767791+00:00"
+          "errors": "Deterministic verification active (non-LLM)",
+          "timestamp": "2026-10-23T18:56:33.811695+00:00"
         }
       ]
     },
@@ -672,10 +704,11 @@
       "is_fallback": true,
       "model_provider": "fallback",
       "model_name": "deterministic-rules (non-LLM)",
-      "e2e_latency_ms": 857.56,
-      "task_latencies_ms": {
-        "investigation": 0.09,
-        "report_review": 856.6
+      "pipeline_latency_ms": 0.86,
+      "task_pipeline_latencies_ms": {
+        "investigation": 0.07,
+        "summary": 0.0,
+        "report_review": 0.06
       },
       "model_call_records": [
         {
@@ -686,7 +719,7 @@
           "request_latency_seconds": 0.0,
           "fallback_status": true,
           "errors": "Deterministic fallback engaged",
-          "timestamp": "2026-10-23T17:17:23.768950+00:00"
+          "timestamp": "2026-10-23T18:56:33.813020+00:00"
         },
         {
           "provider": "fallback",
@@ -695,8 +728,8 @@
           "request_latency_ms": 0.0,
           "request_latency_seconds": 0.0,
           "fallback_status": true,
-          "errors": "Hugging Face Inference Providers requires prepaid credits or PRO subscription (HTTP 402: PrepaidCreditsRequired). Check remaining credits or billing settings at https://huggingface.co/settings/billing. Error: You have no remaining credits. Purchase pre-paid credits to continue using Inference Providers. Alternatively, subscribe to PRO to get monthly included credits.",
-          "timestamp": "2026-10-23T17:17:24.624869+00:00"
+          "errors": "Deterministic verification active (non-LLM)",
+          "timestamp": "2026-10-23T18:56:33.813020+00:00"
         }
       ]
     },
@@ -716,10 +749,11 @@
       "is_fallback": true,
       "model_provider": "fallback",
       "model_name": "deterministic-rules (non-LLM)",
-      "e2e_latency_ms": 697.31,
-      "task_latencies_ms": {
-        "investigation": 0.06,
-        "report_review": 696.56
+      "pipeline_latency_ms": 0.77,
+      "task_pipeline_latencies_ms": {
+        "investigation": 0.07,
+        "summary": 0.0,
+        "report_review": 0.06
       },
       "model_call_records": [
         {
@@ -730,7 +764,7 @@
           "request_latency_seconds": 0.0,
           "fallback_status": true,
           "errors": "Deterministic fallback engaged",
-          "timestamp": "2026-10-23T17:17:24.626337+00:00"
+          "timestamp": "2026-10-23T18:56:33.813020+00:00"
         },
         {
           "provider": "fallback",
@@ -739,8 +773,8 @@
           "request_latency_ms": 0.0,
           "request_latency_seconds": 0.0,
           "fallback_status": true,
-          "errors": "Hugging Face Inference Providers requires prepaid credits or PRO subscription (HTTP 402: PrepaidCreditsRequired). Check remaining credits or billing settings at https://huggingface.co/settings/billing. Error: You have no remaining credits. Purchase pre-paid credits to continue using Inference Providers. Alternatively, subscribe to PRO to get monthly included credits.",
-          "timestamp": "2026-10-23T17:17:25.322467+00:00"
+          "errors": "Deterministic verification active (non-LLM)",
+          "timestamp": "2026-10-23T18:56:33.814134+00:00"
         }
       ]
     },
@@ -760,10 +794,11 @@
       "is_fallback": true,
       "model_provider": "fallback",
       "model_name": "deterministic-rules (non-LLM)",
-      "e2e_latency_ms": 792.41,
-      "task_latencies_ms": {
-        "investigation": 0.23,
-        "report_review": 788.22
+      "pipeline_latency_ms": 1.41,
+      "task_pipeline_latencies_ms": {
+        "investigation": 0.09,
+        "summary": 0.0,
+        "report_review": 0.1
       },
       "model_call_records": [
         {
@@ -774,7 +809,7 @@
           "request_latency_seconds": 0.0,
           "fallback_status": true,
           "errors": "Deterministic fallback engaged",
-          "timestamp": "2026-10-23T17:17:25.327364+00:00"
+          "timestamp": "2026-10-23T18:56:33.815133+00:00"
         },
         {
           "provider": "fallback",
@@ -783,8 +818,8 @@
           "request_latency_ms": 0.0,
           "request_latency_seconds": 0.0,
           "fallback_status": true,
-          "errors": "Hugging Face Inference Providers requires prepaid credits or PRO subscription (HTTP 402: PrepaidCreditsRequired). Check remaining credits or billing settings at https://huggingface.co/settings/billing. Error: You have no remaining credits. Purchase pre-paid credits to continue using Inference Providers. Alternatively, subscribe to PRO to get monthly included credits.",
-          "timestamp": "2026-10-23T17:17:26.115337+00:00"
+          "errors": "Deterministic verification active (non-LLM)",
+          "timestamp": "2026-10-23T18:56:33.815133+00:00"
         }
       ]
     },
@@ -804,10 +839,11 @@
       "is_fallback": true,
       "model_provider": "fallback",
       "model_name": "deterministic-rules (non-LLM)",
-      "e2e_latency_ms": 660.78,
-      "task_latencies_ms": {
-        "investigation": 0.24,
-        "report_review": 656.82
+      "pipeline_latency_ms": 1.75,
+      "task_pipeline_latencies_ms": {
+        "investigation": 0.11,
+        "summary": 0.0,
+        "report_review": 0.1
       },
       "model_call_records": [
         {
@@ -818,7 +854,7 @@
           "request_latency_seconds": 0.0,
           "fallback_status": true,
           "errors": "Deterministic fallback engaged",
-          "timestamp": "2026-10-23T17:17:26.119557+00:00"
+          "timestamp": "2026-10-23T18:56:33.818131+00:00"
         },
         {
           "provider": "fallback",
@@ -827,8 +863,8 @@
           "request_latency_ms": 0.0,
           "request_latency_seconds": 0.0,
           "fallback_status": true,
-          "errors": "Hugging Face Inference Providers requires prepaid credits or PRO subscription (HTTP 402: PrepaidCreditsRequired). Check remaining credits or billing settings at https://huggingface.co/settings/billing. Error: You have no remaining credits. Purchase pre-paid credits to continue using Inference Providers. Alternatively, subscribe to PRO to get monthly included credits.",
-          "timestamp": "2026-10-23T17:17:26.776618+00:00"
+          "errors": "Deterministic verification active (non-LLM)",
+          "timestamp": "2026-10-23T18:56:33.818131+00:00"
         }
       ]
     },
@@ -848,10 +884,11 @@
       "is_fallback": true,
       "model_provider": "fallback",
       "model_name": "deterministic-rules (non-LLM)",
-      "e2e_latency_ms": 647.25,
-      "task_latencies_ms": {
-        "investigation": 0.08,
-        "report_review": 646.1
+      "pipeline_latency_ms": 1.68,
+      "task_pipeline_latencies_ms": {
+        "investigation": 0.16,
+        "summary": 0.0,
+        "report_review": 0.1
       },
       "model_call_records": [
         {
@@ -862,7 +899,7 @@
           "request_latency_seconds": 0.0,
           "fallback_status": true,
           "errors": "Deterministic fallback engaged",
-          "timestamp": "2026-10-23T17:17:26.777298+00:00"
+          "timestamp": "2026-10-23T18:56:33.820044+00:00"
         },
         {
           "provider": "fallback",
@@ -871,8 +908,8 @@
           "request_latency_ms": 0.0,
           "request_latency_seconds": 0.0,
           "fallback_status": true,
-          "errors": "Hugging Face Inference Providers requires prepaid credits or PRO subscription (HTTP 402: PrepaidCreditsRequired). Check remaining credits or billing settings at https://huggingface.co/settings/billing. Error: You have no remaining credits. Purchase pre-paid credits to continue using Inference Providers. Alternatively, subscribe to PRO to get monthly included credits.",
-          "timestamp": "2026-10-23T17:17:27.423632+00:00"
+          "errors": "Deterministic verification active (non-LLM)",
+          "timestamp": "2026-10-23T18:56:33.820044+00:00"
         }
       ]
     },
@@ -892,10 +929,11 @@
       "is_fallback": true,
       "model_provider": "fallback",
       "model_name": "deterministic-rules (non-LLM)",
-      "e2e_latency_ms": 656.56,
-      "task_latencies_ms": {
-        "investigation": 0.06,
-        "report_review": 655.64
+      "pipeline_latency_ms": 1.17,
+      "task_pipeline_latencies_ms": {
+        "investigation": 0.09,
+        "summary": 0.0,
+        "report_review": 0.08
       },
       "model_call_records": [
         {
@@ -906,7 +944,7 @@
           "request_latency_seconds": 0.0,
           "fallback_status": true,
           "errors": "Deterministic fallback engaged",
-          "timestamp": "2026-10-23T17:17:27.424877+00:00"
+          "timestamp": "2026-10-23T18:56:33.821043+00:00"
         },
         {
           "provider": "fallback",
@@ -915,8 +953,8 @@
           "request_latency_ms": 0.0,
           "request_latency_seconds": 0.0,
           "fallback_status": true,
-          "errors": "Hugging Face Inference Providers requires prepaid credits or PRO subscription (HTTP 402: PrepaidCreditsRequired). Check remaining credits or billing settings at https://huggingface.co/settings/billing. Error: You have no remaining credits. Purchase pre-paid credits to continue using Inference Providers. Alternatively, subscribe to PRO to get monthly included credits.",
-          "timestamp": "2026-10-23T17:17:28.079811+00:00"
+          "errors": "Deterministic verification active (non-LLM)",
+          "timestamp": "2026-10-23T18:56:33.821043+00:00"
         }
       ]
     },
@@ -936,10 +974,11 @@
       "is_fallback": true,
       "model_provider": "fallback",
       "model_name": "deterministic-rules (non-LLM)",
-      "e2e_latency_ms": 647.19,
-      "task_latencies_ms": {
-        "investigation": 0.06,
-        "report_review": 646.16
+      "pipeline_latency_ms": 1.35,
+      "task_pipeline_latencies_ms": {
+        "investigation": 0.09,
+        "summary": 0.0,
+        "report_review": 0.08
       },
       "model_call_records": [
         {
@@ -950,7 +989,7 @@
           "request_latency_seconds": 0.0,
           "fallback_status": true,
           "errors": "Deterministic fallback engaged",
-          "timestamp": "2026-10-23T17:17:28.081047+00:00"
+          "timestamp": "2026-10-23T18:56:33.823031+00:00"
         },
         {
           "provider": "fallback",
@@ -959,8 +998,8 @@
           "request_latency_ms": 0.0,
           "request_latency_seconds": 0.0,
           "fallback_status": true,
-          "errors": "Hugging Face Inference Providers requires prepaid credits or PRO subscription (HTTP 402: PrepaidCreditsRequired). Check remaining credits or billing settings at https://huggingface.co/settings/billing. Error: You have no remaining credits. Purchase pre-paid credits to continue using Inference Providers. Alternatively, subscribe to PRO to get monthly included credits.",
-          "timestamp": "2026-10-23T17:17:28.726969+00:00"
+          "errors": "Deterministic verification active (non-LLM)",
+          "timestamp": "2026-10-23T18:56:33.823031+00:00"
         }
       ]
     },
@@ -980,10 +1019,11 @@
       "is_fallback": true,
       "model_provider": "fallback",
       "model_name": "deterministic-rules (non-LLM)",
-      "e2e_latency_ms": 1635.13,
-      "task_latencies_ms": {
-        "investigation": 0.07,
-        "report_review": 1624.61
+      "pipeline_latency_ms": 1.13,
+      "task_pipeline_latencies_ms": {
+        "investigation": 0.09,
+        "summary": 0.0,
+        "report_review": 0.1
       },
       "model_call_records": [
         {
@@ -994,7 +1034,7 @@
           "request_latency_seconds": 0.0,
           "fallback_status": true,
           "errors": "Deterministic fallback engaged",
-          "timestamp": "2026-10-23T17:17:28.737655+00:00"
+          "timestamp": "2026-10-23T18:56:33.824035+00:00"
         },
         {
           "provider": "fallback",
@@ -1003,8 +1043,8 @@
           "request_latency_ms": 0.0,
           "request_latency_seconds": 0.0,
           "fallback_status": true,
-          "errors": "Hugging Face Inference Providers requires prepaid credits or PRO subscription (HTTP 402: PrepaidCreditsRequired). Check remaining credits or billing settings at https://huggingface.co/settings/billing. Error: You have no remaining credits. Purchase pre-paid credits to continue using Inference Providers. Alternatively, subscribe to PRO to get monthly included credits.",
-          "timestamp": "2026-10-23T17:17:30.362628+00:00"
+          "errors": "Deterministic verification active (non-LLM)",
+          "timestamp": "2026-10-23T18:56:33.824035+00:00"
         }
       ]
     },
@@ -1024,10 +1064,11 @@
       "is_fallback": true,
       "model_provider": "fallback",
       "model_name": "deterministic-rules (non-LLM)",
-      "e2e_latency_ms": 645.78,
-      "task_latencies_ms": {
-        "investigation": 0.13,
-        "report_review": 644.32
+      "pipeline_latency_ms": 1.16,
+      "task_pipeline_latencies_ms": {
+        "investigation": 0.2,
+        "summary": 0.0,
+        "report_review": 0.1
       },
       "model_call_records": [
         {
@@ -1038,7 +1079,7 @@
           "request_latency_seconds": 0.0,
           "fallback_status": true,
           "errors": "Deterministic fallback engaged",
-          "timestamp": "2026-10-23T17:17:30.364090+00:00"
+          "timestamp": "2026-10-23T18:56:33.826072+00:00"
         },
         {
           "provider": "fallback",
@@ -1047,8 +1088,8 @@
           "request_latency_ms": 0.0,
           "request_latency_seconds": 0.0,
           "fallback_status": true,
-          "errors": "Hugging Face Inference Providers requires prepaid credits or PRO subscription (HTTP 402: PrepaidCreditsRequired). Check remaining credits or billing settings at https://huggingface.co/settings/billing. Error: You have no remaining credits. Purchase pre-paid credits to continue using Inference Providers. Alternatively, subscribe to PRO to get monthly included credits.",
-          "timestamp": "2026-10-23T17:17:31.008931+00:00"
+          "errors": "Deterministic verification active (non-LLM)",
+          "timestamp": "2026-10-23T18:56:33.826072+00:00"
         }
       ]
     },
@@ -1068,10 +1109,11 @@
       "is_fallback": true,
       "model_provider": "fallback",
       "model_name": "deterministic-rules (non-LLM)",
-      "e2e_latency_ms": 584.89,
-      "task_latencies_ms": {
+      "pipeline_latency_ms": 0.88,
+      "task_pipeline_latencies_ms": {
         "investigation": 0.08,
-        "report_review": 584.01
+        "summary": 0.0,
+        "report_review": 0.07
       },
       "model_call_records": [
         {
@@ -1082,7 +1124,7 @@
           "request_latency_seconds": 0.0,
           "fallback_status": true,
           "errors": "Deterministic fallback engaged",
-          "timestamp": "2026-10-23T17:17:31.009578+00:00"
+          "timestamp": "2026-10-23T18:56:33.828044+00:00"
         },
         {
           "provider": "fallback",
@@ -1091,8 +1133,8 @@
           "request_latency_ms": 0.0,
           "request_latency_seconds": 0.0,
           "fallback_status": true,
-          "errors": "Hugging Face Inference Providers requires prepaid credits or PRO subscription (HTTP 402: PrepaidCreditsRequired). Check remaining credits or billing settings at https://huggingface.co/settings/billing. Error: You have no remaining credits. Purchase pre-paid credits to continue using Inference Providers. Alternatively, subscribe to PRO to get monthly included credits.",
-          "timestamp": "2026-10-23T17:17:31.593565+00:00"
+          "errors": "Deterministic verification active (non-LLM)",
+          "timestamp": "2026-10-23T18:56:33.828044+00:00"
         }
       ]
     },
@@ -1112,10 +1154,11 @@
       "is_fallback": true,
       "model_provider": "fallback",
       "model_name": "deterministic-rules (non-LLM)",
-      "e2e_latency_ms": 672.48,
-      "task_latencies_ms": {
+      "pipeline_latency_ms": 0.76,
+      "task_pipeline_latencies_ms": {
         "investigation": 0.07,
-        "report_review": 671.7
+        "summary": 0.0,
+        "report_review": 0.06
       },
       "model_call_records": [
         {
@@ -1126,7 +1169,7 @@
           "request_latency_seconds": 0.0,
           "fallback_status": true,
           "errors": "Deterministic fallback engaged",
-          "timestamp": "2026-10-23T17:17:31.594180+00:00"
+          "timestamp": "2026-10-23T18:56:33.829035+00:00"
         },
         {
           "provider": "fallback",
@@ -1135,8 +1178,8 @@
           "request_latency_ms": 0.0,
           "request_latency_seconds": 0.0,
           "fallback_status": true,
-          "errors": "Hugging Face Inference Providers requires prepaid credits or PRO subscription (HTTP 402: PrepaidCreditsRequired). Check remaining credits or billing settings at https://huggingface.co/settings/billing. Error: You have no remaining credits. Purchase pre-paid credits to continue using Inference Providers. Alternatively, subscribe to PRO to get monthly included credits.",
-          "timestamp": "2026-10-23T17:17:32.265872+00:00"
+          "errors": "Deterministic verification active (non-LLM)",
+          "timestamp": "2026-10-23T18:56:33.829035+00:00"
         }
       ]
     }

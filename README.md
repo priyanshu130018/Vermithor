@@ -171,30 +171,45 @@ Every model call records rich operational metadata directly into `model_call_rec
 
 ## 6. Empirical Cloud Evaluation Benchmark & Measured Results
 
-Vermithor includes a reproducible quantitative evaluation suite (`evaluation/run_cloud_benchmark.py`) executed across a fixed, labeled corpus of **8 synthetic incident scenarios** (24 repeated trials, 3 per scenario). The benchmark exercises every major failure family and includes an explicit **ambiguous noise negative control** (`ambiguous_noise.yaml`).
+Vermithor includes a reproducible quantitative evaluation suite (`evaluation/run_cloud_benchmark.py`) executed across a fixed, labeled corpus of **8 synthetic incident scenarios** (24 repeated trials, 3 per scenario). Evaluation uses strict domain ground-truth matching (`ScenarioCauseMatcher`) with explicit negative controls and cross-domain collision prevention.
 
 ### Live Cloud Evaluation Status: BLOCKED
 > [!WARNING]
-> **Live Evaluation Audit Finding**:  
-> Live cloud model generation is formally recorded as **`BLOCKED`** because the configured Hugging Face Inference Providers account (`apriyanshu13`) returned `HTTP 402 Payment Required: You have no remaining credits. Purchase pre-paid credits to continue using Inference Providers. Alternatively, subscribe to PRO to get monthly included credits.`
+> **Live Evaluation Audit Finding: BLOCKED (HTTP 402 Payment Required)**  
+> Live cloud model generation is formally recorded as **`BLOCKED`** because the configured Hugging Face Inference Providers account returned `HTTP 402 Payment Required: You have no remaining credits. Purchase pre-paid credits to continue using Inference Providers. Alternatively, subscribe to PRO to get monthly included credits.`
 > 
-> **Evaluation Rigor Guarantee**: Per benchmark rules, fallback executions are **NEVER** counted as live model calls. No benchmark numbers are fabricated or tuned against held-out evaluation sets.
+> **Evaluation Rigor Guarantees:**  
+> 1. **Live Model Accuracy:** **`UNAVAILABLE (BLOCKED)`**. Because live inference calls are blocked, no live AI model accuracy metrics are claimed.  
+> 2. **Actual Model Request Latency:** **`UNAVAILABLE (BLOCKED)`**. With 0 live model requests executed, actual model request latency is left unavailable.  
+> 3. **Deterministic Baseline Separation:** Fallback executions are strictly reported under the deterministic rule-based baseline and NEVER represented as live LLM accuracy.
 
 ### Measured Deterministic Baseline Performance (24 Trials)
 
+Tested across all 8 fixed scenarios with strict cause matching (`ScenarioCauseMatcher`):
+
 | Metric | Measured Baseline Result | Gate Target | Status |
 | :--- | :--- | :--- | :--- |
-| **RCA Top-1 Accuracy** | **100.0%** (24/24) | >= 75.0% | **PASSED** |
-| **RCA Top-3 Accuracy** | **100.0%** (24/24) | >= 85.0% | **PASSED** |
-| **Mean Reciprocal Rank (MRR)** | **1.0000** | >= 0.7000 | **PASSED** |
-| **Valid JSON Schema Rate** | **100.0%** (24/24) | 100.0% | **PASSED** |
-| **Evidence Citation Validity Rate** | **100.0%** (38/38 per report) | >= 95.0% | **PASSED** |
-| **Unsupported-Claim Rate** | **0.0%** | <= 5.0% | **PASSED** |
+| **RCA Top-1 Accuracy** | **100.0%** (24/24) | >= 75.0% | **PASSED (BASELINE)** |
+| **RCA Top-3 Accuracy** | **100.0%** (24/24) | >= 85.0% | **PASSED (BASELINE)** |
+| **Mean Reciprocal Rank (MRR)** | **1.0000** | >= 0.7000 | **PASSED (BASELINE)** |
+| **Valid JSON Schema Rate** | **100.0%** (24/24) | 100.0% | **PASSED (BASELINE)** |
+| **Evidence Citation Validity Rate** | **100.0%** | >= 95.0% | **PASSED (BASELINE)** |
+| **Unsupported-Claim Rate** | **0.0%** | <= 5.0% | **PASSED (BASELINE)** |
 | **Deterministic Fallback Rate** | **100.0%** | 100.0% (Live Blocked) | **VERIFIED (NON-LLM)** |
-| **Mean E2E Latency** | **396.11 ms** | < 1000 ms | **PASSED** |
-| **Latency p50** | **398.60 ms** | < 800 ms | **PASSED** |
-| **Latency p90** | **444.24 ms** | < 1000 ms | **PASSED** |
-| **Latency p95** | **512.07 ms** | < 1200 ms | **PASSED** |
+
+### Strict Timing Dimension Separation
+
+Timing metrics are strictly divided into three independent measurements via `time.perf_counter()` without fabricating internal server reasoning time:
+
+| Timing Dimension | Measured Wall-Clock Time | Description |
+| :--- | :--- | :--- |
+| **Provider Health-Check Time** | **1075.77 ms** | Total wall-clock time spent auditing HF router chat completion endpoints. |
+| **Benchmark Pipeline Total Time** | **34.40 ms** | Total wall-clock time to execute all 24 scenario baseline trials. |
+| **Deterministic Pipeline Latency (Mean)** | **1.05 ms** | Mean per-trial execution time of the deterministic pipeline. |
+| **Deterministic Pipeline Latency (p50)** | **0.91 ms** | Median per-trial execution time of the deterministic pipeline. |
+| **Deterministic Pipeline Latency (p90)** | **1.74 ms** | 90th percentile per-trial execution time. |
+| **Deterministic Pipeline Latency (p95)** | **1.76 ms** | 95th percentile per-trial execution time. |
+| **Actual Model Request Latency** | **UNAVAILABLE (BLOCKED)** | 0 live model requests executed (HTTP 402). |
 
 ### Benchmark Reproduction Command
 To reproduce the 24-trial benchmark and generate the audit reports:

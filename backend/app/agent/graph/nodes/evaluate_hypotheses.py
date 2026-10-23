@@ -18,6 +18,8 @@ logger = logging.getLogger(__name__)
 
 def _extract_json_from_llm(raw_text: str) -> Optional[Dict[str, Any]]:
     """Robustly parse JSON object from LLM response string."""
+    if not raw_text or not isinstance(raw_text, str):
+        return None
     cleaned = raw_text.strip()
     if cleaned.startswith("```"):
         lines = cleaned.splitlines()
