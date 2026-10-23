@@ -1,0 +1,22 @@
+incident_key: INC-HOLDOUT-113
+service: invoice-generator
+lookback_minutes: 60
+environment: production
+severity: LOW
+metrics:
+- metric_name: cpu_utilization_ratio
+  service: invoice-generator
+  value: 0.15
+  timestamp: '2026-10-06T10:00:00Z'
+- metric_name: http_error_rate_ratio
+  service: invoice-generator
+  value: 0.001
+  timestamp: '2026-10-06T10:00:00Z'
+logs:
+- service: invoice-generator
+  level: INFO
+  message: Routine hourly batch invoice generator completed successfully with 0 errors
+  timestamp: '2026-10-20T14:50:00Z'
+deployments: []
+dependencies:
+- postgres-invoice

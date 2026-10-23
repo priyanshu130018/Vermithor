@@ -1,0 +1,35 @@
+id: PILOT-CASE-09
+scenario_name: subscription_billing_postgres_row_deadlocks
+target_service: subscription-billing
+environment: production
+severity: CRITICAL
+agent_input:
+  incident_key: INC-PILOT-209
+  service: subscription-billing
+  lookback_minutes: 30
+  metrics:
+  - metric_name: postgres_deadlocks_count
+    service: subscription-billing
+    value: 24.0
+    timestamp: '2026-10-20T11:10:00Z'
+  - metric_name: db_query_latency_ms
+    service: subscription-billing
+    value: 4800.0
+    timestamp: '2026-10-20T11:10:00Z'
+  - metric_name: transaction_rollback_rate
+    service: subscription-billing
+    value: 0.42
+    timestamp: '2026-10-20T11:15:00Z'
+  logs:
+  - service: subscription-billing
+    level: WARN
+    message: 'PostgresBackend: Lock contention on relation subscriptions_idx'
+    timestamp: '2026-10-20T11:11:00Z'
+  - service: subscription-billing
+    level: ERROR
+    message: 'DeadlockDetected: Process 48192 waits for ExclusiveLock on tuple (142,
+      18); blocked by process 48195'
+    timestamp: '2026-10-20T11:12:00Z'
+  deployments: []
+  dependencies:
+  - postgres-billing

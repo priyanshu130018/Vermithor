@@ -24,6 +24,10 @@ from backend.app.retrieval.api.runbooks import router as runbooks_router
 from backend.app.summary.api.summaries import router as summaries_router
 from backend.app.agent.api.investigations import router as agent_router
 from backend.app.agent.api.repairs import router as repairs_router
+from backend.app.agent.api.repositories import router as repositories_router
+from backend.app.agent.api.shadow import router as shadow_router
+from backend.app.agent.api.pilot import router as pilot_router
+
 
 # Import all models to ensure complete metadata registration
 import backend.app.ingestion.db.models
@@ -199,3 +203,7 @@ app.include_router(summaries_router, prefix="/api/v1", dependencies=jwt_dependen
 app.include_router(observability_router, prefix="/api/v1", dependencies=jwt_dependency)
 app.include_router(agent_router, prefix="/api/v1", dependencies=jwt_dependency)
 app.include_router(repairs_router, prefix="/api/v1", dependencies=jwt_dependency)
+app.include_router(repositories_router, prefix="/api/v1", dependencies=jwt_dependency)
+app.include_router(shadow_router, prefix="/api/v1", dependencies=jwt_dependency)
+app.include_router(pilot_router, prefix="/api/v1", dependencies=jwt_dependency)
+

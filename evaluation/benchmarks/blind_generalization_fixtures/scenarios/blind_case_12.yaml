@@ -1,0 +1,31 @@
+id: BLIND-CASE-12
+scenario_name: Linux CFS Quota Throttling Causing Thread Starvation
+root_cause_family: CPU_SATURATION_AND_THREAD_STARVATION
+target_service: pdf-generator
+severity: HIGH
+environment: production
+is_negative_control: false
+agent_input:
+  incident_key: INC-BLIND-512
+  service: pdf-generator
+  lookback_minutes: 15
+  metrics:
+  - metric_name: container_cpu_cfs_throttled_seconds_total
+    value: 160.0
+    service: pdf-generator
+    timestamp: '2026-10-21T02:25:00Z'
+  - metric_name: cpu_utilization_ratio
+    value: 0.99
+    service: pdf-generator
+    timestamp: '2026-10-21T02:25:10Z'
+  logs:
+  - level: WARN
+    message: 'CFS cpu quota exceeded: container throttled for 160000ms'
+    service: pdf-generator
+    timestamp: '2026-10-21T02:25:30Z'
+  - level: ERROR
+    message: 'ThreadPoolTaskExecutor: Maximum pool size reached; thread starvation
+      on worker threads'
+    service: pdf-generator
+    timestamp: '2026-10-21T02:26:00Z'
+  deployments: []

@@ -1,6 +1,6 @@
 import logging
 import time
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, List
 import jwt
 from fastapi import Depends, HTTPException, Request, Security, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
@@ -124,3 +124,90 @@ def get_current_user(
 ) -> str:
     """Return subject identifier (user ID) from validated JWT payload."""
     return str(token_payload["sub"])
+
+
+import re
+
+DEFAULT_ALLOWED_ORGS = [
+    "vermithor",
+    "internal",
+    "local",
+    "default",
+    "org_default",
+    "org_alpha",
+    "org_beta",
+    "tenant_alpha",
+    "tenant_beta",
+    "tenant-alpha",
+    "tenant-beta",
+    "tenant_a",
+    "tenant_b",
+    "tenant_c",
+    "tenant_fb",
+    "tenant_kill",
+    "tenant_attacker",
+    "tenant_victim",
+]
+
+
+def get_effective_allowed_orgs(settings: Optional[Any] = None) -> List[str]:
+    """Return the active authorized organization allowlist based on configuration and environment."""
+    if settings is None:
+        try:
+            from backend.app.common.config import get_settings
+            settings = get_settings()
+        except Exception:
+            settings = None
+
+    if settings is not None:
+        configured_orgs = getattr(settings, "ALLOWED_ORGS", None)
+        if configured_orgs is not None:
+            if isinstance(configured_orgs, str):
+                return [o.strip().lower() for o in configured_orgs.split(",") if o.strip()]
+            return [str(o).strip().lower() for o in configured_orgs if str(o).strip()]
+
+        app_env = getattr(settings, "APP_ENV", "development").lower()
+        if app_env == "production":
+            # In production, default fail-closed strictly to internal/vermithor; test orgs MUST be forbidden
+            return ["vermithor", "internal"]
+
+    # In development/test environments, allow test harness fixture organizations
+    return [o.lower() for o in DEFAULT_ALLOWED_ORGS]
+
+
+def is_org_authorized(org_id: Optional[str], allowed_orgs: Optional[list] = None) -> bool:
+    """Check if an organization identifier is authorized without raising HTTPException."""
+    if not org_id or not str(org_id).strip():
+        return False
+    clean_org = str(org_id).strip().lower()
+    if not re.match(r"^[a-z0-9_-]+$", clean_org):
+        return False
+    check_orgs = [o.lower() for o in (allowed_orgs if allowed_orgs is not None else get_effective_allowed_orgs())]
+    return clean_org in check_orgs
+
+
+def verify_org_access(
+    auth_payload: Dict[str, Any],
+    allowed_orgs: Optional[list] = None,
+) -> str:
+    """Validate that the authenticated token's organization claim is authorized."""
+    raw_org = auth_payload.get("org_id") or auth_payload.get("organization") or auth_payload.get("org")
+    if raw_org is None or not str(raw_org).strip():
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Missing required organization claim in authentication token",
+        )
+    org_id = str(raw_org).strip().lower()
+    if not re.match(r"^[a-z0-9_-]+$", org_id):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"Malformed organization identifier '{org_id}'",
+        )
+    check_orgs = [o.lower() for o in (allowed_orgs if allowed_orgs is not None else get_effective_allowed_orgs())]
+    if org_id not in check_orgs:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"Organization '{org_id}' is not authorized to access this resource",
+        )
+    return org_id
+

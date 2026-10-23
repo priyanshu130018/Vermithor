@@ -1,0 +1,27 @@
+id: BLIND-CASE-14
+scenario_name: Corrupt Protobuf Binary Poison Pill Stalling Kafka Consumer
+root_cause_family: KAFKA_POISON_PILL
+target_service: analytics-stream
+severity: CRITICAL
+environment: production
+is_negative_control: false
+agent_input:
+  incident_key: INC-BLIND-514
+  service: analytics-stream
+  lookback_minutes: 15
+  metrics:
+  - metric_name: kafka_consumer_lag_records
+    value: 75000.0
+    service: analytics-stream
+    timestamp: '2026-10-21T02:30:00Z'
+  logs:
+  - level: ERROR
+    message: 'DeserializationException: Malformed Protobuf header byte 0xFF at offset
+      492019'
+    service: analytics-stream
+    timestamp: '2026-10-21T02:30:30Z'
+  - level: FATAL
+    message: 'Consumer thread terminated: poison pill message blocking partition 5'
+    service: analytics-stream
+    timestamp: '2026-10-21T02:31:00Z'
+  deployments: []

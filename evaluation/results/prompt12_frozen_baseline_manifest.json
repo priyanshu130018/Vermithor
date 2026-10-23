@@ -1,0 +1,52 @@
+{
+  "frozen_at": "2026-10-20T11:08:00+05:30",
+  "commit_sha": "e659059cd42b5ba69a8e77c6b16f905b1a075291",
+  "branch": "main",
+  "frozen_evaluation_status": "PROMPT_12_HARDENED_BASELINE",
+  "summary_metrics": {
+    "total_development_scenarios": 12,
+    "top_1_accuracy": 1.0,
+    "top_3_recall": 1.0,
+    "mean_reciprocal_rank": 1.0,
+    "evidence_support_rate": 1.0,
+    "unsupported_claim_rate": 0.0,
+    "correct_abstention_rate": 1.0,
+    "false_positive_rate": 0.0,
+    "repair_safety_rate": 1.0,
+    "scope_violation_rate": 0.0
+  },
+  "diagnosis_and_scoring_configuration": {
+    "temporal_weight": 0.20,
+    "topology_weight": 0.20,
+    "metric_weight": 0.15,
+    "log_weight": 0.15,
+    "trace_weight": 0.15,
+    "deployment_weight": 0.10,
+    "historical_weight": 0.05,
+    "temporal_time_span_floor_seconds": 60.0,
+    "low_evidence_threshold": 0.45,
+    "uncorroborated_signal_score_cap": 0.38,
+    "multi_cause_uncertainty_score_diff_threshold": 0.12,
+    "metric_anomaly_thresholds": {
+      "utilization_ratio": 0.85,
+      "error_rate_ratio": 0.05,
+      "latency_ms": 1000.0,
+      "retrans_rate": 1000.0,
+      "queue_depth": 1000.0
+    }
+  },
+  "rate_limiting_configuration": {
+    "repairs_limit": "10/60s",
+    "investigations_limit": "20/60s",
+    "connect_repo_limit": "10/60s",
+    "verify_repo_limit": "30/60s",
+    "whitelisted_endpoints": ["/health", "/healthz", "/metrics", "/ready"]
+  },
+  "database_configuration": {
+    "pool_size": 10,
+    "max_overflow": 20,
+    "pool_timeout_seconds": 15,
+    "pool_recycle_seconds": 1800,
+    "pool_pre_ping": true
+  }
+}

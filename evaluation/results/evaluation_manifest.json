@@ -1,0 +1,17 @@
+{
+  "manifest_version": "2.0.0",
+  "benchmark_name": "Prompt 20 Independent Blind Evaluation Benchmark",
+  "git_commit": "e659059cd42b5ba69a8e77c6b16f905b1a075291",
+  "frozen_answer_keys_sha256": "6b01fdcf2c459e44477a18d7d1d8054fd738ee96202a3c5552072f8779fedb3e",
+  "total_cases": 24,
+  "total_families": 10,
+  "negative_controls": 11,
+  "positive_cases": 13,
+  "artifacts_generated": [
+    "evaluation/results/independent_blind_evaluation_report.md",
+    "evaluation/results/independent_blind_case_results.json",
+    "evaluation/results/candidate_coverage_by_family.json",
+    "evaluation/results/citation_provenance_audit.json",
+    "evaluation/results/evaluation_manifest.json"
+  ]
+}

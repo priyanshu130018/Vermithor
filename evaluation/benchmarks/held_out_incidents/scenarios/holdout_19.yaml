@@ -1,0 +1,27 @@
+incident_key: INC-HOLDOUT-119
+service: report-worker
+lookback_minutes: 60
+environment: production
+severity: HIGH
+metrics:
+- metric_name: celery_unacknowledged_tasks_count
+  service: report-worker
+  value: 12500.0
+  timestamp: '2026-10-20T17:30:00Z'
+- metric_name: active_worker_concurrency_ratio
+  service: report-worker
+  value: 1.0
+  timestamp: '2026-10-20T17:30:00Z'
+logs:
+- service: report-worker
+  level: WARN
+  message: 'Celery: Worker hard time limit (300s) exceeded for task generate_monthly_pdf'
+  timestamp: '2026-10-20T17:28:40Z'
+- service: report-worker
+  level: ERROR
+  message: 'TaskRevokedException: Celery worker processes frozen on unyielding socket
+    IO; queue backlog growing'
+  timestamp: '2026-10-20T17:29:30Z'
+deployments: []
+dependencies:
+- rabbitmq-broker

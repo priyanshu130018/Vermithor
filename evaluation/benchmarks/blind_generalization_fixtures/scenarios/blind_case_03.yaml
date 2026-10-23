@@ -1,0 +1,30 @@
+id: BLIND-CASE-03
+scenario_name: Upstream CoreDNS SERVFAIL Causing Cascading Downstream Gateway Timeout
+root_cause_family: DNS_AND_SERVICE_DISCOVERY
+target_service: inventory-api
+severity: CRITICAL
+environment: production
+is_negative_control: false
+agent_input:
+  incident_key: INC-BLIND-503
+  service: inventory-api
+  lookback_minutes: 15
+  metrics:
+  - metric_name: dns_resolution_latency_ms
+    value: 2850.0
+    service: inventory-api
+    timestamp: '2026-10-21T02:05:00Z'
+  - metric_name: http_request_duration_seconds
+    value: 6.5
+    service: inventory-api
+    timestamp: '2026-10-21T02:05:20Z'
+  logs:
+  - level: ERROR
+    message: 'CoreDNS: Nameserver 10.96.0.10:53 returned SERVFAIL resolving supplier-db.corp.internal'
+    service: inventory-api
+    timestamp: '2026-10-21T02:05:40Z'
+  - level: ERROR
+    message: 'Failed resolving backend supplier: CoreDNS lookup failed with SERVFAIL'
+    service: inventory-api
+    timestamp: '2026-10-21T02:06:00Z'
+  deployments: []

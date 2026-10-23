@@ -14,6 +14,7 @@ from backend.app.agent.graph.nodes.generate_rca import generate_rca_node
 from backend.app.agent.graph.nodes.initialize import initialize_investigation_node
 from backend.app.agent.graph.nodes.produce_report import produce_report_node
 from backend.app.agent.graph.nodes.retrieve_knowledge import retrieve_knowledge_node
+from backend.app.agent.graph.nodes.review_report import review_report_node
 from backend.app.agent.graph.state import InvestigationState
 from backend.app.anomaly.services.anomaly_service import AnomalyService
 from backend.app.common.config import Settings, get_settings
@@ -22,6 +23,7 @@ from backend.app.observability.services.telemetry_service import TelemetryEviden
 from backend.app.rca.analysis.analyzer import RCAAnalyzer
 from backend.app.retrieval.retrieval.engine import RetrievalEngine
 from backend.app.summary.llm.base import LLMProvider
+from backend.app.summary.llm.factory import ProviderFactory
 
 logger = logging.getLogger(__name__)
 
@@ -72,8 +74,18 @@ def create_investigation_graph(
     def node_knowledge(state: InvestigationState) -> Dict[str, Any]:
         return retrieve_knowledge_node(state, db=db, retrieval_engine=retrieval_engine)
 
+    try:
+        investigation_llm = llm_provider or ProviderFactory.get_provider(cfg, task="investigation")
+    except TypeError:
+        investigation_llm = llm_provider or ProviderFactory.get_provider(cfg)
+
+    try:
+        review_llm = llm_provider or ProviderFactory.get_provider(cfg, task="report_review")
+    except TypeError:
+        review_llm = llm_provider or ProviderFactory.get_provider(cfg)
+
     def node_evaluate(state: InvestigationState) -> Dict[str, Any]:
-        return evaluate_hypotheses_node(state, db=db, llm_provider=llm_provider, settings=cfg)
+        return evaluate_hypotheses_node(state, db=db, llm_provider=investigation_llm, settings=cfg)
 
     def node_completeness(state: InvestigationState) -> Dict[str, Any]:
         return check_completeness_node(state)
@@ -83,6 +95,9 @@ def create_investigation_graph(
 
     def node_report(state: InvestigationState) -> Dict[str, Any]:
         return produce_report_node(state, db=db)
+
+    def node_review(state: InvestigationState) -> Dict[str, Any]:
+        return review_report_node(state, db=db, llm_provider=review_llm, settings=cfg)
 
     # Initialize StateGraph with typed investigation state
     workflow = StateGraph(InvestigationState)
@@ -98,6 +113,7 @@ def create_investigation_graph(
     workflow.add_node("check_completeness", node_completeness)
     workflow.add_node("gather_additional", node_additional)
     workflow.add_node("produce_report", node_report)
+    workflow.add_node("review_report", node_review)
 
     # Linear investigation edges
     workflow.add_edge(START, "initialize")
@@ -122,8 +138,9 @@ def create_investigation_graph(
     # Re-evaluate hypotheses with gathered additional evidence
     workflow.add_edge("gather_additional", "evaluate_hypotheses")
 
-    # Termination
-    workflow.add_edge("produce_report", END)
+    # Final review and termination
+    workflow.add_edge("produce_report", "review_report")
+    workflow.add_edge("review_report", END)
 
     logger.info("Compiled LangGraph Investigation StateGraph successfully")
     return workflow.compile()

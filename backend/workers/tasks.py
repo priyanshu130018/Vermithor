@@ -261,10 +261,35 @@ def investigate_incident_task(self, request_payload: Dict[str, Any]) -> Dict[str
         try:
             from backend.app.agent.schemas.investigation import InvestigationRequest
             from backend.app.agent.services.investigation_service import InvestigationService
+            from backend.app.agent.db.models import PilotGovernancePolicy
+
+            raw_org = request_payload.get("org_id")
+            if not raw_org or not str(raw_org).strip():
+                logger.error("Celery investigate_incident_task aborted: Missing required org_id in task payload")
+                return {"status": "unauthorized", "error": "Missing required organization context in task payload"}
+            org_id = str(raw_org).strip().lower()
+
+            from backend.app.common.security import is_org_authorized
+            if not is_org_authorized(org_id):
+                logger.error("Celery investigate_incident_task aborted: org '%s' is not authorized", org_id)
+                return {
+                    "status": "unauthorized",
+                    "error": f"Organization '{org_id}' is not authorized to run investigations",
+                    "incident_key": incident_key,
+                }
+
+            pol = db.query(PilotGovernancePolicy).filter(PilotGovernancePolicy.org_id == org_id).first()
+            if pol and pol.investigations_paused:
+                logger.warning("Celery task aborted: investigations paused for org '%s' under pilot policy", org_id)
+                return {
+                    "status": "aborted",
+                    "reason": f"Investigations paused for org '{org_id}' under pilot policy",
+                    "incident_key": incident_key,
+                }
 
             req = InvestigationRequest.model_validate(request_payload)
             inv_service = InvestigationService()
-            response = inv_service.run_investigation(db=db, req=req)
+            response = inv_service.run_investigation(db=db, req=req, org_id=org_id)
 
             return {
                 "status": "success",
@@ -316,12 +341,71 @@ def repair_code_task(self, request_payload: Dict[str, Any]) -> Dict[str, Any]:
     ) as span:
         db = common_db.SessionLocal()
         try:
-            from backend.app.agent.schemas.repair import RepairRequest
+            from backend.app.agent.schemas.repair import RepairRequest, RepairStatus
             from backend.app.agent.services.repair_service import RepairService
+            from backend.app.agent.db.models import Investigation, Repair
+
+            raw_org = request_payload.get("org_id")
+            if not raw_org or not str(raw_org).strip():
+                logger.error("Celery repair_code_task aborted: Missing required org_id in task payload")
+                return {"status": "unauthorized", "error": "Missing required organization context in task payload"}
+            org_id = str(raw_org).strip().lower()
+
+            from backend.app.common.security import is_org_authorized
+            if not is_org_authorized(org_id):
+                logger.error("Celery repair_code_task aborted: org '%s' is not authorized", org_id)
+                return {
+                    "status": "unauthorized",
+                    "error": f"Organization '{org_id}' is not authorized to run repairs",
+                    "investigation_key": inv_key,
+                }
+
+            # Worker-side authorization verification: verify DB record tenant matches payload org
+            import uuid
+            inv_filter = Investigation.investigation_key == inv_key
+            try:
+                val_uuid = uuid.UUID(inv_key)
+                inv_filter = (Investigation.investigation_key == inv_key) | (Investigation.id == val_uuid)
+            except (ValueError, AttributeError):
+                pass
+            inv_record = db.execute(select(Investigation).where(inv_filter)).scalars().first()
+            if inv_record:
+                if not inv_record.org_id or not str(inv_record.org_id).strip():
+                    if org_id not in ("vermithor", "admin"):
+                        logger.error("Worker authorization check failed: record '%s' lacks tenant ownership", inv_key)
+                        return {"status": "unauthorized", "error": f"Record '{inv_key}' lacks tenant ownership and cannot be processed by '{org_id}'"}
+                elif inv_record.org_id.lower() != org_id and org_id not in ("vermithor", "admin"):
+                    logger.error("Worker authorization check failed: payload org '%s' does not match record org '%s'", org_id, inv_record.org_id)
+                    return {"status": "unauthorized", "error": f"Tenant context mismatch: task payload organization '{org_id}' does not own investigation '{inv_key}'"}
+
+            # Idempotency / duplicate delivery check: if already completed or awaiting approval, return existing
+            existing_rep = db.execute(select(Repair).where(
+                Repair.investigation_key == inv_key,
+                Repair.status.in_([
+                    RepairStatus.AWAITING_APPROVAL.value,
+                    RepairStatus.APPROVED.value,
+                    RepairStatus.VALIDATED.value,
+                ]),
+            )).scalars().first()
+            if existing_rep:
+                logger.info("Celery task: idempotent return for already processed repair '%s'", existing_rep.repair_key)
+                rep_service = RepairService()
+                response = rep_service._to_response(existing_rep)
+                return {
+                    "status": "success",
+                    "repair_key": response.repair_key,
+                    "investigation_key": response.investigation_key,
+                    "incident_key": response.incident_key,
+                    "repair_status": response.status.value,
+                    "validation_status": response.validation_status.value,
+                    "patch_hash": response.patch_hash,
+                    "requires_human_approval": response.requires_human_approval,
+                    "is_duplicate_delivery": True,
+                }
 
             req = RepairRequest.model_validate(request_payload)
             rep_service = RepairService()
-            response = rep_service.run_repair(db=db, req=req)
+            response = rep_service.run_repair(db=db, req=req, user_identity={"org_id": org_id})
 
             return {
                 "status": "success",

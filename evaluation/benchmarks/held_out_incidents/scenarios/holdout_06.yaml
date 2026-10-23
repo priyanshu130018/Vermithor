@@ -1,0 +1,28 @@
+incident_key: INC-HOLDOUT-106
+service: checkout-orchestrator
+lookback_minutes: 60
+environment: production
+severity: HIGH
+metrics:
+- metric_name: downstream_call_duration_seconds
+  service: checkout-orchestrator
+  value: 30.0
+  timestamp: '2026-10-20T11:00:00Z'
+- metric_name: http_504_gateway_timeout_ratio
+  service: checkout-orchestrator
+  value: 0.86
+  timestamp: '2026-10-20T11:00:00Z'
+logs:
+- service: checkout-orchestrator
+  level: ERROR
+  message: 'HttpClientTimeoutException: HTTP 504 Gateway Timeout connecting to partner
+    endpoint https://api.partnerpay.external/v3/authorize'
+  timestamp: '2026-10-20T10:58:10Z'
+- service: checkout-orchestrator
+  level: WARN
+  message: Circuit breaker OPEN for external partner service 'PartnerPayGateway' due
+    to consecutive 30s timeouts
+  timestamp: '2026-10-20T10:59:00Z'
+deployments: []
+dependencies:
+- partner-pay-gateway

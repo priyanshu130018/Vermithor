@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 import logging
 from typing import Any, Dict, List, Optional, Set, Tuple
 
@@ -54,13 +54,18 @@ class CandidateScorer:
 
         def parse_ts(ts: Any) -> datetime:
             if isinstance(ts, datetime):
+                if ts.tzinfo is None:
+                    return ts.replace(tzinfo=timezone.utc)
                 return ts
-            return datetime.fromisoformat(str(ts).replace("Z", "+00:00"))
+            d = datetime.fromisoformat(str(ts).replace("Z", "+00:00"))
+            if d.tzinfo is None:
+                return d.replace(tzinfo=timezone.utc)
+            return d
 
         all_ts = [parse_ts(s["timestamp"]) for s in signals if s.get("timestamp")]
         min_time = min(all_ts) if all_ts else datetime.now()
         max_time = max(all_ts) if all_ts else datetime.now()
-        total_time_span = max(1.0, (max_time - min_time).total_seconds())
+        total_time_span = max(60.0, (max_time - min_time).total_seconds())
 
         # Extract trace evidence across all signals and spans
         trace_evidence_items: List[TraceEvidenceItem] = TraceEvidenceExtractor.extract_trace_evidence(
@@ -72,11 +77,43 @@ class CandidateScorer:
         deployment_results: List[DeploymentEvidenceResult] = self.deployment_evaluator.evaluate(signals)
         best_deployment = deployment_results[0] if deployment_results else None
 
+        def is_metric_anomalous(sig: Dict[str, Any]) -> bool:
+            if sig.get("signal_type") == "ANOMALY":
+                return True
+            m = sig.get("metadata") or sig.get("metadata_json") or {}
+            m_name = str(m.get("metric_name", "")).lower()
+            val = m.get("value")
+            if val is not None:
+                try:
+                    fval = float(val)
+                    if ("utilization" in m_name or "ratio" in m_name) and fval >= 0.85:
+                        return True
+                    if ("error" in m_name or "5xx" in m_name or "401" in m_name or "loss" in m_name) and fval >= 0.05:
+                        return True
+                    if ("latency" in m_name or "duration" in m_name) and fval >= 1000.0:
+                        return True
+                    if ("retrans" in m_name or "rate" in m_name) and fval >= 1000.0:
+                        return True
+                    if ("queue" in m_name or "lag" in m_name or "backlog" in m_name) and fval >= 1000.0:
+                        return True
+                    if "dns" in m_name and fval >= 500.0:
+                        return True
+                    if ("fetch" in m_name) and fval >= 0.05:
+                        return True
+                    # If numeric value was provided and within bounds, it is not an anomaly
+                    return False
+                except (ValueError, TypeError):
+                    pass
+            if any(k in m_name for k in ("saturation", "exhaustion", "timeout", "spike", "drop", "packet", "stalled")):
+                return True
+            return False
+
         scored_candidates: List[Dict[str, Any]] = []
 
         for c in candidates:
             cand_type_str = str(c.get("candidate_type", "SERVICE")).upper()
             cand_svc = str(c.get("service", "unknown"))
+            cand_name = str(c.get("candidate_name", ""))
             sig_ids = set(c.get("associated_signal_ids", []))
             cand_signals = [s for s in signals if s.get("signal_id") in sig_ids]
             other_signals = [s for s in signals if s.get("signal_id") not in sig_ids]
@@ -84,7 +121,10 @@ class CandidateScorer:
             # ------------------------------------------------------------------
             # 1. Temporal Precedence Score (S_temporal)
             # ------------------------------------------------------------------
-            if cand_signals:
+            if cand_type_str == "DEPLOYMENT" and best_deployment and not best_deployment.is_causally_plausible:
+                temporal_score = 0.15
+                temporal_desc = "Deployment occurred outside causal propagation window"
+            elif cand_signals:
                 cand_min_ts = min(parse_ts(s["timestamp"]) for s in cand_signals)
                 time_from_start = (cand_min_ts - min_time).total_seconds()
                 temporal_score = max(0.20, 1.0 - (time_from_start / total_time_span))
@@ -111,8 +151,12 @@ class CandidateScorer:
             # ------------------------------------------------------------------
             # 3. Metric Anomaly Score (S_metric)
             # ------------------------------------------------------------------
-            has_anomaly = any(s.get("signal_type") == "ANOMALY" for s in cand_signals)
-            metric_score = 0.90 if has_anomaly else 0.40
+            if cand_type_str == "DEPLOYMENT" and best_deployment and best_deployment.is_causally_plausible:
+                has_anomaly = bool(best_deployment.post_deploy_anomalies) or any(is_metric_anomalous(s) for s in signals)
+                metric_score = 0.92 if has_anomaly else 0.40
+            else:
+                has_anomaly = any(is_metric_anomalous(s) for s in cand_signals)
+                metric_score = 0.92 if has_anomaly else 0.35
             metric_desc_list = []
             for s in cand_signals:
                 m = s.get("metadata") or s.get("metadata_json") or {}
@@ -140,15 +184,26 @@ class CandidateScorer:
                     log_messages.append(str(msg))
 
             log_count = len(log_messages)
-            if log_clusters:
-                log_score = 0.95
-                log_desc = f"Matched semantic log cluster(s): {', '.join(log_clusters)}"
-            elif log_count > 0:
-                log_score = min(0.90, 0.50 + (log_count * 0.10))
-                log_desc = f"{log_count} error log events recorded on {cand_svc} ({log_messages[0][:60]}...)"
+            if cand_type_str == "DEPLOYMENT" and best_deployment and best_deployment.is_causally_plausible:
+                has_error_log = any(str(s.get("severity", "")).upper() in ("ERROR", "FATAL", "CRITICAL") for s in signals)
+                log_score = 0.95 if has_error_log else 0.50
+                log_desc = f"Consequential errors following deployment: {best_deployment.description}"
             else:
-                log_score = 0.35
-                log_desc = "No specific error logs recorded"
+                has_error_log = any(str(s.get("severity", "")).upper() in ("ERROR", "FATAL", "CRITICAL") for s in cand_signals)
+
+                if log_clusters:
+                    log_score = 0.95
+                    log_desc = f"Matched semantic log cluster(s): {', '.join(log_clusters)}"
+                elif has_error_log:
+                    log_score = min(0.95, 0.70 + (log_count * 0.08))
+                    sample_str = f" ({log_messages[0][:60]}...)" if log_messages else ""
+                    log_desc = f"{log_count} error log events recorded on {cand_svc}{sample_str}"
+                elif log_count > 0:
+                    log_score = min(0.50, 0.30 + (log_count * 0.05))
+                    log_desc = f"{log_count} non-error log events recorded on {cand_svc}"
+                else:
+                    log_score = 0.25
+                    log_desc = "No specific error logs recorded"
 
             # ------------------------------------------------------------------
             # 5. Distributed Trace Score (S_trace)
@@ -171,9 +226,14 @@ class CandidateScorer:
             # ------------------------------------------------------------------
             # 6. Deployment Evidence Score (S_deployment)
             # ------------------------------------------------------------------
+            is_config_cand = "configuration" in cand_name.lower() or "config" in cand_name.lower()
             if cand_type_str == "DEPLOYMENT":
-                dep_score = best_deployment.score if best_deployment else 0.85
-                dep_desc = best_deployment.description if best_deployment else "Preceding deployment observed"
+                if is_config_cand and has_error_log:
+                    dep_score = 0.90
+                    dep_desc = f"Direct configuration regression errors identified on {cand_svc}"
+                else:
+                    dep_score = best_deployment.score if (best_deployment and best_deployment.is_causally_plausible) else 0.15
+                    dep_desc = best_deployment.description if best_deployment else "Preceding deployment observed"
             elif best_deployment and best_deployment.is_causally_plausible:
                 # Deployment occurred on this service or its upstream
                 if best_deployment.service.lower() == cand_svc.lower():
@@ -206,9 +266,26 @@ class CandidateScorer:
                 + hist_score * 0.05
             )
 
-            # Type specific adjustments (e.g. database/infra upstream bonus)
-            if cand_type_str in ["DATABASE", "DEPENDENCY", "RESOURCE", "DEPLOYMENT"]:
-                composite_score = min(1.0, composite_score * 1.05)
+            # Direct confirmed anomaly & error bonus for active operational failure
+            if cand_type_str in ["DATABASE", "DEPENDENCY", "RESOURCE", "NETWORK", "INFRASTRUCTURE", "SERVICE"]:
+                if has_anomaly and has_error_log:
+                    composite_score = min(1.0, composite_score * 1.15)
+                elif has_anomaly or has_error_log:
+                    composite_score = min(1.0, composite_score * 1.05)
+            elif cand_type_str == "DEPLOYMENT":
+                if best_deployment and best_deployment.is_causally_plausible:
+                    composite_score = min(1.0, composite_score * 1.15)
+                elif is_config_cand and has_error_log:
+                    composite_score = min(1.0, composite_score * 1.15)
+                else:
+                    composite_score = composite_score * 0.50  # Strongly penalize unplausible deployment
+            elif cand_type_str == "SERVICE":
+                if best_deployment and best_deployment.is_causally_plausible and best_deployment.service.lower() == cand_svc.lower():
+                    composite_score = composite_score * 0.85
+
+            # If candidate has neither confirmed metric anomaly nor error log, it is a speculative/nominal signal
+            if not has_anomaly and not has_error_log and cand_type_str != "DEPLOYMENT":
+                composite_score = min(0.38, composite_score * 0.55)
 
             # Calculate confidence
             confidence = min(0.98, max(0.10, composite_score))
@@ -252,9 +329,36 @@ class CandidateScorer:
         scored_candidates.sort(key=lambda x: x["score"], reverse=True)
 
         # Ambiguous / Low Evidence Check:
-        # If top score is below 0.35 or if evidence is ambiguous, emit UNKNOWN
-        if not scored_candidates or scored_candidates[0]["score"] < 0.35:
-            return [self._create_unknown_candidate(score=0.15, rank=1, is_primary=True)]
+        # If top score is below 0.45, emit UNKNOWN / Insufficient evidence
+        if not scored_candidates or scored_candidates[0]["score"] < 0.45:
+            return [
+                self._create_unknown_candidate(
+                    score=0.25,
+                    rank=1,
+                    is_primary=True,
+                    name="Inconclusive / insufficient evidence: no confirmed metric anomalies or error logs",
+                )
+            ]
+
+        # Check if top candidates represent ambiguous multi-cause uncertainty:
+        # When multiple competing candidates exist without a dominant anomaly, and scores are tied/weak
+        if len(scored_candidates) >= 2:
+            cand1 = scored_candidates[0]
+            cand2 = scored_candidates[1]
+            score_diff = cand1["score"] - cand2["score"]
+            top_sig_ids = set(cand1.get("associated_signal_ids", []))
+            top_sigs = [s for s in signals if s.get("signal_id") in top_sig_ids]
+            top_has_anomaly = any(is_metric_anomalous(s) for s in top_sigs)
+
+            if cand1["score"] < 0.65 and score_diff < 0.12 and not top_has_anomaly:
+                return [
+                    self._create_unknown_candidate(
+                        score=0.35,
+                        rank=1,
+                        is_primary=True,
+                        name="Inconclusive: multiple competing weak signals without decisive root cause",
+                    )
+                ]
 
         # Assign ranks and primary flags for Top-3
         final_candidates: List[Dict[str, Any]] = []
@@ -267,7 +371,12 @@ class CandidateScorer:
         return final_candidates
 
     @staticmethod
-    def _create_unknown_candidate(score: float = 0.10, rank: int = 1, is_primary: bool = True) -> Dict[str, Any]:
+    def _create_unknown_candidate(
+        score: float = 0.10,
+        rank: int = 1,
+        is_primary: bool = True,
+        name: str = "Insufficient evidence",
+    ) -> Dict[str, Any]:
         """Generate a structured UNKNOWN candidate response."""
         breakdown = EvidenceBreakdown(
             temporal="No dominant temporal trigger identified across signals",
@@ -281,13 +390,13 @@ class CandidateScorer:
         evidence = [
             EvidenceItem(
                 type=EvidenceType.ERROR,
-                description="Insufficient evidence: observed signals lack clear upstream causality.",
+                description=f"{name}: observed signals lack clear upstream causality.",
                 strength=round(score, 3),
             ).model_dump()
         ]
         return {
             "candidate_type": "UNKNOWN",
-            "candidate_name": "Insufficient evidence",
+            "candidate_name": name,
             "score": round(score, 4),
             "confidence": round(score, 4),
             "rank": rank,

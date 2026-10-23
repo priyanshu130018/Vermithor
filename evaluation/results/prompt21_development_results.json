@@ -1,0 +1,169 @@
+{
+  "metadata": {
+    "evaluation_title": "Prompt 21 Development Set Iterative Progression & Verification",
+    "evaluation_date": "2026-10-21T02:14:00.000000+00:00",
+    "development_cases_count": 6,
+    "focus_areas": [
+      "Container memory exhaustion and OOM kills",
+      "Deployment and configuration regressions",
+      "Negative control alternative diagnosis calibration",
+      "Evidence citation provenance resolution"
+    ]
+  },
+  "progression_summary": {
+    "baseline_pre_remediation": {
+      "candidate_coverage": "2/6 (33.3%)",
+      "top_1_accuracy": "0/6 (0.0%)",
+      "top_3_recall": "0/6 (0.0%)",
+      "mean_reciprocal_rank": 0.0,
+      "unresolved_citations_count": 9,
+      "safety_discrimination": "2/2 (100.0%)",
+      "diagnostic_discrimination": "0/2 (0.0%)"
+    },
+    "post_remediation": {
+      "candidate_coverage": "6/6 (100.0%)",
+      "top_1_accuracy": "6/6 (100.0%)",
+      "top_3_recall": "6/6 (100.0%)",
+      "mean_reciprocal_rank": 1.0,
+      "unresolved_citations_count": 0,
+      "safety_discrimination": "2/2 (100.0%)",
+      "diagnostic_discrimination": "2/2 (100.0%)"
+    }
+  },
+  "case_progression_details": [
+    {
+      "case_id": "BLIND-CASE-09",
+      "family": "MEMORY_EXHAUSTION_AND_OOM",
+      "scenario": "JVM Metaspace Leak Causing Linux Kernel OOM Kill",
+      "target_service": "catalog-search",
+      "baseline": {
+        "leading_hypothesis": "Insufficient evidence",
+        "confidence": 0.10,
+        "candidate_coverage": false,
+        "top_1_hit": false,
+        "missing_citations": 2
+      },
+      "post_remediation": {
+        "leading_hypothesis": "Memory exhaustion on catalog-search",
+        "confidence": 0.8437,
+        "candidate_coverage": true,
+        "top_1_hit": true,
+        "missing_citations": 0
+      },
+      "fix_applied": "Service resolution via event DB lookup; memory limit bytes ratio anomaly detection."
+    },
+    {
+      "case_id": "BLIND-CASE-11",
+      "family": "MEMORY_EXHAUSTION_AND_OOM",
+      "scenario": "HTTP 502 Bad Gateway Caused by Upstream Kernel OOM Kill",
+      "target_service": "auth-service",
+      "baseline": {
+        "leading_hypothesis": "Insufficient evidence",
+        "confidence": 0.10,
+        "candidate_coverage": false,
+        "top_1_hit": false,
+        "missing_citations": 2
+      },
+      "post_remediation": {
+        "leading_hypothesis": "Memory exhaustion on auth-service",
+        "confidence": 0.8453,
+        "candidate_coverage": true,
+        "top_1_hit": true,
+        "missing_citations": 0
+      },
+      "fix_applied": "Unrestricted event query by incident key; OOM event error string propagation to RCA node."
+    },
+    {
+      "case_id": "BLIND-CASE-18",
+      "family": "DEPLOYMENT_OR_CONFIG_REGRESSION",
+      "scenario": "Recent Ingress Deployment with Corrupted Dynamic Routing Table",
+      "target_service": "api-router",
+      "baseline": {
+        "leading_hypothesis": "Insufficient evidence",
+        "confidence": 0.10,
+        "candidate_coverage": false,
+        "top_1_hit": false,
+        "missing_citations": 2
+      },
+      "post_remediation": {
+        "leading_hypothesis": "Configuration regression on api-router",
+        "confidence": 0.9800,
+        "candidate_coverage": true,
+        "top_1_hit": true,
+        "missing_citations": 0
+      },
+      "fix_applied": "Event ingestion of route config errors; temporal alignment with v3.2.0 deployment."
+    },
+    {
+      "case_id": "BLIND-CASE-20",
+      "family": "DEPLOYMENT_OR_CONFIG_REGRESSION",
+      "scenario": "Environment Variable Misconfiguration Pointing to Wrong Port",
+      "target_service": "vault-agent",
+      "baseline": {
+        "leading_hypothesis": "Insufficient evidence",
+        "confidence": 0.10,
+        "candidate_coverage": false,
+        "top_1_hit": false,
+        "missing_citations": 2
+      },
+      "post_remediation": {
+        "leading_hypothesis": "Configuration regression on vault-agent",
+        "confidence": 0.8796,
+        "candidate_coverage": true,
+        "top_1_hit": true,
+        "missing_citations": 0
+      },
+      "fix_applied": "Removed unplausible deployment penalty for configuration regressions verified by error logs."
+    },
+    {
+      "case_id": "BLIND-CASE-02",
+      "family": "DNS_AND_SERVICE_DISCOVERY",
+      "scenario": "Downstream Stripe HTTP 504 with Healthy Cluster DNS (Negative Control)",
+      "target_service": "checkout-gateway",
+      "baseline": {
+        "leading_hypothesis": "Insufficient evidence",
+        "confidence": 0.10,
+        "candidate_coverage": true,
+        "top_1_hit": false,
+        "safety_discrimination": true,
+        "diagnostic_discrimination": false,
+        "missing_citations": 1
+      },
+      "post_remediation": {
+        "leading_hypothesis": "Downstream dependency timeout on checkout-gateway",
+        "confidence": 0.7961,
+        "candidate_coverage": true,
+        "top_1_hit": true,
+        "safety_discrimination": true,
+        "diagnostic_discrimination": true,
+        "missing_citations": 0
+      },
+      "fix_applied": "Telemetry snapshot routing by actual service; downstream HTTP 504 candidate generation."
+    },
+    {
+      "case_id": "BLIND-CASE-05",
+      "family": "DATABASE_CONNECTION_POOL",
+      "scenario": "HTTP Client Pool Exhaustion with Healthy Postgres Database Pool (Negative Control)",
+      "target_service": "shipping-tracker",
+      "baseline": {
+        "leading_hypothesis": "Insufficient evidence",
+        "confidence": 0.10,
+        "candidate_coverage": true,
+        "top_1_hit": false,
+        "safety_discrimination": true,
+        "diagnostic_discrimination": false,
+        "missing_citations": 1
+      },
+      "post_remediation": {
+        "leading_hypothesis": "Downstream dependency timeout on shipping-tracker",
+        "confidence": 0.7961,
+        "candidate_coverage": true,
+        "top_1_hit": true,
+        "safety_discrimination": true,
+        "diagnostic_discrimination": true,
+        "missing_citations": 0
+      },
+      "fix_applied": "Prioritized HTTPClientPool timeouts over Postgres pool; resolved missing trace citations."
+    }
+  ]
+}

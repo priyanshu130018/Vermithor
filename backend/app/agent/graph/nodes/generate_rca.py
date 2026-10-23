@@ -33,7 +33,7 @@ def generate_rca_node(
     primary_cause = None
     primary_conf = 0.0
 
-    if db is not None:
+    if db is not None and not state.get("force_refresh", False):
         try:
             existing_rca = db.execute(
                 select(RCAAnalysis)
@@ -67,7 +67,10 @@ def generate_rca_node(
     if not db_candidates:
         # Build signals structure from collected evidence
         # Filter for actual signals (exclude CORRELATION, RCA, etc.)
-        valid_signal_types = {"METRIC_OBSERVATION", "PROMETHEUS", "EVENT", "DEPLOYMENT", "TRACE", "ANOMALY"}
+        valid_signal_types = {
+            "METRIC_OBSERVATION", "PROMETHEUS", "EVENT", "DEPLOYMENT",
+            "TRACE", "JAEGER", "ANOMALY", "INCIDENT_EVENT",
+        }
         signals: List[Dict[str, Any]] = []
         for ev in collected_evidence:
             stype = ev.get("source_type", "EVENT")
@@ -78,14 +81,45 @@ def generate_rca_node(
                     ts = datetime.now(timezone.utc).isoformat()
                 elif hasattr(ts, "isoformat"):
                     ts = ts.isoformat()
+                data = ev.get("data", {})
+                raw_sev = str(data.get("severity") or ev.get("severity") or "").upper()
+                if raw_sev in ("CRITICAL", "ERROR", "FATAL"):
+                    sev = "ERROR"
+                elif raw_sev in ("WARN", "WARNING"):
+                    sev = "WARN"
+                elif stype == "ANOMALY":
+                    sev = "ERROR"
+                elif stype in ("PROMETHEUS", "METRIC_OBSERVATION"):
+                    m_val = data.get("value")
+                    m_name = str(data.get("metric_name", "")).lower()
+                    try:
+                        fval = float(m_val) if m_val is not None else 0.0
+                    except (ValueError, TypeError):
+                        fval = 0.0
+                    if ("error" in m_name or "5xx" in m_name or "401" in m_name or "loss" in m_name) and fval >= 0.05:
+                        sev = "ERROR"
+                    elif ("utilization" in m_name or "ratio" in m_name) and fval >= 0.85:
+                        sev = "ERROR"
+                    elif ("latency" in m_name or "duration" in m_name) and fval >= 1000.0:
+                        sev = "ERROR"
+                    elif ("rate" in m_name or "retrans" in m_name) and fval >= 1000.0:
+                        sev = "ERROR"
+                    else:
+                        sev = "INFO"
+                elif "error" in ev.get("claim", "").lower() and stype not in ("PROMETHEUS", "METRIC_OBSERVATION"):
+                    sev = "ERROR"
+                else:
+                    sev = "INFO"
+
                 signals.append({
                     "signal_id": ev.get("source_id", ev.get("evidence_id")),
                     "signal_type": stype,
                     "timestamp": str(ts),
                     "service": ev.get("service") or target_svc,
-                    "severity": "ERROR" if "anom" in ev.get("evidence_id", "").lower() or "error" in ev.get("claim", "").lower() else "INFO",
+                    "severity": sev,
                     "source_reference": ev.get("source_id"),
-                    "metadata": ev.get("data", {}),
+                    "message": data.get("message") or ev.get("claim", ""),
+                    "metadata": data,
                 })
 
         if not signals:

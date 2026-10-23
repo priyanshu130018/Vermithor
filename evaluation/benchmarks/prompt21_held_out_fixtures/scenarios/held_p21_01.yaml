@@ -1,0 +1,31 @@
+id: HELD-P21-01
+scenario_name: Go Microservice Off-Heap Leak Resulting in cgroup OOMKilled
+root_cause_family: MEMORY_EXHAUSTION_AND_OOM
+target_service: media-transcoder
+severity: CRITICAL
+environment: production
+is_negative_control: false
+agent_input:
+  incident_key: INC-P21-01
+  service: media-transcoder
+  lookback_minutes: 15
+  metrics:
+  - metric_name: container_memory_usage_bytes
+    value: 4294967296.0
+    service: media-transcoder
+    timestamp: '2026-10-21T03:00:00Z'
+  - metric_name: container_memory_limit_bytes
+    value: 4294967296.0
+    service: media-transcoder
+    timestamp: '2026-10-21T03:00:10Z'
+  logs:
+  - level: FATAL
+    message: 'runtime: out of memory allocating 65536 bytes'
+    service: media-transcoder
+    timestamp: '2026-10-21T03:00:20Z'
+  - level: CRITICAL
+    message: 'kernel: Memory cgroup out of memory: Killed process 8841 (media-transcode)
+      total-vm:4194304kB OOMKilled'
+    service: media-transcoder
+    timestamp: '2026-10-21T03:00:40Z'
+  deployments: []

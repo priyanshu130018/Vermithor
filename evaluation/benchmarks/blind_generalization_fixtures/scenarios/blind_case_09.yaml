@@ -1,0 +1,32 @@
+id: BLIND-CASE-09
+scenario_name: JVM Metaspace Leak Causing Linux Kernel OOM Kill
+root_cause_family: MEMORY_EXHAUSTION_AND_OOM
+target_service: catalog-search
+severity: CRITICAL
+environment: production
+is_negative_control: false
+agent_input:
+  incident_key: INC-BLIND-509
+  service: catalog-search
+  lookback_minutes: 15
+  metrics:
+  - metric_name: container_memory_usage_bytes
+    value: 2147483648.0
+    service: catalog-search
+    timestamp: '2026-10-21T02:20:00Z'
+  - metric_name: container_memory_limit_bytes
+    value: 2147483648.0
+    service: catalog-search
+    timestamp: '2026-10-21T02:20:10Z'
+  logs:
+  - level: FATAL
+    message: 'java.lang.OutOfMemoryError: Metaspace limit exceeded under continuous
+      dynamic classloader reload'
+    service: catalog-search
+    timestamp: '2026-10-21T02:20:30Z'
+  - level: CRITICAL
+    message: 'kernel: Memory cgroup out of memory: Killed process 1421 (java) total-vm:2097152kB
+      OOMKilled'
+    service: catalog-search
+    timestamp: '2026-10-21T02:20:45Z'
+  deployments: []

@@ -1,0 +1,53 @@
+id: "SCN-04-HIGH-CPU"
+scenario_name: "payload_validator_cpu_spike"
+target_service: "auth-service"
+environment: "production"
+severity: "HIGH"
+
+# Ground-truth labels
+ground_truth:
+  injected_cause: "Catastrophic polynomial backtracking in authorization header regex parsing causing 99% CPU saturation"
+  root_cause_category: "resource_saturation"
+  expected_root_cause_keywords: ["cpu", "utilization", "throttle", "compute", "saturation", "regex"]
+  expected_services: ["auth-service"]
+  expected_evidence_ids: ["EV-METRIC-CPU-99", "EV-LOG-CPU-THROTTLE"]
+  plausible_alternatives:
+    - "DDoS layer-7 volumetric flood"
+    - "Rogue unconstrained thread spin in telemetry exporter"
+  abstain_required: false
+  abstain_conditions:
+    - "If CPU utilization is below 75%, do not classify as CPU saturation"
+  repair_appropriate: true
+  repair_target_file: "src/auth/validator.py"
+  repair_expected_defect: "Replace unanchored nested quantifier regex with deterministic string prefix validator"
+
+# Information presented to the agent
+agent_input:
+  incident_key: "INC-2026-9004"
+  service: "auth-service"
+  lookback_minutes: 60
+  metrics:
+    - metric_name: "container_cpu_utilization_ratio"
+      service: "auth-service"
+      value: 0.99
+      timestamp: "2026-10-19T12:00:00Z"
+    - metric_name: "container_cpu_cfs_throttled_ratio"
+      service: "auth-service"
+      value: 0.58
+      timestamp: "2026-10-19T12:00:00Z"
+    - metric_name: "api_request_latency_ms"
+      service: "auth-service"
+      value: 3800.0
+      timestamp: "2026-10-19T12:05:00Z"
+  logs:
+    - service: "auth-service"
+      level: "WARN"
+      message: "Node.js EventLoopDelay: Event loop lag exceeds 1420ms across 4 worker threads"
+      timestamp: "2026-10-19T12:01:10Z"
+    - service: "auth-service"
+      level: "WARN"
+      message: "Cgroup CPU quota reached: container throttled for 1800ms in 5000ms window"
+      timestamp: "2026-10-19T12:02:00Z"
+  deployments: []
+  dependencies:
+    - "postgres"

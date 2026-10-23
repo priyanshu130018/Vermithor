@@ -36,7 +36,19 @@ def authorize_repository_node(
             "error_message": f"Access denied: User is not authorized to inspect or modify repository '{repo_url}'",
         }
 
+    base_commit = None
+    try:
+        base_commit = git_provider.get_latest_commit_sha(repo_url, ref=target_branch)
+    except Exception as exc:
+        logger.warning("Could not determine latest commit SHA for '%s': %s", repo_url, exc)
+
+    is_read_only = getattr(git_provider, "read_only", True)
     return {
         "is_authorized": True,
         "authorization_error": None,
+        "base_commit": base_commit,
+        "is_read_only_pilot": is_read_only,
+        "pilot_audit_notice": "No repository changes have been published (Read-Only Pilot Mode)" if is_read_only else None,
     }
+
+

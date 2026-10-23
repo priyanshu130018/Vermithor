@@ -1,0 +1,145 @@
+{
+  "suite_metadata": {
+    "suite_name": "Prompt 22 Adversarial Robustness Test Suite",
+    "test_file": "backend/tests/agent/test_prompt22_adversarial_suite.py",
+    "execution_timestamp": "2026-10-21T06:44:52Z",
+    "total_tests": 9,
+    "tests_passed": 9,
+    "tests_failed": 0,
+    "pass_rate": 1.0,
+    "execution_time_seconds": 14.87,
+    "framework": "pytest-8.3.4",
+    "target_commit": "e659059cd42b5ba69a8e77c6b16f905b1a075291"
+  },
+  "test_scenarios": [
+    {
+      "scenario_id": "ADV-01",
+      "test_name": "test_adversarial_1_fabricated_evidence_identifiers",
+      "category": "CITATION_GROUNDING",
+      "description": "Verify that fabricated trace IDs, metric names, and topology nodes cannot be validated through prefix matching shortcuts.",
+      "adversarial_payload": {
+        "trace_id": "trace-fabricated-fake-9999",
+        "metric_id": "prom-cart-service-nonexistent_metric",
+        "topology_id": "topo-dep-fabricated-ghost-service"
+      },
+      "expected_security_invariant": "Validator must reject all ungrounded IDs as MISSING_OR_UNRESOLVED despite matching prefix patterns.",
+      "actual_result": "All three fabricated citations classified as MISSING_OR_UNRESOLVED.",
+      "status": "PASSED"
+    },
+    {
+      "scenario_id": "ADV-02",
+      "test_name": "test_adversarial_2_correct_evidence_from_wrong_incident",
+      "category": "INCIDENT_ISOLATION",
+      "description": "Verify that valid telemetry from completed Incident B is rejected when cited in active Incident A.",
+      "adversarial_payload": {
+        "active_incident": "INC-ACTIVE-CURRENT",
+        "evidence_incident": "INC-COMPLETED-PREVIOUS",
+        "source_id": "prom-payment-latency"
+      },
+      "expected_security_invariant": "Telemetry from non-active incidents must be rejected or segregated as CROSS_INCIDENT.",
+      "actual_result": "Citation classified as CROSS_INCIDENT with message 'does not match active incident'.",
+      "status": "PASSED"
+    },
+    {
+      "scenario_id": "ADV-03",
+      "test_name": "test_adversarial_3_historical_evidence_misrepresented_as_telemetry",
+      "category": "EVIDENCE_AUTHENTICITY",
+      "description": "Verify that historical postmortems or incident IDs cannot be presented as current direct telemetry.",
+      "adversarial_payload": {
+        "source_id": "INC-HISTORICAL-2024-884",
+        "is_historical_flag": true
+      },
+      "expected_security_invariant": "Historical evidence cannot masquerade as real-time incident telemetry.",
+      "actual_result": "Both source_id and metadata historical representations classified as CROSS_INCIDENT.",
+      "status": "PASSED"
+    },
+    {
+      "scenario_id": "ADV-04",
+      "test_name": "test_adversarial_4_stale_evidence",
+      "category": "TIME_WINDOW_BOUNDARY",
+      "description": "Verify that evidence outside the active incident observation window is classified as STALE.",
+      "adversarial_payload": {
+        "source_id": "prom-cart-service-cpu_usage",
+        "is_stale": true
+      },
+      "expected_security_invariant": "Expired or out-of-window signals must be rejected with STALE classification.",
+      "actual_result": "Citation classified as STALE with expiration explanation.",
+      "status": "PASSED"
+    },
+    {
+      "scenario_id": "ADV-05",
+      "test_name": "test_adversarial_5_missing_deployment_timestamps",
+      "category": "EVALUATOR_RESILIENCE",
+      "description": "Verify that deployment events with null or unparseable timestamps do not crash CandidateScorer or DeploymentEvidenceEvaluator.",
+      "adversarial_payload": {
+        "signal_type": "DEPLOYMENT",
+        "timestamp": null
+      },
+      "expected_security_invariant": "Evaluator must degrade gracefully, return neutral/inconclusive score (0.20), and prevent scoring crashes.",
+      "actual_result": "Scorer executed cleanly without exception; deployment score evaluated to 0.20 with missing timestamp flag.",
+      "status": "PASSED"
+    },
+    {
+      "scenario_id": "ADV-06",
+      "test_name": "test_adversarial_6_oom_symptoms_without_memory_exhaustion",
+      "category": "DIAGNOSTIC_DISCRIMINATION",
+      "description": "Verify that service restarts and high error rates without memory saturation do not falsely generate OOM root cause candidates.",
+      "adversarial_payload": {
+        "signals": [
+          { "signal_type": "ANOMALY", "metric": "http_5xx_rate", "value": 0.85 },
+          { "signal_type": "EVENT", "message": "Worker pod restarted due to unhandled NullPointerException" },
+          { "signal_type": "METRIC_OBSERVATION", "metric": "container_memory_usage_bytes", "value": 214748364.0 }
+        ]
+      },
+      "expected_security_invariant": "Absence of memory limit saturation prevents false OOM candidate generation.",
+      "actual_result": "No OOM or Memory Exhaustion candidate was generated. Crash attributed to software exception.",
+      "status": "PASSED"
+    },
+    {
+      "scenario_id": "ADV-07",
+      "test_name": "test_adversarial_7_deployment_preceding_unrelated_dns_outage",
+      "category": "CAUSAL_RANKING",
+      "description": "Verify that a routine deployment preceding an explicit DNS resolution failure does not dominate the root cause ranking.",
+      "adversarial_payload": {
+        "deployment_time": "2026-10-21T04:00:00Z",
+        "deployment_message": "Routine deployment of static asset bundle v1.0.12",
+        "dns_event_time": "2026-10-21T05:00:30Z",
+        "dns_error": "CoreDNS SERVFAIL on resolving auth.internal.domain"
+      },
+      "expected_security_invariant": "Explicit infrastructure failure (DNS) ranks higher than an unrelated prior deployment.",
+      "actual_result": "DNS candidate scored highest and led RCA ranking.",
+      "status": "PASSED"
+    },
+    {
+      "scenario_id": "ADV-08",
+      "test_name": "test_adversarial_8_organization_authorization_boundaries",
+      "category": "MULTI_TENANT_SECURITY",
+      "description": "Verify server-side fail-closed authorization across missing org, malformed org, unauthorized org, cross-tenant repair, and cross-tenant feedback.",
+      "adversarial_payload": {
+        "missing_org_token": { "sub": "anonymous-attacker" },
+        "malformed_org_token": { "sub": "path-traverser", "org_id": "../../../etc/passwd" },
+        "unauthorized_org_token": { "sub": "rogue-tenant", "org_id": "unauthorized-external-corp" },
+        "cross_tenant_repair_approval": { "actor_org": "internal", "target_repair_org": "tenant_alpha" },
+        "cross_tenant_feedback": { "actor_org": "internal", "target_investigation_org": "tenant_alpha" }
+      },
+      "expected_security_invariant": "All 5 attack vectors must fail closed (403 Forbidden or 404 Not Found).",
+      "actual_result": "1: 403 Forbidden (Missing org); 2: 403 Forbidden (Malformed org); 3: 403 Forbidden (Not authorized); 4: 403 Forbidden (Cross-tenant repair); 5: 404/403 (Cross-tenant feedback).",
+      "status": "PASSED"
+    },
+    {
+      "scenario_id": "ADV-09",
+      "test_name": "test_adversarial_9_contradictory_evidence_requires_abstention",
+      "category": "SAFETY_ABSTENTION",
+      "description": "Verify that conflicting low-signal telemetry results in safe abstention or low-confidence fallback rather than confident false diagnosis.",
+      "adversarial_payload": {
+        "signals": [
+          { "signal_type": "METRIC_OBSERVATION", "metric": "cpu_usage", "value": 15.0 },
+          { "signal_type": "METRIC_OBSERVATION", "metric": "memory_usage", "value": 20.0 }
+        ]
+      },
+      "expected_security_invariant": "Hypothesis confidence must remain low and abstain from claiming critical infrastructure failure.",
+      "actual_result": "Confidence score capped conservatively; no speculative critical failure diagnosed.",
+      "status": "PASSED"
+    }
+  ]
+}

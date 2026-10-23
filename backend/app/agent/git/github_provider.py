@@ -26,11 +26,14 @@ class GitHubProvider(GitProvider):
         token: Optional[str] = None,
         base_url: str = "https://api.github.com",
         allowed_orgs: Optional[List[str]] = None,
+        read_only: bool = True,
     ):
         self.token = token or os.getenv("GITHUB_TOKEN", "")
         self.base_url = base_url.rstrip("/")
         self.allowed_orgs = allowed_orgs or ["vermithor", "internal", "default"]
+        self.read_only = read_only
         self.timeout = 15.0
+
 
     def _get_headers(self) -> Dict[str, str]:
         headers = {
@@ -102,6 +105,10 @@ class GitHubProvider(GitProvider):
                 resp = client.get(url, headers=self._get_headers(), params=params)
                 if resp.status_code == 404:
                     raise FileNotFoundError(f"File '{cleaned_path}' not found in GitHub repository {owner}/{repo}@{ref}")
+                if resp.status_code in (403, 429):
+                    limit_rem = resp.headers.get("X-RateLimit-Remaining")
+                    logger.warning("GitHub rate limit encountered while querying file content: remaining=%s", limit_rem)
+                    raise PermissionError(f"GitHub API rate limit exceeded or access forbidden (remaining: {limit_rem})")
                 resp.raise_for_status()
 
                 data = resp.json()
@@ -140,6 +147,53 @@ class GitHubProvider(GitProvider):
             logger.warning("GitHub list_files failed: %s", redact_secrets(str(exc)))
             return []
 
+    def get_latest_commit_sha(
+        self,
+        repository_url: str,
+        ref: str = "main",
+    ) -> str:
+        """Retrieve commit SHA for the specified branch/ref on GitHub."""
+        owner, repo = self._parse_repo(repository_url)
+        if not self.token:
+            # Deterministic pilot mock SHA when remote GitHub token is absent
+            import hashlib
+            slug = f"{owner}/{repo}:{ref}".encode("utf-8")
+            return hashlib.sha256(slug).hexdigest()[:40]
+
+        url = f"{self.base_url}/repos/{owner}/{repo}/commits/{ref}"
+        try:
+            with httpx.Client(timeout=self.timeout) as client:
+                resp = client.get(url, headers=self._get_headers())
+                if resp.status_code in (403, 429):
+                    limit_rem = resp.headers.get("X-RateLimit-Remaining")
+                    logger.warning("GitHub rate limit encountered while querying commit SHA: remaining=%s", limit_rem)
+                    raise PermissionError(f"GitHub API rate limit exceeded or access forbidden (remaining: {limit_rem})")
+                resp.raise_for_status()
+                return resp.json()["sha"]
+        except Exception as exc:
+            logger.error("GitHub get_latest_commit_sha failed for %s/%s@%s: %s", owner, repo, ref, redact_secrets(str(exc)))
+            raise
+
+    def check_rate_limit(self) -> Dict[str, Any]:
+        """Check GitHub API rate limit status without leaking credentials."""
+        if not self.token:
+            return {"limit": 60, "remaining": 60, "reset": 0, "mock": True}
+        try:
+            with httpx.Client(timeout=self.timeout) as client:
+                resp = client.get(f"{self.base_url}/rate_limit", headers=self._get_headers())
+                if resp.status_code == 200:
+                    rate = resp.json().get("rate", {})
+                    return {
+                        "limit": rate.get("limit", 5000),
+                        "remaining": rate.get("remaining", 5000),
+                        "reset": rate.get("reset", 0),
+                        "mock": False,
+                    }
+                return {"limit": 60, "remaining": 0, "reset": 0, "mock": False}
+        except Exception as exc:
+            logger.warning("Failed to check GitHub rate limit: %s", redact_secrets(str(exc)))
+            return {"limit": 0, "remaining": 0, "reset": 0, "error": redact_secrets(str(exc))}
+
     _PROTECTED_BRANCHES = {"main", "master", "production", "prod", "release", "stable"}
 
     def create_branch(
@@ -148,7 +202,10 @@ class GitHubProvider(GitProvider):
         new_branch: str,
         base_ref: str = "main",
     ) -> bool:
-        """Create a new ref on GitHub, strictly preventing write to protected branches."""
+        """Create a new ref on GitHub, strictly preventing write in read-only pilot mode or to protected branches."""
+        if self.read_only:
+            raise PermissionError("Repository is connected in read-only pilot mode; write operations ('create_branch') are strictly disabled.")
+
         if new_branch.lower() in self._PROTECTED_BRANCHES:
             raise ValueError(f"Protected branch boundary violation: cannot create or overwrite protected branch '{new_branch}'")
 
@@ -186,7 +243,10 @@ class GitHubProvider(GitProvider):
         head_branch: str,
         base_branch: str = "main",
     ) -> Dict[str, Any]:
-        """Create a draft pull request on GitHub, verifying head branch safety."""
+        """Create a draft pull request on GitHub, strictly preventing write in read-only pilot mode."""
+        if self.read_only:
+            raise PermissionError("Repository is connected in read-only pilot mode; write operations ('create_pull_request') are strictly disabled.")
+
         if head_branch.lower() in self._PROTECTED_BRANCHES:
             raise ValueError(f"Protected branch boundary violation: head branch cannot be protected branch '{head_branch}'")
 
@@ -229,3 +289,4 @@ class GitHubProvider(GitProvider):
                 "html_url": f"https://github.com/{owner}/{repo}/compare/{base_branch}...{head_branch}",
                 "simulated": True,
             }
+

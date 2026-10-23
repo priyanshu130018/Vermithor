@@ -127,13 +127,13 @@ Configure settings in `.env`. **Never commit `.env` or real passwords to version
 | `EMBEDDING_MODEL_NAME` | No | `sentence-transformers/all-MiniLM-L6-v2` | Embedding model identifier (384-dimensional dense vectors). |
 | `EMBEDDING_DIMENSION` | No | `384` | Vector dimension matching `pgvector` column. |
 | `HF_EMBEDDING_BASE_URL` | No | `https://router.huggingface.co/hf-inference` | Hugging Face feature-extraction pipeline base URL. |
-| `LLM_PROVIDER` | No | `huggingface` | LLM synthesis provider (`huggingface` or `ollama`). |
-| `HF_TOKEN` | Optional | *(Empty)* | Hugging Face Bearer token (when `LLM_PROVIDER=huggingface`). |
-| `HF_MODEL` | No | `meta-llama/Llama-3.1-8B-Instruct` | Model identifier for Hugging Face Inference Providers. |
-| `HF_BASE_URL` | No | `https://router.huggingface.co/v1` | OpenAI-compatible router endpoint for Hugging Face. |
-| `OLLAMA_BASE_URL` | No | `http://localhost:11434` | Ollama endpoint (`http://host.docker.internal:11434` for Docker Compose). |
-| `OLLAMA_MODEL` | No | `llama3.2` | Ollama model identifier (e.g., `llama3.2`, `llama3.1`, `mistral`). |
-| `LLM_FALLBACK_ENABLED` | No | `true` | Enable deterministic grounded fallback when LLM is offline or credits exhausted. |
+| LLM_PROVIDER | No | huggingface | Cloud LLM backend provider (huggingface). |
+| HF_TOKEN | Optional | *(Empty)* | Hugging Face Bearer token for Inference Providers. |
+| HF_BASE_URL | No | https://router.huggingface.co/v1 | OpenAI-compatible router endpoint for Hugging Face Inference Providers. |
+| HF_INVESTIGATION_MODEL | No | meta-llama/Llama-3.1-8B-Instruct | Configured cloud model for investigation and root-cause analysis. |
+| HF_SUMMARY_MODEL | No | meta-llama/Llama-3.1-8B-Instruct | Configured cloud model for summary and postmortem generation. |
+| HF_REVIEW_MODEL | No | meta-llama/Llama-3.1-8B-Instruct | Configured cloud model for report review and citation verification. |
+| LLM_FALLBACK_ENABLED | No | 	rue | Enable deterministic grounded fallback when cloud LLM is offline or credits exhausted. |
 | `OTEL_EXPORTER_OTLP_ENDPOINT`| No | `http://localhost:4318` | Jaeger OTLP HTTP receiver endpoint. |
 
 ---
@@ -212,28 +212,28 @@ npm run dev
 ```
 Dashboard available at `http://localhost:5173`.
 
-### 7.4 Running Local Ollama for RCA Summaries
-Ollama provides local, offline LLM synthesis without cloud API rate limits or credit quotas.
+### 7.4 Cloud Multi-Model Routing Configuration (Hugging Face Inference Providers)
+Vermithor connects to cloud Hugging Face Inference Providers router (https://router.huggingface.co/v1) with task-specific model routing.
 
-1. **Install Ollama**: Download from [ollama.com](https://ollama.com/download) for Windows/macOS/Linux.
-2. **Pull the Model**:
-   ```powershell
-   ollama pull llama3.2
-   ```
-3. **Start Ollama Service**:
-   ```powershell
-   ollama serve
-   ```
-   *(Listens on `http://localhost:11434` by default)*.
-4. **Configure Vermithor**:
-   Set in `.env`:
-   ```bash
-   LLM_PROVIDER=ollama
-   OLLAMA_BASE_URL=http://localhost:11434
-   OLLAMA_MODEL=llama3.2
-   ```
-   *Note for Docker Compose:* When running Vermithor in Docker, set `OLLAMA_BASE_URL=http://host.docker.internal:11434`.
+1. **Obtain API Token & Check Credits**:
+   - Create an API token at [huggingface.co/settings/tokens](https://huggingface.co/settings/tokens).
+   - Ensure the account has active credits or a PRO subscription at [huggingface.co/settings/billing](https://huggingface.co/settings/billing).
 
+2. **Configure Multi-Model Routing in .env**:
+   `ash
+   LLM_PROVIDER=huggingface
+   HF_TOKEN=hf_your_actual_token_here
+   HF_BASE_URL=https://router.huggingface.co/v1
+
+   # Task-Specific Cloud Model Routing (configurable per intelligence task)
+   HF_INVESTIGATION_MODEL=meta-llama/Llama-3.1-8B-Instruct
+   HF_SUMMARY_MODEL=meta-llama/Llama-3.1-8B-Instruct
+   HF_REVIEW_MODEL=meta-llama/Llama-3.1-8B-Instruct
+   LLM_FALLBACK_ENABLED=true
+   `
+
+3. **Grounded Deterministic Fallback**:
+   When cloud credits are exhausted (HTTP 402) or provider is unreachable, Vermithor automatically routes to deterministic grounded rules without hallucination. All fallback responses are explicitly labeled as deterministic-rules (non-LLM).
 ---
 
 ## 8. Testing & Static Validation
@@ -270,19 +270,78 @@ python evaluation/evaluator.py
 ```
 Evaluates RCA accuracy, anomaly F1, and schema validity across 7 deterministic incident scenarios. Generates report at `evaluation/report.md`.
 
-### 8.5 Frontend Unit Tests
+### 8.5 Frontend Unit & Integration Tests
 ```powershell
 cd frontend
-npm run test
+npm test
 cd ..
 ```
+Runs Vitest across 9 test suites including `InvestigationPanel.test.tsx` and `CodeRepairPanel.test.tsx` (21 tests).
 
-### 8.6 Docker Compose Syntax Validation
+### 8.6 Frontend TypeScript Type Check & Production Build
+```powershell
+cd frontend
+npm run build
+cd ..
+```
+Compiles TypeScript with 0 errors and generates production bundle via Vite.
+
+### 8.7 LangGraph AI Agent Test Suites
+```powershell
+# Run all LangGraph AI agent unit and security tests (61 tests)
+python -m pytest backend/tests/agent/ -v
+
+# Run the complete end-to-end incident-to-repair user journey test suite (3 tests)
+python -m pytest backend/tests/test_end_to_end_journey.py -v
+```
+Validates investigation evidence gathering, hypothesis evaluation, code repair generation, isolated sandbox validation (4/4 tests pass), patch hashing, stale patch rejection, RBAC authorization, and tenant isolation.
+
+### 8.8 End-to-End Workflow & Demo Verification
+```powershell
+# Run the synthetic incident INC-2026-1042 pipeline runner
+python scripts/demo/synthetic-incidents/run_incident_1042.py
+
+# Run the AI Code Repair interactive demo CLI
+python backend/scripts/run_repair_demo.py
+```
+
+### 8.9 Docker Compose Syntax Validation
 ```powershell
 docker compose config --quiet
 ```
 
+### 8.10 Controlled Pilot & Read-Only Repository Testing
+```powershell
+# Run the complete controlled pilot and repository isolation test suite (15 tests)
+python -m pytest backend/tests/agent/test_pilot_repository_isolation.py -v
+
+# Run all 76 LangGraph agent investigation, repair, and pilot isolation tests
+python -m pytest backend/tests/agent/ -v
+```
+Validates repository connection under least privilege (`contents: read`, `metadata: read`), multi-tenant isolation, directory traversal/SSRF prevention, revocation gating, read-only write protection, rate limit resilience, and full traceability.
+See [Controlled Pilot & Read-Only Repository Setup Guide](file:///docs/pilot_setup.md) for step-by-step setup details.
+
+### 8.11 Customer Pilot Onboarding, Telemetry Verification & Data Governance Tests
+`powershell
+# Run the complete pilot onboarding, least-privilege telemetry, and governance test suite (15 tests)
+python -m pytest backend/tests/agent/test_pilot_onboarding_and_readiness.py -v
+
+# Run the frontend Pilot Readiness and Onboarding component tests
+npm --prefix frontend test -- PilotReadiness
+`
+Validates:
+- Guided 8-milestone onboarding workflow state machine.
+- Least-privilege telemetry integration: SSRF protection, loopback/cloud-metadata blocking, and 2MB response size limits.
+- The 5 explicit integration states: NOT_CONFIGURED, CONFIGURED_UNVERIFIED, VERIFIED, DEGRADED, REVOKED.
+- Truthful provenance labeling: distinguishes LIVE_CUSTOMER_TELEMETRY from SANITIZED_REPLAY_FIXTURE.
+- Multi-tenant boundary isolation across all pilot readiness endpoints.
+- Role-based administrative gating (viewer rejected with 403).
+- Secret masking and credential redaction before persistence.
+- Telemetry collection kill-switch (collection_enabled: false) and investigation pause (investigations_paused: true).
+- Cascading organization data purge across PostgreSQL, Redis cache, and background task queues.
+
 ---
+
 
 ## 9. Troubleshooting Common Issues
 
@@ -291,8 +350,12 @@ docker compose config --quiet
 | `psycopg.OperationalError: connection failed` | Network block or invalid Neon credentials in `.env`. | Verify `DATABASE_URL` in `.env`. Ensure `?sslmode=require` is present. Verify project status on [console.neon.tech](https://console.neon.tech). |
 | `ModuleNotFoundError: No module named 'psycopg2'` | Driver scheme missing `+psycopg`. | Vermithor automatically converts `postgresql://` to `postgresql+psycopg://`. Ensure `backend/app/common/config.py` is up to date. |
 | `type "vector" does not exist` | Migration has not been applied to Neon. | Run `alembic upgrade head`. Neon supports `pgvector` natively. |
-| `HTTP 401 Unauthorized` on Gateway | Missing, expired, or invalidly signed JWT. | Ensure client passes `Authorization: Bearer <TOKEN>` signed with `JWT_SECRET`, issuer `vermithor`, and audience `vermithor-api`. |
+| `HTTP 401 Unauthorized` on Gateway or Backend | Missing, expired, or invalidly signed JWT. | Ensure client passes `Authorization: Bearer <TOKEN>` signed with `JWT_SECRET`, issuer `vermithor`, and audience `vermithor-api`. |
+| `HTTP 403 Forbidden: Organization ... not authorized` | JWT `org_id` claim does not belong to authorized tenants list. | Use an authorized tenant (`vermithor`, `internal`, `local`, `default`, `org_default`) or configure tenant mapping. |
+| `HTTP 403 Forbidden: Role ... is not authorized to approve code repairs` | User role lacks approval privileges. | Code repair approval requires `sre`, `sre_lead`, `admin`, or `lead_engineer` role in the JWT claims. |
+| `HTTP 409 Conflict: Stale patch hash` | The patch has changed or reviewer specified an outdated patch hash. | Refresh the repair artifact (`GET /api/v1/agent/repairs/{id}`) to obtain the latest `patch_hash` before approving. |
 | `HTTP 429 Too Many Requests` on Gateway | Exceeded rate limit ceiling. | Respect the `Retry-After: 5` header. Summary endpoint has a 2 req/s limit. |
-| Hugging Face 401 / 429 Errors | Missing/invalid `HF_TOKEN` or free-tier rate limits. | Verify `HF_TOKEN` in `.env`. If exhausted, Vermithor automatically activates deterministic fallback (`is_fallback: true`). |
+| Hugging Face 401 / 402 / 429 / 5xx | Missing/invalid HF_TOKEN, credit exhaustion, or cloud provider offline. | Vermithor automatically activates deterministic grounded fallback (is_fallback: true, model: deterministic-rules (non-LLM)). Synthesis operates without hallucination or network dependencies. |
 | Port Conflict (`Address already in use`) | Host ports (8000, 8080, 5173, 6379) bound by other processes. | Terminate process holding port (`netstat -ano \| findstr <PORT>` on Windows; `lsof -i :<PORT>` on Linux). |
 | CORS Errors in Browser | Origin mismatch between Vite and Gateway. | Set `VITE_API_BASE_URL=http://localhost:8080` in `frontend/.env`. |
+

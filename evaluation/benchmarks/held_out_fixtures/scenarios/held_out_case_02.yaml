@@ -1,0 +1,35 @@
+id: HELDOUT-CASE-02
+scenario_name: checkout_gateway_downstream_partner_timeout_healthy_dns
+target_service: checkout-gateway
+environment: production
+severity: HIGH
+agent_input:
+  incident_key: INC-HELDOUT-302
+  service: checkout-gateway
+  lookback_minutes: 30
+  metrics:
+  - metric_name: http_client_request_timeout_ratio
+    service: checkout-gateway
+    value: 0.65
+    timestamp: '2026-10-20T14:10:00Z'
+  - metric_name: partner_api_latency_p99_ms
+    service: checkout-gateway
+    value: 8500.0
+    timestamp: '2026-10-20T14:10:00Z'
+  - metric_name: dns_resolution_latency_ms
+    service: checkout-gateway
+    value: 1.8
+    timestamp: '2026-10-20T14:10:00Z'
+  logs:
+  - service: checkout-gateway
+    level: WARN
+    message: 'HTTP 504 Gateway Timeout received from external partner payment provider https://api.stripe.com'
+    timestamp: '2026-10-20T14:11:00Z'
+  - service: checkout-gateway
+    level: ERROR
+    message: 'HTTPClientPool timeout: partner gateway external endpoint failed to respond within 8000ms'
+    timestamp: '2026-10-20T14:12:00Z'
+  deployments: []
+  dependencies:
+  - partner-gateway
+  - coredns

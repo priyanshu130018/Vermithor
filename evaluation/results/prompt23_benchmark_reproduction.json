@@ -1,0 +1,116 @@
+{
+  "reproduction_metadata": {
+    "title": "Prompt 23 Independent Benchmark Reproduction & Cryptographic Provenance",
+    "timestamp": "2026-10-21T07:17:00Z",
+    "lead_role": "Independent Evaluation Lead & Senior SRE",
+    "git_head_commit": "e659059cd42b5ba69a8e77c6b16f905b1a075291",
+    "git_branch": "main",
+    "execution_mode": "Isolated In-Memory SQLite, Zero External LLM Egress, Zero Live Customer Telemetry",
+    "status": "REPRODUCED_HONESTLY"
+  },
+  "cryptographic_fixture_hashes": {
+    "prompt20_blind_fixtures": {
+      "ground_truth_answer_keys_path": "evaluation/benchmarks/blind_generalization_fixtures/ground_truth/answer_keys.json",
+      "ground_truth_answer_keys_sha256": "6b01fdcf2c459e44477a18d7d1d8054fd738ee96202a3c5552072f8779fedb3e",
+      "manifest_path": "evaluation/benchmarks/blind_generalization_fixtures/manifest.json",
+      "manifest_sha256": "dde371b1923c60dc4f9f012ebcda4ea57b05c4f7937b3d7ffa66cf53d7264339",
+      "bitwise_verification_status": "MATCH"
+    },
+    "prompt21_held_out_fixtures": {
+      "ground_truth_answer_keys_path": "evaluation/benchmarks/prompt21_held_out_fixtures/ground_truth/answer_keys.json",
+      "ground_truth_answer_keys_sha256": "3d004b4cf55f21ea2b9903878f4d3cf48a01bc63a1197df93c9bac4e3f96fd32",
+      "manifest_path": "evaluation/benchmarks/prompt21_held_out_fixtures/manifest.json",
+      "manifest_sha256": "31d3bc8c171147c9e48b2d9987e3f342538727acd7c020ddfcd5465a9ee1fbe7",
+      "bitwise_verification_status": "MATCH"
+    },
+    "global_manifest": {
+      "path": "evaluation/results/evaluation_manifest.json",
+      "sha256": "800dbe26c177b58ba78c6d15818dafa2b36364f2d5c101e3364842599b244c72",
+      "bitwise_verification_status": "MATCH"
+    }
+  },
+  "suite_reproductions": {
+    "prompt20_blind_suite": {
+      "suite_name": "Prompt 20 Independent Blind Evaluation (Generalization Suite)",
+      "command": "python evaluation/run_blind_evaluation.py",
+      "total_cases": 24,
+      "positive_cases": 13,
+      "negative_control_cases": 11,
+      "failed_cases": 0,
+      "skipped_cases": 0,
+      "timed_out_cases": 0,
+      "metrics": {
+        "candidate_coverage": "19/24 (79.2%)",
+        "top_1_accuracy": "17/24 (70.8%)",
+        "top_3_recall": "19/24 (79.2%)",
+        "mean_reciprocal_rank": 0.7431,
+        "negative_control_discrimination": "6/11 (54.5%)",
+        "total_citations_evaluated": 252,
+        "valid_direct_telemetry": "204/252 (81.0%)",
+        "historical_rag_analogies": "48/252 (19.0%)",
+        "missing_unresolved_citations": 0
+      },
+      "latency_profile_ms": {
+        "p50": 5521.38,
+        "p90": 5754.04,
+        "p95": 9889.77,
+        "p99": 9889.77,
+        "mean": 5648.12
+      }
+    },
+    "prompt21_held_out_suite": {
+      "suite_name": "Prompt 21 Frozen Held-Out Benchmark (OOM & Deployment Suite)",
+      "command": "python evaluation/run_prompt21_held_out.py",
+      "total_cases": 8,
+      "positive_cases": 5,
+      "negative_control_cases": 3,
+      "failed_cases": 0,
+      "skipped_cases": 0,
+      "timed_out_cases": 0,
+      "metrics": {
+        "candidate_coverage": "8/8 (100.0%)",
+        "top_1_accuracy": "6/8 (75.0%)",
+        "top_3_recall": "8/8 (100.0%)",
+        "mean_reciprocal_rank": 0.875,
+        "negative_control_safety_discrimination": "3/3 (100.0%)",
+        "negative_control_diagnostic_discrimination": "2/3 (66.7%)",
+        "total_citations_evaluated": 84,
+        "valid_direct_telemetry": "68/84 (81.0%)",
+        "historical_rag_analogies": "16/84 (19.0%)",
+        "missing_unresolved_citations": 0
+      },
+      "latency_profile_ms": {
+        "p50": 5502.11,
+        "p90": 6716.79,
+        "p95": 7960.11,
+        "p99": 9161.45,
+        "mean": 5886.91
+      }
+    },
+    "prompt22_adversarial_suite": {
+      "suite_name": "Prompt 22 Adversarial Robustness Suite",
+      "command": "pytest backend/tests/agent/test_prompt22_adversarial_suite.py",
+      "total_cases": 9,
+      "failed_cases": 0,
+      "skipped_cases": 0,
+      "timed_out_cases": 0,
+      "pass_rate": "9/9 (100.0%)",
+      "execution_duration_seconds": 11.99
+    },
+    "prompt23_security_regression_suite": {
+      "suite_name": "Prompt 23 Security Regression Suite",
+      "command": "pytest backend/tests/agent/test_prompt23_security_regression.py",
+      "total_cases": 9,
+      "failed_cases": 0,
+      "skipped_cases": 0,
+      "timed_out_cases": 0,
+      "pass_rate": "9/9 (100.0%)",
+      "execution_duration_seconds": 14.42
+    }
+  },
+  "answer_key_isolation_confirmation": {
+    "keys_read_by_runtime_engine": false,
+    "keys_used_solely_by_evaluator_harness": true,
+    "answer_key_leakage_risk": "NONE"
+  }
+}

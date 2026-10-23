@@ -1,0 +1,30 @@
+id: PILOT-CASE-10
+scenario_name: search_federator_transient_cloud_jitter
+target_service: search-federator
+environment: production
+severity: LOW
+agent_input:
+  incident_key: INC-PILOT-210
+  service: search-federator
+  lookback_minutes: 30
+  metrics:
+  - metric_name: network_packet_loss
+    service: search-federator
+    value: 0.002
+    timestamp: '2026-10-20T11:10:00Z'
+  - metric_name: search_query_p95_latency_ms
+    service: search-federator
+    value: 180.0
+    timestamp: '2026-10-20T11:15:00Z'
+  logs:
+  - service: search-federator
+    level: INFO
+    message: BGP route convergence transit latency nominal; 0 connection drops
+    timestamp: '2026-10-20T11:11:00Z'
+  - service: search-federator
+    level: INFO
+    message: Federated query dispatch completed in 140ms
+    timestamp: '2026-10-20T11:14:00Z'
+  deployments: []
+  dependencies:
+  - search-nodes

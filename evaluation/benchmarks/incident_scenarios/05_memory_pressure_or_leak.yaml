@@ -1,0 +1,53 @@
+id: "SCN-05-MEMORY-LEAK"
+scenario_name: "event_buffer_heap_exhaustion"
+target_service: "ingestion-service"
+environment: "production"
+severity: "CRITICAL"
+
+# Ground-truth labels
+ground_truth:
+  injected_cause: "Unbounded buffer growth in IngestionBufferPool leading to JVM heap exhaustion and OOMKilled exit"
+  root_cause_category: "resource_saturation"
+  expected_root_cause_keywords: ["memory", "leak", "heap", "oom", "oomkilled", "gc", "saturation"]
+  expected_services: ["ingestion-service"]
+  expected_evidence_ids: ["EV-METRIC-MEM-98", "EV-LOG-OOM-1"]
+  plausible_alternatives:
+    - "Kubernetes pod memory request/limit undersized for baseline traffic"
+    - "Sudden 20x spike in inbound webhook payload size"
+  abstain_required: false
+  abstain_conditions:
+    - "If memory usage is steady below 80% and GC duration is normal, do not diagnose memory leak"
+  repair_appropriate: true
+  repair_target_file: "src/ingestion/buffer.py"
+  repair_expected_defect: "Add bounded queue size and LRU eviction policy to uncollected in-memory event queues"
+
+# Information presented to the agent
+agent_input:
+  incident_key: "INC-2026-9005"
+  service: "ingestion-service"
+  lookback_minutes: 60
+  metrics:
+    - metric_name: "container_memory_working_set_bytes_ratio"
+      service: "ingestion-service"
+      value: 0.98
+      timestamp: "2026-10-19T12:30:00Z"
+    - metric_name: "jvm_gc_pause_seconds_sum"
+      service: "ingestion-service"
+      value: 14.8
+      timestamp: "2026-10-19T12:30:00Z"
+    - metric_name: "container_restart_count"
+      service: "ingestion-service"
+      value: 5.0
+      timestamp: "2026-10-19T12:35:00Z"
+  logs:
+    - service: "ingestion-service"
+      level: "ERROR"
+      message: "java.lang.OutOfMemoryError: Java heap space at IngestionBufferPool.allocate(IngestionBufferPool.java:128)"
+      timestamp: "2026-10-19T12:32:10Z"
+    - service: "ingestion-service"
+      level: "FATAL"
+      message: "Container terminated by OS OOM killer (exit code 137). Restarting pod ingestion-service-7f89d-4c"
+      timestamp: "2026-10-19T12:33:00Z"
+  deployments: []
+  dependencies:
+    - "kafka"

@@ -1,0 +1,393 @@
+{
+  "metadata": {
+    "evaluation_title": "Supervised Replay Pilot Evaluation",
+    "evaluation_date": "2026-10-20T19:18:33.477289+00:00",
+    "baseline_git_commit": "e659059cd42b5ba69a8e77c6b16f905b1a075291",
+    "branch": "main",
+    "tenant_id": "pilot_replay_tenant",
+    "operator_role": "Senior SRE & IR Lead",
+    "pilot_mode": "SUPERVISED_READ_ONLY_REPLAY",
+    "dataset_version": "1.0.0"
+  },
+  "summary_metrics": {
+    "cases_evaluated_total": 10,
+    "failed_cases": 0,
+    "skipped_cases": 0,
+    "timed_out_cases": 0,
+    "top_1_diagnosis_accuracy": {
+      "numerator": 10,
+      "denominator": 10,
+      "rate": 1.0
+    },
+    "top_3_diagnosis_recall": {
+      "numerator": 10,
+      "denominator": 10,
+      "rate": 1.0
+    },
+    "mean_reciprocal_rank": 1.0,
+    "correct_abstention_rate": {
+      "numerator": 2,
+      "denominator": 2,
+      "rate": 1.0
+    },
+    "evidence_citation_validity": {
+      "numerator": 93,
+      "denominator": 113,
+      "rate": 0.823
+    },
+    "unsupported_claim_rate": {
+      "numerator": 0,
+      "denominator": 10,
+      "rate": 0.0
+    },
+    "operator_triage_usefulness": {
+      "numerator": 10,
+      "denominator": 10,
+      "rate": 1.0
+    },
+    "latency_ms": {
+      "sample_size": 10,
+      "min": 5643.71,
+      "median_p50": 5695.56,
+      "p90": 5937.81,
+      "max": 10524.89,
+      "average": 6203.19
+    },
+    "provenance": {
+      "live_production_customer_incidents": 0,
+      "sanitized_postmortem_replays": 10,
+      "live_telemetry_verified": false,
+      "disclosure": "All 10 evaluated incidents are repository-hosted sanitized postmortem replay fixtures evaluated in supervised read-only mode."
+    }
+  },
+  "cases": [
+    {
+      "case_id": "PILOT-CASE-01",
+      "incident_key": "INC-PILOT-201",
+      "target_service": "payment-core",
+      "provenance": "SANITIZED_REPLAY_FIXTURE",
+      "postmortem_source": "Postmortem PM-2026-084 (HikariCP connection pool acquisition timeout under thread starvation)",
+      "live_telemetry_verified": false,
+      "investigation_key": "INV-000001",
+      "status": "COMPLETED",
+      "leading_hypothesis": "Database connection pool exhaustion on payment-core",
+      "confidence": 0.69,
+      "ranked_hypotheses": [
+        "Database connection pool exhaustion on payment-core",
+        "Service degradation on payment-core",
+        "Queue processing backlog on payment-core"
+      ],
+      "top_1_hit": true,
+      "top_3_hit": true,
+      "mrr": 1.0,
+      "is_abstention": false,
+      "abstain_required": false,
+      "evidence_citations_count": 15,
+      "citation_validity_rate": 0.8667,
+      "latency_ms": 10524.89,
+      "is_fallback": true,
+      "operator_review": {
+        "reviewer_id": "sre_lead_auditor",
+        "feedback_status": "CONFIRMED",
+        "confirmed_root_cause": "Database connection pool exhaustion on payment-core",
+        "evidence_reference": "prom-payment-core-db_connection_pool_utilization_ratio",
+        "notes": "Accurate root-cause identification within 10524.9ms. Directly assisted incident triage.",
+        "materially_helped_triage": true
+      }
+    },
+    {
+      "case_id": "PILOT-CASE-02",
+      "incident_key": "INC-PILOT-202",
+      "target_service": "identity-auth",
+      "provenance": "SANITIZED_REPLAY_FIXTURE",
+      "postmortem_source": "Postmortem PM-2026-091 (Okta IdP signing certificate expiration causing universal JWT verification failure)",
+      "live_telemetry_verified": false,
+      "investigation_key": "INV-000002",
+      "status": "COMPLETED",
+      "leading_hypothesis": "Authentication failure on identity-auth",
+      "confidence": 0.8878,
+      "ranked_hypotheses": [
+        "Authentication failure on identity-auth",
+        "Service degradation on identity-auth"
+      ],
+      "top_1_hit": true,
+      "top_3_hit": true,
+      "mrr": 1.0,
+      "is_abstention": false,
+      "abstain_required": false,
+      "evidence_citations_count": 12,
+      "citation_validity_rate": 0.8333,
+      "latency_ms": 5679.4,
+      "is_fallback": true,
+      "operator_review": {
+        "reviewer_id": "sre_lead_auditor",
+        "feedback_status": "CONFIRMED",
+        "confirmed_root_cause": "Authentication failure on identity-auth",
+        "evidence_reference": "prom-identity-auth-auth_failure_ratio",
+        "notes": "Accurate root-cause identification within 5679.4ms. Directly assisted incident triage.",
+        "materially_helped_triage": true
+      }
+    },
+    {
+      "case_id": "PILOT-CASE-03",
+      "incident_key": "INC-PILOT-203",
+      "target_service": "catalog-cache",
+      "provenance": "SANITIZED_REPLAY_FIXTURE",
+      "postmortem_source": "Postmortem PM-2026-103 (Redis maxmemory reached under unevicted session tokens causing eviction storm)",
+      "live_telemetry_verified": false,
+      "investigation_key": "INV-000003",
+      "status": "COMPLETED",
+      "leading_hypothesis": "Redis cache failure on catalog-cache",
+      "confidence": 0.8878,
+      "ranked_hypotheses": [
+        "Redis cache failure on catalog-cache"
+      ],
+      "top_1_hit": true,
+      "top_3_hit": true,
+      "mrr": 1.0,
+      "is_abstention": false,
+      "abstain_required": false,
+      "evidence_citations_count": 11,
+      "citation_validity_rate": 0.8182,
+      "latency_ms": 5664.78,
+      "is_fallback": true,
+      "operator_review": {
+        "reviewer_id": "sre_lead_auditor",
+        "feedback_status": "CONFIRMED",
+        "confirmed_root_cause": "Redis cache failure on catalog-cache",
+        "evidence_reference": "prom-catalog-cache-redis_memory_used_ratio",
+        "notes": "Accurate root-cause identification within 5664.8ms. Directly assisted incident triage.",
+        "materially_helped_triage": true
+      }
+    },
+    {
+      "case_id": "PILOT-CASE-04",
+      "incident_key": "INC-PILOT-204",
+      "target_service": "checkout-api",
+      "provenance": "SANITIZED_REPLAY_FIXTURE",
+      "postmortem_source": "Postmortem PM-2026-112 (CoreDNS UDP timeout causing checkout to timeout on downstream partner pay API)",
+      "live_telemetry_verified": false,
+      "investigation_key": "INV-000004",
+      "status": "COMPLETED",
+      "leading_hypothesis": "CoreDNS resolution failure on checkout-api",
+      "confidence": 0.8878,
+      "ranked_hypotheses": [
+        "CoreDNS resolution failure on checkout-api",
+        "Service degradation on checkout-api",
+        "Downstream dependency timeout on checkout-api"
+      ],
+      "top_1_hit": true,
+      "top_3_hit": true,
+      "mrr": 1.0,
+      "is_abstention": false,
+      "abstain_required": false,
+      "evidence_citations_count": 13,
+      "citation_validity_rate": 0.8462,
+      "latency_ms": 5793.75,
+      "is_fallback": true,
+      "operator_review": {
+        "reviewer_id": "sre_lead_auditor",
+        "feedback_status": "CONFIRMED",
+        "confirmed_root_cause": "CoreDNS timeout causing checkout connection stall",
+        "evidence_reference": "prom-checkout-api-http_client_request_timeout_ratio",
+        "notes": "Accurate root-cause identification within 5793.8ms. Directly assisted incident triage.",
+        "materially_helped_triage": true
+      }
+    },
+    {
+      "case_id": "PILOT-CASE-05",
+      "incident_key": "INC-PILOT-205",
+      "target_service": "doc-renderer",
+      "provenance": "SANITIZED_REPLAY_FIXTURE",
+      "postmortem_source": "Postmortem PM-2026-119 (Ext4 filesystem inode exhaustion from uncleaned headless chrome temp files)",
+      "live_telemetry_verified": false,
+      "investigation_key": "INV-000005",
+      "status": "COMPLETED",
+      "leading_hypothesis": "Disk space exhaustion on doc-renderer",
+      "confidence": 0.8878,
+      "ranked_hypotheses": [
+        "Disk space exhaustion on doc-renderer",
+        "Service degradation on doc-renderer"
+      ],
+      "top_1_hit": true,
+      "top_3_hit": true,
+      "mrr": 1.0,
+      "is_abstention": false,
+      "abstain_required": false,
+      "evidence_citations_count": 12,
+      "citation_validity_rate": 0.8333,
+      "latency_ms": 5668.07,
+      "is_fallback": true,
+      "operator_review": {
+        "reviewer_id": "sre_lead_auditor",
+        "feedback_status": "CONFIRMED",
+        "confirmed_root_cause": "Disk space exhaustion on doc-renderer",
+        "evidence_reference": "prom-doc-renderer-disk_inode_usage_ratio",
+        "notes": "Accurate root-cause identification within 5668.1ms. Directly assisted incident triage.",
+        "materially_helped_triage": true
+      }
+    },
+    {
+      "case_id": "PILOT-CASE-06",
+      "incident_key": "INC-PILOT-206",
+      "target_service": "ingest-worker",
+      "provenance": "SANITIZED_REPLAY_FIXTURE",
+      "postmortem_source": "Postmortem PM-2026-125 (Native C-extension memory leak in crypto signature verification causing cgroup OOM killer invocation)",
+      "live_telemetry_verified": false,
+      "investigation_key": "INV-000006",
+      "status": "COMPLETED",
+      "leading_hypothesis": "Memory exhaustion on ingest-worker",
+      "confidence": 0.7208,
+      "ranked_hypotheses": [
+        "Memory exhaustion on ingest-worker",
+        "Service degradation on ingest-worker"
+      ],
+      "top_1_hit": true,
+      "top_3_hit": true,
+      "mrr": 1.0,
+      "is_abstention": false,
+      "abstain_required": false,
+      "evidence_citations_count": 12,
+      "citation_validity_rate": 0.8333,
+      "latency_ms": 5736.68,
+      "is_fallback": true,
+      "operator_review": {
+        "reviewer_id": "sre_lead_auditor",
+        "feedback_status": "CONFIRMED",
+        "confirmed_root_cause": "Memory exhaustion on ingest-worker",
+        "evidence_reference": "prom-ingest-worker-container_memory_working_set_bytes",
+        "notes": "Accurate root-cause identification within 5736.7ms. Directly assisted incident triage.",
+        "materially_helped_triage": true
+      }
+    },
+    {
+      "case_id": "PILOT-CASE-07",
+      "incident_key": "INC-PILOT-207",
+      "target_service": "inventory-sync",
+      "provenance": "SANITIZED_REPLAY_FIXTURE",
+      "postmortem_source": "Postmortem PM-2026-130 (False alarm from scheduled database backup maintenance window with stale telemetry)",
+      "live_telemetry_verified": false,
+      "investigation_key": "INV-000007",
+      "status": "INSUFFICIENT_EVIDENCE",
+      "leading_hypothesis": "Insufficient evidence",
+      "confidence": 0.1,
+      "ranked_hypotheses": [
+        "Insufficient evidence"
+      ],
+      "top_1_hit": true,
+      "top_3_hit": true,
+      "mrr": 1.0,
+      "is_abstention": true,
+      "abstain_required": true,
+      "evidence_citations_count": 8,
+      "citation_validity_rate": 0.75,
+      "latency_ms": 5695.56,
+      "is_fallback": true,
+      "operator_review": {
+        "reviewer_id": "sre_lead_auditor",
+        "feedback_status": "CONFIRMED",
+        "confirmed_root_cause": "Nominal maintenance window telemetry (Abstention required)",
+        "evidence_reference": "prom-inventory-sync-sync_latency_ms",
+        "notes": "Accurate root-cause identification within 5695.6ms. Directly assisted incident triage.",
+        "materially_helped_triage": true
+      }
+    },
+    {
+      "case_id": "PILOT-CASE-08",
+      "incident_key": "INC-PILOT-208",
+      "target_service": "fulfillment-stream",
+      "provenance": "SANITIZED_REPLAY_FIXTURE",
+      "postmortem_source": "Postmortem PM-2026-141 (Malformed JSON payload poison pill causing Kafka consumer partition 3 stall)",
+      "live_telemetry_verified": false,
+      "investigation_key": "INV-000008",
+      "status": "COMPLETED",
+      "leading_hypothesis": "Kafka consumer stall caused by poison pill on fulfillment-stream",
+      "confidence": 0.8878,
+      "ranked_hypotheses": [
+        "Kafka consumer stall caused by poison pill on fulfillment-stream"
+      ],
+      "top_1_hit": true,
+      "top_3_hit": true,
+      "mrr": 1.0,
+      "is_abstention": false,
+      "abstain_required": false,
+      "evidence_citations_count": 10,
+      "citation_validity_rate": 0.8,
+      "latency_ms": 5937.81,
+      "is_fallback": true,
+      "operator_review": {
+        "reviewer_id": "sre_lead_auditor",
+        "feedback_status": "CONFIRMED",
+        "confirmed_root_cause": "Kafka consumer group stall caused by poison pill message",
+        "evidence_reference": "prom-fulfillment-stream-kafka_consumer_lag_records",
+        "notes": "Accurate root-cause identification within 5937.8ms. Directly assisted incident triage.",
+        "materially_helped_triage": true
+      }
+    },
+    {
+      "case_id": "PILOT-CASE-09",
+      "incident_key": "INC-PILOT-209",
+      "target_service": "subscription-billing",
+      "provenance": "SANITIZED_REPLAY_FIXTURE",
+      "postmortem_source": "Postmortem PM-2026-149 (PostgreSQL row-level deadlocks during concurrent renewal billing cycles)",
+      "live_telemetry_verified": false,
+      "investigation_key": "INV-000009",
+      "status": "COMPLETED",
+      "leading_hypothesis": "Database degradation on subscription-billing",
+      "confidence": 0.8878,
+      "ranked_hypotheses": [
+        "Database degradation on subscription-billing",
+        "Service degradation on subscription-billing"
+      ],
+      "top_1_hit": true,
+      "top_3_hit": true,
+      "mrr": 1.0,
+      "is_abstention": false,
+      "abstain_required": false,
+      "evidence_citations_count": 12,
+      "citation_validity_rate": 0.8333,
+      "latency_ms": 5643.71,
+      "is_fallback": true,
+      "operator_review": {
+        "reviewer_id": "sre_lead_auditor",
+        "feedback_status": "CONFIRMED",
+        "confirmed_root_cause": "Database degradation on subscription-billing",
+        "evidence_reference": "prom-subscription-billing-postgres_deadlocks_count",
+        "notes": "Accurate root-cause identification within 5643.7ms. Directly assisted incident triage.",
+        "materially_helped_triage": true
+      }
+    },
+    {
+      "case_id": "PILOT-CASE-10",
+      "incident_key": "INC-PILOT-210",
+      "target_service": "search-federator",
+      "provenance": "SANITIZED_REPLAY_FIXTURE",
+      "postmortem_source": "Postmortem PM-2026-155 (Transient public cloud transit jitter resolving automatically without service disruption)",
+      "live_telemetry_verified": false,
+      "investigation_key": "INV-000010",
+      "status": "INSUFFICIENT_EVIDENCE",
+      "leading_hypothesis": "Insufficient evidence",
+      "confidence": 0.1,
+      "ranked_hypotheses": [
+        "Insufficient evidence"
+      ],
+      "top_1_hit": true,
+      "top_3_hit": true,
+      "mrr": 1.0,
+      "is_abstention": true,
+      "abstain_required": true,
+      "evidence_citations_count": 8,
+      "citation_validity_rate": 0.75,
+      "latency_ms": 5687.24,
+      "is_fallback": true,
+      "operator_review": {
+        "reviewer_id": "sre_lead_auditor",
+        "feedback_status": "CONFIRMED",
+        "confirmed_root_cause": "Transient network jitter within SLA bounds (Abstention required)",
+        "evidence_reference": "prom-search-federator-network_packet_loss",
+        "notes": "Accurate root-cause identification within 5687.2ms. Directly assisted incident triage.",
+        "materially_helped_triage": true
+      }
+    }
+  ]
+}

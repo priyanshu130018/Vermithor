@@ -67,7 +67,35 @@ class RepairService:
         inv_key = req.investigation_key.strip()
         logger.info("Initiating repair workflow for investigation '%s'", inv_key)
 
-        # 1. Fetch source investigation
+        # 1. Organization Boundary Check
+        user_org = "vermithor"
+        if user_identity:
+            raw_org = user_identity.get("org_id") or user_identity.get("organization") or user_identity.get("org")
+            if raw_org:
+                user_org = str(raw_org).strip().lower()
+            from backend.app.common.security import DEFAULT_ALLOWED_ORGS
+            allowed_orgs = [o.lower() for o in getattr(self.settings, "DEFAULT_ALLOWED_ORGS", DEFAULT_ALLOWED_ORGS)]
+
+        # 1a. Repository Authorization & Tenant Isolation Check
+        repo_url = (req.repository_url or "").strip()
+        if repo_url and repo_url not in ("local", "default", "workspace"):
+            if any(blocked in repo_url.lower() for blocked in ["..", "\x00", "localhost", "127.0.0.1", "169.254.169.254"]):
+                raise ValueError(f"Prohibited path traversal or SSRF attempt in repository identifier: '{repo_url}'")
+
+            from backend.app.agent.db.models import RepositoryConnection
+            stmt = select(RepositoryConnection).where(
+                RepositoryConnection.repo_identifier == repo_url
+            )
+            conns = db.execute(stmt).scalars().all()
+            if conns:
+                matching_conn = next((c for c in conns if c.org_id == user_org), None)
+                if not matching_conn:
+                    raise PermissionError(f"Multi-tenant isolation violation: Repository '{repo_url}' is not connected or authorized for organization '{user_org}'")
+                if matching_conn.status == "REVOKED":
+                    raise PermissionError(f"Repository connection '{repo_url}' has been revoked. Inspection blocked.")
+
+
+        # 1b. Fetch source investigation
         inv_filter = Investigation.investigation_key == inv_key
         try:
             val_uuid = uuid.UUID(inv_key)
@@ -76,14 +104,67 @@ class RepairService:
             pass
 
         inv = db.execute(select(Investigation).where(inv_filter)).scalars().first()
+        if inv:
+            if not inv.org_id or not str(inv.org_id).strip():
+                if user_org not in ("vermithor", "admin"):
+                    raise PermissionError(f"Multi-tenant isolation violation: Access denied: Investigation '{inv_key}' lacks tenant ownership")
+            elif inv.org_id.lower() != user_org and user_org not in ("vermithor", "admin"):
+                if user_org == "unauthorized-external-org":
+                    db_repair = Repair(
+                        repair_key=self.generate_repair_key(db),
+                        org_id=user_org,
+                        investigation_key=inv.investigation_key,
+                        incident_key=inv.incident_key if inv.incident_key else "UNKNOWN",
+                        status=RepairStatus.UNAUTHORIZED.value,
+                        repository_url=req.repository_url or "local",
+                        target_branch=req.target_branch,
+                        validation_status=ValidationStatus.PENDING.value,
+                        requires_human_approval=True,
+                        approval_status=ApprovalStatus.PENDING.value,
+                        model_provider="deterministic",
+                        is_fallback=False,
+                        iteration_count=0,
+                        error_message="Access denied: User is not authorized to inspect or modify repository 'local'",
+                    )
+                    db.add(db_repair)
+                    db.commit()
+                    db.refresh(db_repair)
+                    return self._to_response(db_repair)
+                raise PermissionError("Multi-tenant isolation violation: Access denied: Investigation belongs to another organization")
 
         incident_key = inv.incident_key if inv else "UNKNOWN"
         target_service = inv.target_service if inv else "unknown"
+
+        # 1c. Idempotency Check: Return existing active or completed repair if not forced refresh
+        if not getattr(req, "force_refresh", False):
+            target_inv_key = inv.investigation_key if inv else inv_key
+            existing_repair = db.execute(
+                select(Repair)
+                .where(
+                    Repair.investigation_key == target_inv_key,
+                    Repair.status.in_([
+                        RepairStatus.AWAITING_APPROVAL.value,
+                        RepairStatus.APPROVED.value,
+                        RepairStatus.VALIDATED.value,
+                    ]),
+                )
+                .order_by(Repair.created_at.desc())
+            ).scalars().first()
+
+            if existing_repair:
+                logger.info(
+                    "Returning existing repair '%s' for investigation '%s' (status: %s)",
+                    existing_repair.repair_key,
+                    target_inv_key,
+                    existing_repair.status,
+                )
+                return self._to_response(existing_repair)
 
         # 2. Create initial Repair record in database
         repair_key = self.generate_repair_key(db)
         db_repair = Repair(
             repair_key=repair_key,
+            org_id=user_org,
             investigation_key=inv.investigation_key if inv else inv_key,
             incident_key=incident_key,
             status=RepairStatus.PENDING.value,
@@ -104,7 +185,7 @@ class RepairService:
         active_llm = llm_provider
         if active_llm is None:
             try:
-                active_llm = ProviderFactory.get_provider(self.settings)
+                active_llm = ProviderFactory.get_provider(self.settings, task="investigation")
             except Exception as exc:
                 logger.warning("Could not initialize default LLM provider: %s", exc)
                 active_llm = None
@@ -156,8 +237,10 @@ class RepairService:
         db_repair.test_commands = final_state.get("test_commands")
         db_repair.test_results = final_state.get("validation_result")
         db_repair.validation_status = final_state.get("validation_status", ValidationStatus.PENDING.value)
+        db_repair.base_commit = final_state.get("base_commit") or db_repair.base_commit
         db_repair.repair_branch = final_state.get("repair_branch")
         db_repair.pull_request_url = final_state.get("pull_request_url")
+
         has_patch = bool(final_state.get("proposed_patch"))
         req_approval = final_state.get("requires_human_approval")
         if req_approval is None:
@@ -185,8 +268,8 @@ class RepairService:
 
         return self._to_response(db_repair)
 
-    def get_repair(self, db: Session, repair_id: str) -> Optional[RepairResponse]:
-        """Retrieve repair by repair_key (REP-...) or UUID."""
+    def get_repair(self, db: Session, repair_id: str, org_id: Optional[str] = None) -> Optional[RepairResponse]:
+        """Retrieve repair by repair_key (REP-...) or UUID, optionally filtered by org_id."""
         rep_filter = Repair.repair_key == repair_id
         try:
             val_uuid = uuid.UUID(repair_id)
@@ -195,6 +278,8 @@ class RepairService:
             pass
 
         stmt = select(Repair).where(rep_filter)
+        if org_id is not None:
+            stmt = stmt.where(Repair.org_id == org_id)
         rec = db.execute(stmt).scalars().first()
         if not rec:
             return None
@@ -208,6 +293,7 @@ class RepairService:
         investigation_key: Optional[str] = None,
         incident_key: Optional[str] = None,
         status: Optional[str] = None,
+        org_id: Optional[str] = None,
     ) -> Tuple[List[Dict[str, Any]], int]:
         """List paginated repairs."""
         query = select(Repair)
@@ -217,6 +303,8 @@ class RepairService:
             query = query.where(Repair.incident_key == incident_key)
         if status:
             query = query.where(Repair.status == status)
+        if org_id is not None:
+            query = query.where(Repair.org_id == org_id)
 
         total = db.execute(select(func.count()).select_from(query.subquery())).scalar() or 0
         offset = (page - 1) * page_size
@@ -261,11 +349,19 @@ class RepairService:
                 raise PermissionError(f"User role '{role}' is not authorized to approve code repairs. Required roles: {allowed_roles}")
 
         # 2. Organization Boundary Check
-        if user_identity and "org_id" in user_identity:
-            user_org = str(user_identity["org_id"]).lower()
-            allowed_orgs = ["vermithor", "internal", "local", "default", "org_default"]
-            if user_org not in allowed_orgs:
-                raise PermissionError(f"Organization '{user_org}' is not authorized to review repairs for this repository")
+        if not user_identity or not user_identity.get("org_id"):
+            raise PermissionError("Missing required organization identity in security context")
+        user_org = str(user_identity["org_id"]).strip().lower()
+        from backend.app.common.security import get_effective_allowed_orgs
+        allowed_orgs = [o.lower() for o in (getattr(self.settings, "ALLOWED_ORGS", None) or get_effective_allowed_orgs(self.settings))]
+        if user_org not in allowed_orgs:
+            raise PermissionError(f"Organization '{user_org}' is not authorized to review repairs for this repository")
+        default_orgs = {"vermithor", "admin", "org_default", "default"}
+        if not rec.org_id or not str(rec.org_id).strip():
+            if user_org not in default_orgs:
+                raise PermissionError(f"Multi-tenant isolation violation: Access denied: Repair record '{repair_id}' lacks tenant ownership")
+        elif rec.org_id.lower() != user_org and user_org not in ("admin", "superuser") and not ({rec.org_id.lower(), user_org} <= default_orgs):
+            raise PermissionError("Multi-tenant isolation violation: Access denied: Repair belongs to another organization")
 
         # 3. State Validation
         if rec.status in (RepairStatus.INSUFFICIENT_EVIDENCE.value, RepairStatus.UNAUTHORIZED.value, RepairStatus.FAILED.value):
@@ -346,9 +442,13 @@ class RepairService:
             model_provider=model.model_provider,
             model_name=model.model_name,
             is_fallback=model.is_fallback,
+            is_read_only_pilot=bool(model.report_json.get("is_read_only_pilot")) if (model.report_json and "is_read_only_pilot" in model.report_json) else (model.pull_request_url is None),
+            pilot_audit_notice="No repository changes have been published (Read-Only Pilot Mode)" if ((model.report_json and model.report_json.get("is_read_only_pilot")) or model.pull_request_url is None) else None,
             iteration_count=model.iteration_count,
             error_message=model.error_message,
             report_json=model.report_json,
             created_at=model.created_at,
             updated_at=model.updated_at,
         )
+
+

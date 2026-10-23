@@ -1,0 +1,31 @@
+incident_key: INC-HOLDOUT-112
+service: subscription-api
+lookback_minutes: 60
+environment: production
+severity: HIGH
+metrics:
+- metric_name: db_active_connections_ratio
+  service: subscription-api
+  value: 0.98
+  timestamp: '2026-10-20T14:25:00Z'
+- metric_name: http_5xx_error_rate_ratio
+  service: subscription-api
+  value: 0.38
+  timestamp: '2026-10-20T14:26:00Z'
+logs:
+- service: subscription-api
+  level: ERROR
+  message: 'PSQLException: ERROR: deadlock detected between transaction 849201 and
+    849208 on table subscription_leases'
+  timestamp: '2026-10-20T14:24:30Z'
+- service: subscription-api
+  level: WARN
+  message: Transaction aborted due to PostgreSQL lock acquisition deadlock graph cycle
+  timestamp: '2026-10-20T14:25:10Z'
+deployments:
+- service: subscription-api
+  version: v1.4.2
+  change_summary: Updated swagger openapi documentation and markdown changelog
+  timestamp: '2026-10-20T14:00:00Z'
+dependencies:
+- postgres-sub

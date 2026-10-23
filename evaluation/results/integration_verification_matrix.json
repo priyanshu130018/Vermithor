@@ -1,0 +1,156 @@
+{
+  "pilot_phase": "Phase 1 - Supervised Customer Pilot (Read-Only)",
+  "verification_date": "2026-10-20T17:15:00Z",
+  "baseline_commit": "e659059cd42b5ba69a8e77c6b16f905b1a075291",
+  "audit_verdict": "CONDITIONAL_GO_REPLAY_PILOT",
+  "audit_summary": "Vermithor is fully verified and authorized for supervised customer pilot execution in Sanitized Postmortem Replay Mode. Live customer VPC telemetry remains strictly labeled as NOT VERIFIED pending deployment of customer VPC OpenTelemetry collectors.",
+  "supported_integrations": [
+    {
+      "id": "INT-REPLAY-MODE",
+      "name": "Sanitized Incident Postmortem Replay Fixtures",
+      "type": "REPLAY_MODE",
+      "status": "VERIFIED",
+      "live_telemetry_verified": false,
+      "telemetry_provenance": "SANITIZED_REPLAY_FIXTURE",
+      "network_access_required": "None (local filesystem read of sanitized JSON fixtures)",
+      "endpoint_validation": "Local file path validation against directory traversal and null bytes",
+      "authentication_mechanism": "None (unauthenticated local fixture access)",
+      "permissions_requested": {
+        "file_system": "Read-only access to evaluation/results/shadow_pilot_cases.json",
+        "external_network": "None",
+        "cluster_modifications": "None"
+      },
+      "ssrf_protection": "N/A (Zero external network requests)",
+      "timeouts": {
+        "connect_timeout_seconds": 0.0,
+        "read_timeout_seconds": 1.0
+      },
+      "response_size_limit_mb": 5.0,
+      "sensitive_fields_redacted": [
+        "AWS Access Keys (AKIA...)",
+        "OpenAI/Anthropic API Keys (sk-...)",
+        "PostgreSQL / MySQL connection strings with plaintext passwords",
+        "Bearer tokens and JWT signatures",
+        "Customer PII (emails, names, IP addresses)"
+      ],
+      "external_llm_egress": "Disabled by default under Pilot Governance Policy (runs via local deterministic rules)",
+      "data_retention_days": 30,
+      "purge_behavior": "Immediate cascading deletion from database and local cache upon administrator command",
+      "disconnection_behavior": "Immediate transition to REVOKED; subsequent shadow runs blocked",
+      "verified_cases_count": 10,
+      "blockers": []
+    },
+    {
+      "id": "INT-PROMETHEUS-HTTP",
+      "name": "Prometheus Metrics Server (PromQL HTTP API)",
+      "type": "PROMETHEUS",
+      "status": "CONFIGURED_UNVERIFIED",
+      "live_telemetry_verified": false,
+      "telemetry_provenance": "NOT_VERIFIED",
+      "network_access_required": "Outbound HTTP/HTTPS to customer-approved Prometheus endpoint (:9090 or custom)",
+      "endpoint_validation": "SSRF protected; rejects cloud metadata (169.254.*), loopback (127.0.0.1), multicast, and userinfo credentials. Rejects redirects (301/302).",
+      "authentication_mechanism": "Bearer Token or HTTP Basic Auth; secrets masked in storage (e.g. 'Bearer ***8877')",
+      "permissions_requested": {
+        "prometheus_api": "Read-only GET queries on /api/v1/query, /api/v1/query_range, /api/v1/targets",
+        "write_operations": "Strictly prohibited (no remote-write, no alertmanager silences)",
+        "cluster_modifications": "None"
+      },
+      "ssrf_protection": "Strict IP checking, prohibited metadata blacklist, DNS rebinding validation, follow_redirects=False",
+      "timeouts": {
+        "connect_timeout_seconds": 5.0,
+        "read_timeout_seconds": 5.0
+      },
+      "response_size_limit_mb": 2.0,
+      "sensitive_fields_redacted": [
+        "Authorization headers scrubbed before logging",
+        "Tokens redacted from PromQL query labels and error messages",
+        "Metric observation labels scrubbed of user identifiers"
+      ],
+      "external_llm_egress": "Disabled unless administrator explicitly enables allow_external_llm in governance policy",
+      "data_retention_days": 30,
+      "purge_behavior": "Full purge removes all ingested MetricObservation records and Redis cached queries",
+      "disconnection_behavior": "Immediately revokes credentials; telemetry collection paused; subsequent polling returns REVOKED",
+      "verified_cases_count": 0,
+      "blockers": [
+        "Customer VPC OpenTelemetry/Prometheus collector not yet connected in live customer environment"
+      ]
+    },
+    {
+      "id": "INT-JAEGER-QUERY",
+      "name": "Jaeger Query API / OpenTelemetry Distributed Tracing",
+      "type": "JAEGER",
+      "status": "CONFIGURED_UNVERIFIED",
+      "live_telemetry_verified": false,
+      "telemetry_provenance": "NOT_VERIFIED",
+      "network_access_required": "Outbound HTTP/HTTPS to customer-approved Jaeger Query endpoint (:16686 or custom)",
+      "endpoint_validation": "SSRF protected; rejects cloud metadata (169.254.*), loopback (127.0.0.1), multicast, and userinfo credentials. Rejects redirects.",
+      "authentication_mechanism": "Bearer Token or Header Key; masked in storage",
+      "permissions_requested": {
+        "jaeger_api": "Read-only GET queries on /api/services, /api/operations, /api/traces",
+        "write_operations": "Strictly prohibited",
+        "cluster_modifications": "None"
+      },
+      "ssrf_protection": "Strict IP checking, prohibited metadata blacklist, DNS rebinding validation, follow_redirects=False",
+      "timeouts": {
+        "connect_timeout_seconds": 5.0,
+        "read_timeout_seconds": 5.0
+      },
+      "response_size_limit_mb": 2.0,
+      "sensitive_fields_redacted": [
+        "Trace span tag values matching passwords, auth tokens, JWTs, and credit card patterns scrubbed before persistence"
+      ],
+      "external_llm_egress": "Disabled by default under Pilot Governance Policy",
+      "data_retention_days": 30,
+      "purge_behavior": "Purges all ingested Event and Trace correlation records from Postgres and Redis",
+      "disconnection_behavior": "Immediately revokes provider; subsequent trace queries blocked",
+      "verified_cases_count": 0,
+      "blockers": [
+        "Customer VPC distributed tracing agent pending customer network security team sign-off"
+      ]
+    },
+    {
+      "id": "INT-GITHUB-RO",
+      "name": "GitHub Read-Only Repository Connection",
+      "type": "REPOSITORY",
+      "status": "CONNECTED",
+      "live_telemetry_verified": true,
+      "telemetry_provenance": "LIVE_CUSTOMER_TELEMETRY",
+      "network_access_required": "Outbound HTTPS to https://api.github.com on port 443",
+      "endpoint_validation": "Strict regex validation on owner/repo slug; blocks directory traversal, null bytes, SSRF loopback",
+      "authentication_mechanism": "GitHub App Private Key (PEM) or Fine-Grained Personal Access Token (Read-Only)",
+      "permissions_requested": {
+        "contents": "Read-only",
+        "metadata": "Read-only",
+        "pull_requests": "No access (strictly prohibited)",
+        "issues": "No access",
+        "workflows": "No access",
+        "administration": "No access"
+      },
+      "ssrf_protection": "Strict domain restriction to api.github.com; denies external redirects",
+      "timeouts": {
+        "connect_timeout_seconds": 5.0,
+        "read_timeout_seconds": 10.0
+      },
+      "response_size_limit_mb": 5.0,
+      "sensitive_fields_redacted": [
+        "Repository tokens and PEM contents masked in memory and excluded from all logs/APIs"
+      ],
+      "external_llm_egress": "Source code inspected only in local sandbox; diffs generated without external transmission if LLM egress is disabled",
+      "data_retention_days": 30,
+      "purge_behavior": "Purges all repair proposals, validation diffs, and disconnected repository connection records",
+      "disconnection_behavior": "Endpoint POST /api/v1/agent/repositories/{id}/disconnect sets REVOKED; blocks all further file fetches",
+      "verified_cases_count": 15,
+      "blockers": []
+    }
+  ],
+  "operational_readiness_checklist": {
+    "organization_identity_verification": "PASSED (multi-tenant JWT claims enforced on all routes)",
+    "read_only_git_boundary": "PASSED (server-side rejection of PR creation, branch push, and write permissions)",
+    "ssrf_and_dns_rebinding_defense": "PASSED (cloud metadata, loopback, private networks, and redirects blocked)",
+    "secret_scrubbing_and_masking": "PASSED (pre-storage regex redaction and masked token storage)",
+    "distributed_rate_limiting": "PASSED (sliding window with bounded in-memory degradation; 503 fail-closed on repairs)",
+    "operator_feedback_immutability": "PASSED (immutable InvestigationFeedback table; original diagnoses preserved)",
+    "incident_data_governance_purge": "PASSED (complete cascading purge of Postgres records, Redis keys, and queued tasks)",
+    "live_production_telemetry": "NOT VERIFIED (0 customer VPC collectors active; honest provenance labeling enforced)"
+  }
+}

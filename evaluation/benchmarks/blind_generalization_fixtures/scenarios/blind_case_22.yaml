@@ -1,0 +1,27 @@
+id: BLIND-CASE-22
+scenario_name: Plain HTTP Connection Timeout with Completely Valid TLS Certificate
+root_cause_family: TLS_CERTIFICATE_OR_CONNECTION
+target_service: internal-scraper
+severity: MEDIUM
+environment: production
+is_negative_control: true
+agent_input:
+  incident_key: INC-BLIND-522
+  service: internal-scraper
+  lookback_minutes: 15
+  metrics:
+  - metric_name: http_client_timeout_ratio
+    value: 0.65
+    service: internal-scraper
+    timestamp: '2026-10-21T02:45:00Z'
+  logs:
+  - level: INFO
+    message: TLS certificate on port 8443 is valid until 2027-10-20; handshake successful
+    service: internal-scraper
+    timestamp: '2026-10-21T02:45:15Z'
+  - level: ERROR
+    message: 'ConnectTimeoutException: Target plain HTTP endpoint 10.0.2.14:8080 timed
+      out after 5000ms'
+    service: internal-scraper
+    timestamp: '2026-10-21T02:45:30Z'
+  deployments: []

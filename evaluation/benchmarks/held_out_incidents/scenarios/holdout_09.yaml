@@ -1,0 +1,31 @@
+incident_key: INC-HOLDOUT-109
+service: document-renderer
+lookback_minutes: 60
+environment: production
+severity: CRITICAL
+metrics:
+- metric_name: filesystem_inode_utilization_ratio
+  service: document-renderer
+  value: 1.0
+  timestamp: '2026-10-20T12:30:00Z'
+- metric_name: disk_space_utilization_ratio
+  service: document-renderer
+  value: 0.52
+  timestamp: '2026-10-20T12:30:00Z'
+- metric_name: render_job_failure_ratio
+  service: document-renderer
+  value: 0.94
+  timestamp: '2026-10-20T12:32:00Z'
+logs:
+- service: document-renderer
+  level: ERROR
+  message: 'IOException: No space left on device: cannot allocate inode in /tmp/render_cache'
+  timestamp: '2026-10-20T12:28:15Z'
+- service: document-renderer
+  level: ERROR
+  message: 'PosixException: ENOSPC error creating file descriptor for temporary PDF
+    page artifact'
+  timestamp: '2026-10-20T12:29:05Z'
+deployments: []
+dependencies:
+- storage-nfs

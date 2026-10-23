@@ -85,7 +85,10 @@ class IncidentSummaryService:
     def llm_provider(self) -> LLMProvider:
         if self._llm_provider is not None:
             return self._llm_provider
-        return ProviderFactory.get_provider(self.settings)
+        try:
+            return ProviderFactory.get_provider(self.settings, task="summary")
+        except TypeError:
+            return ProviderFactory.get_provider(self.settings)
 
     def generate_summary_key(self, db: Session) -> str:
         """Generate sequence key (e.g. SUM-000001)."""
@@ -290,8 +293,8 @@ class IncidentSummaryService:
         fallback_schema = self._build_deterministic_fallback(incident, rca, rag_context)
         summary_record.status = "COMPLETED"
         summary_record.model_provider = "fallback"
-        summary_record.model_name = "deterministic_rules"
-        summary_record.executive_summary = fallback_schema.executive_summary
+        summary_record.model_name = "deterministic-rules (non-LLM)"
+        summary_record.executive_summary = f"[Deterministic Rule-Based Fallback (Non-LLM)] {fallback_schema.executive_summary}"
         summary_record.what_happened = fallback_schema.what_happened
         summary_record.probable_root_cause = fallback_schema.probable_root_cause
         summary_record.impact_json = fallback_schema.impact.model_dump()
@@ -299,7 +302,7 @@ class IncidentSummaryService:
         summary_record.evidence_json = [e.model_dump() for e in fallback_schema.evidence]
         summary_record.remediation_json = [r.model_dump() for r in fallback_schema.remediation]
         summary_record.confidence = round(fallback_schema.confidence, 4)
-        summary_record.limitations_json = fallback_schema.limitations + [f"Synthesized via deterministic fallback: {str(exc)[:100]}"]
+        summary_record.limitations_json = fallback_schema.limitations + [f"Synthesized via deterministic fallback (non-LLM): {str(exc)[:100]}"]
 
         duration = time.perf_counter() - start_time
         SUMMARY_GENERATION_DURATION_SECONDS.labels(provider="fallback", status="fallback").observe(duration)

@@ -1,0 +1,112 @@
+{
+  "INC-PILOT-201": {
+    "case_id": "PILOT-CASE-01",
+    "scenario_name": "payment_hikari_connection_pool_exhaustion",
+    "service": "payment-core",
+    "provenance": "SANITIZED_REPLAY_FIXTURE",
+    "postmortem_source": "Postmortem PM-2026-084 (HikariCP connection pool acquisition timeout under thread starvation)",
+    "injected_cause": "Database connection pool exhaustion on payment-core",
+    "expected_root_cause_keywords": ["pool", "connection", "hikari", "database"],
+    "expected_evidence_ids": ["EV-METRIC-01", "EV-LOG-01"],
+    "abstain_required": false
+  },
+  "INC-PILOT-202": {
+    "case_id": "PILOT-CASE-02",
+    "scenario_name": "identity_auth_okta_idp_cert_expiration",
+    "service": "identity-auth",
+    "provenance": "SANITIZED_REPLAY_FIXTURE",
+    "postmortem_source": "Postmortem PM-2026-091 (Okta IdP signing certificate expiration causing universal JWT verification failure)",
+    "injected_cause": "Authentication failure on identity-auth",
+    "expected_root_cause_keywords": ["auth", "certificate", "idp", "jwt", "signing", "authentication"],
+    "expected_evidence_ids": ["EV-METRIC-01", "EV-LOG-01"],
+    "abstain_required": false
+  },
+  "INC-PILOT-203": {
+    "case_id": "PILOT-CASE-03",
+    "scenario_name": "catalog_cache_redis_maxmemory_eviction_storm",
+    "service": "catalog-cache",
+    "provenance": "SANITIZED_REPLAY_FIXTURE",
+    "postmortem_source": "Postmortem PM-2026-103 (Redis maxmemory reached under unevicted session tokens causing eviction storm)",
+    "injected_cause": "Redis cache failure on catalog-cache",
+    "expected_root_cause_keywords": ["redis", "cache", "memory", "eviction", "maxmemory"],
+    "expected_evidence_ids": ["EV-METRIC-01", "EV-LOG-01"],
+    "abstain_required": false
+  },
+  "INC-PILOT-204": {
+    "case_id": "PILOT-CASE-04",
+    "scenario_name": "checkout_api_coredns_udp_timeout",
+    "service": "checkout-api",
+    "provenance": "SANITIZED_REPLAY_FIXTURE",
+    "postmortem_source": "Postmortem PM-2026-112 (CoreDNS UDP timeout causing checkout to timeout on downstream partner pay API)",
+    "injected_cause": "CoreDNS timeout causing checkout connection stall",
+    "expected_root_cause_keywords": ["dns", "coredns", "udp", "resolver"],
+    "expected_evidence_ids": ["EV-METRIC-01", "EV-LOG-01"],
+    "abstain_required": false
+  },
+  "INC-PILOT-205": {
+    "case_id": "PILOT-CASE-05",
+    "scenario_name": "doc_renderer_ext4_inode_exhaustion",
+    "service": "doc-renderer",
+    "provenance": "SANITIZED_REPLAY_FIXTURE",
+    "postmortem_source": "Postmortem PM-2026-119 (Ext4 filesystem inode exhaustion from uncleaned headless chrome temp files)",
+    "injected_cause": "Disk space exhaustion on doc-renderer",
+    "expected_root_cause_keywords": ["disk", "inode", "filesystem", "space"],
+    "expected_evidence_ids": ["EV-METRIC-01", "EV-LOG-01"],
+    "abstain_required": false
+  },
+  "INC-PILOT-206": {
+    "case_id": "PILOT-CASE-06",
+    "scenario_name": "ingest_worker_c_extension_memory_leak_oom",
+    "service": "ingest-worker",
+    "provenance": "SANITIZED_REPLAY_FIXTURE",
+    "postmortem_source": "Postmortem PM-2026-125 (Native C-extension memory leak in crypto signature verification causing cgroup OOM killer invocation)",
+    "injected_cause": "Memory exhaustion on ingest-worker",
+    "expected_root_cause_keywords": ["memory", "oom", "leak", "cgroup", "sigkill"],
+    "expected_evidence_ids": ["EV-METRIC-01", "EV-LOG-01"],
+    "abstain_required": false
+  },
+  "INC-PILOT-207": {
+    "case_id": "PILOT-CASE-07",
+    "scenario_name": "inventory_sync_scheduled_backup_window_nominal",
+    "service": "inventory-sync",
+    "provenance": "SANITIZED_REPLAY_FIXTURE",
+    "postmortem_source": "Postmortem PM-2026-130 (False alarm from scheduled database backup maintenance window with stale telemetry)",
+    "injected_cause": "Nominal maintenance window telemetry (Abstention required)",
+    "expected_root_cause_keywords": ["backup", "maintenance", "nominal", "transient", "insufficient"],
+    "expected_evidence_ids": [],
+    "abstain_required": true
+  },
+  "INC-PILOT-208": {
+    "case_id": "PILOT-CASE-08",
+    "scenario_name": "fulfillment_stream_kafka_poison_pill_stall",
+    "service": "fulfillment-stream",
+    "provenance": "SANITIZED_REPLAY_FIXTURE",
+    "postmortem_source": "Postmortem PM-2026-141 (Malformed JSON payload poison pill causing Kafka consumer partition 3 stall)",
+    "injected_cause": "Kafka consumer group stall caused by poison pill message",
+    "expected_root_cause_keywords": ["kafka", "queue", "lag", "consumer", "poison"],
+    "expected_evidence_ids": ["EV-METRIC-01", "EV-LOG-01"],
+    "abstain_required": false
+  },
+  "INC-PILOT-209": {
+    "case_id": "PILOT-CASE-09",
+    "scenario_name": "subscription_billing_postgres_row_deadlocks",
+    "service": "subscription-billing",
+    "provenance": "SANITIZED_REPLAY_FIXTURE",
+    "postmortem_source": "Postmortem PM-2026-149 (PostgreSQL row-level deadlocks during concurrent renewal billing cycles)",
+    "injected_cause": "Database degradation on subscription-billing",
+    "expected_root_cause_keywords": ["deadlock", "postgres", "lock", "database"],
+    "expected_evidence_ids": ["EV-METRIC-01", "EV-LOG-01"],
+    "abstain_required": false
+  },
+  "INC-PILOT-210": {
+    "case_id": "PILOT-CASE-10",
+    "scenario_name": "search_federator_transient_cloud_jitter",
+    "service": "search-federator",
+    "provenance": "SANITIZED_REPLAY_FIXTURE",
+    "postmortem_source": "Postmortem PM-2026-155 (Transient public cloud transit jitter resolving automatically without service disruption)",
+    "injected_cause": "Transient network jitter within SLA bounds (Abstention required)",
+    "expected_root_cause_keywords": ["jitter", "transient", "nominal", "insufficient"],
+    "expected_evidence_ids": [],
+    "abstain_required": true
+  }
+}

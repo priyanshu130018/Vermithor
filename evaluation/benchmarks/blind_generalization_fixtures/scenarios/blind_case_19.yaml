@@ -1,0 +1,35 @@
+id: BLIND-CASE-19
+scenario_name: Stale Deployment 6 Hours Ago with Active Redis Maxmemory Eviction
+root_cause_family: DEPLOYMENT_OR_CONFIG_REGRESSION
+target_service: session-cache
+severity: HIGH
+environment: production
+is_negative_control: true
+agent_input:
+  incident_key: INC-BLIND-519
+  service: session-cache
+  lookback_minutes: 15
+  metrics:
+  - metric_name: redis_memory_used_ratio
+    value: 1.0
+    service: session-cache
+    timestamp: '2026-10-21T02:40:00Z'
+  - metric_name: redis_evicted_keys_total
+    value: 45000.0
+    service: session-cache
+    timestamp: '2026-10-21T02:40:10Z'
+  logs:
+  - level: ERROR
+    message: OOM command not allowed when used memory > 'maxmemory' on redis-cache
+      cluster
+    service: session-cache
+    timestamp: '2026-10-21T02:40:30Z'
+  - level: ERROR
+    message: 'Redis cache eviction storm: session keys being evicted prematurely'
+    service: session-cache
+    timestamp: '2026-10-21T02:41:00Z'
+  deployments:
+  - service: session-cache
+    version: v2.1.0
+    change_summary: Routine image base bump
+    timestamp: '2026-10-20T20:40:00Z'

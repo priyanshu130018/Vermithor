@@ -119,7 +119,7 @@ class TelemetryEvidenceService:
             duration_ms = trace.get("duration_ms", 0.0)
             is_bottleneck = bool(trace.get("bottleneck_spans"))
             start_time_iso = trace.get("start_time")
-            t_time = datetime.fromisoformat(start_time_iso) if start_time_iso else now
+            t_time = datetime.fromisoformat(str(start_time_iso).replace("Z", "+00:00")) if start_time_iso else now
 
             evt_severity = Severity.ERROR if has_error else Severity.WARNING if is_bottleneck else Severity.INFO
             msg = (

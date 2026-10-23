@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Dict, List, Tuple
 
 
@@ -19,11 +19,34 @@ class CausalGraphBuilder:
         if not signals:
             return [], []
 
+        MAX_SIGNALS_TO_GRAPH = 50
+        MAX_CAUSAL_EDGES = 100
+
         # Sort chronologically
         def parse_ts(ts: Any) -> datetime:
             if isinstance(ts, datetime):
+                if ts.tzinfo is None:
+                    return ts.replace(tzinfo=timezone.utc)
                 return ts
-            return datetime.fromisoformat(str(ts).replace("Z", "+00:00"))
+            d = datetime.fromisoformat(str(ts).replace("Z", "+00:00"))
+            if d.tzinfo is None:
+                return d.replace(tzinfo=timezone.utc)
+            return d
+
+        # Bound input signals to prevent quadratic graph explosion
+        if len(signals) > MAX_SIGNALS_TO_GRAPH:
+            # Prioritize anomalies, error events, deployments, then chronological order
+            priority_types = {"ANOMALY", "DEPLOYMENT"}
+            def sig_priority(s: Dict[str, Any]) -> int:
+                st = str(s.get("signal_type", "")).upper()
+                sev = str(s.get("severity", "")).upper()
+                if st in priority_types:
+                    return 0
+                if sev in ("CRITICAL", "ERROR", "FATAL"):
+                    return 1
+                return 2
+
+            signals = sorted(signals, key=sig_priority)[:MAX_SIGNALS_TO_GRAPH]
 
         sorted_signals = sorted(signals, key=lambda s: parse_ts(s.get("timestamp")))
 
@@ -31,7 +54,11 @@ class CausalGraphBuilder:
         seen_edges = set()
 
         for i in range(len(sorted_signals)):
+            if len(edges) >= MAX_CAUSAL_EDGES:
+                break
             for j in range(i + 1, len(sorted_signals)):
+                if len(edges) >= MAX_CAUSAL_EDGES:
+                    break
                 s1 = sorted_signals[i]
                 s2 = sorted_signals[j]
 
@@ -103,6 +130,49 @@ class CausalGraphBuilder:
                 "DEPLOYMENT_TRIGGER",
                 0.85,
                 f"Deployment on {s1_srv} preceded {s2_type} on {s2_srv}",
+            )
+
+        s1_blob = f"{s1.get('message', '')} {(s1.get('metadata') or {}).get('metric_name', '')}".lower()
+        s2_blob = f"{s2.get('message', '')} {(s2.get('metadata') or {}).get('metric_name', '')}".lower()
+
+        # DNS resolution to downstream connection timeout
+        if any(k in s1_blob for k in ("dns", "coredns", "resolver", "resolving", "10.96.0.10:53")) and any(k in s2_blob for k in ("timeout", "connecttimeout", "504", "latency")):
+            return (
+                "DNS_RESOLUTION_TO_TIMEOUT",
+                0.95,
+                f"DNS resolver degradation on {s1_srv} cascaded into downstream connection timeout on {s2_srv}",
+            )
+
+        # Consumer processing error to lag accumulation
+        if any(k in s1_blob for k in ("deserialization", "poison", "stall", "exception", "malformed")) and any(k in s2_blob for k in ("lag", "backlog", "offset")):
+            return (
+                "PROCESSING_ERROR_TO_LAG",
+                0.95,
+                f"Processing error / poison pill on {s1_srv} blocked consumer thread and induced lag accumulation",
+            )
+
+        # Lock contention or deadlock to query/connection failure
+        if any(k in s1_blob for k in ("deadlock", "lock wait", "sharelock", "lock contention", "tuple lock")) and any(k in s2_blob for k in ("timeout", "abort", "500", "error", "latency", "pool")):
+            return (
+                "LOCK_CONTENTION_TO_DEGRADATION",
+                0.95,
+                f"Database lock contention or deadlock on {s1_srv} cascaded into transaction failure / timeout on {s2_srv}",
+            )
+
+        # TLS / SSL validation failure to connection failure
+        if any(k in s1_blob for k in ("tls", "ssl", "certificate", "x509", "handshake", "pkix")) and any(k in s2_blob for k in ("connection", "refused", "502", "503", "failed", "unreachable")):
+            return (
+                "TLS_ERROR_TO_CONNECTIVITY",
+                0.95,
+                f"TLS certificate or handshake failure on {s1_srv} cascaded into connection failure on {s2_srv}",
+            )
+
+        # OOM kill to service failure
+        if any(k in s1_blob for k in ("oom", "out of memory", "metaspace", "killed process")) and any(k in s2_blob for k in ("502", "bad gateway", "terminated", "crash", "unreachable", "503")):
+            return (
+                "OOM_TO_UNAVAILABLE",
+                0.95,
+                f"Memory exhaustion / OOM kill on {s1_srv} cascaded into service unavailability on {s2_srv}",
             )
 
         # 2. Metric anomaly to error on same service

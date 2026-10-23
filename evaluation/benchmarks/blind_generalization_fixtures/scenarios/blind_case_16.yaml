@@ -1,0 +1,27 @@
+id: BLIND-CASE-16
+scenario_name: Consumer Group Rebalance Inducing Transient Partition Lag
+root_cause_family: NORMAL_KAFKA_LAG
+target_service: billing-stream-worker
+severity: MEDIUM
+environment: production
+is_negative_control: false
+agent_input:
+  incident_key: INC-BLIND-516
+  service: billing-stream-worker
+  lookback_minutes: 15
+  metrics:
+  - metric_name: kafka_consumer_lag_records
+    value: 18500.0
+    service: billing-stream-worker
+    timestamp: '2026-10-21T02:35:00Z'
+  logs:
+  - level: INFO
+    message: 'ConsumerCoordinator: PreparingRebalance for group billing-workers'
+    service: billing-stream-worker
+    timestamp: '2026-10-21T02:35:20Z'
+  - level: INFO
+    message: 'ConsumerCoordinator: Successfully joined group with 8 assigned partitions;
+      resuming normal fetch loop'
+    service: billing-stream-worker
+    timestamp: '2026-10-21T02:35:40Z'
+  deployments: []

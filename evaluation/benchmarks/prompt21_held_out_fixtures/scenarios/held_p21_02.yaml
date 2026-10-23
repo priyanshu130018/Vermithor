@@ -1,0 +1,30 @@
+id: HELD-P21-02
+scenario_name: Routine Garbage Collection with Stable Heap Memory
+root_cause_family: MEMORY_EXHAUSTION_AND_OOM
+target_service: payment-sync
+severity: LOW
+environment: production
+is_negative_control: true
+agent_input:
+  incident_key: INC-P21-02
+  service: payment-sync
+  lookback_minutes: 15
+  metrics:
+  - metric_name: jvm_memory_used_ratio
+    value: 0.62
+    service: payment-sync
+    timestamp: '2026-10-21T03:05:00Z'
+  - metric_name: jvm_gc_pause_seconds
+    value: 0.08
+    service: payment-sync
+    timestamp: '2026-10-21T03:05:10Z'
+  logs:
+  - level: INFO
+    message: 'GC pause completed: duration 8ms, heap recovered 210MB'
+    service: payment-sync
+    timestamp: '2026-10-21T03:05:30Z'
+  - level: INFO
+    message: Synchronized 450 payment records cleanly
+    service: payment-sync
+    timestamp: '2026-10-21T03:05:50Z'
+  deployments: []

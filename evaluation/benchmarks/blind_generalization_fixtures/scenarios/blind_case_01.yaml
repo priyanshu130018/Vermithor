@@ -1,0 +1,32 @@
+id: BLIND-CASE-01
+scenario_name: CoreDNS Resolver UDP Packet Drop Causing Cache Discovery Failure
+root_cause_family: DNS_AND_SERVICE_DISCOVERY
+target_service: cart-service
+severity: CRITICAL
+environment: production
+is_negative_control: false
+agent_input:
+  incident_key: INC-BLIND-501
+  service: cart-service
+  lookback_minutes: 15
+  metrics:
+  - metric_name: dns_resolution_latency_ms
+    value: 3400.0
+    service: cart-service
+    timestamp: '2026-10-21T02:05:00Z'
+  - metric_name: coredns_forward_request_duration_seconds
+    value: 3.2
+    service: cart-service
+    timestamp: '2026-10-21T02:05:10Z'
+  logs:
+  - level: WARN
+    message: 'CoreDNS: Resolving redis-cart.internal.net via upstream UDP 10.96.0.10:53
+      timed out after 3000ms'
+    service: cart-service
+    timestamp: '2026-10-21T02:06:00Z'
+  - level: ERROR
+    message: 'ConnectTimeoutException: Timeout resolving redis-cart.internal.net (CoreDNS
+      drop)'
+    service: cart-service
+    timestamp: '2026-10-21T02:06:15Z'
+  deployments: []

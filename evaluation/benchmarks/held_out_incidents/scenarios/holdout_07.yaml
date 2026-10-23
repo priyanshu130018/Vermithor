@@ -1,0 +1,32 @@
+incident_key: INC-HOLDOUT-107
+service: fulfillment-worker
+lookback_minutes: 60
+environment: production
+severity: HIGH
+metrics:
+- metric_name: network_packet_loss_ratio
+  service: fulfillment-worker
+  value: 0.16
+  timestamp: '2026-10-20T11:30:00Z'
+- metric_name: network_round_trip_latency_ms
+  service: fulfillment-worker
+  value: 620.0
+  timestamp: '2026-10-20T11:30:00Z'
+- metric_name: tcp_retrans_rate_per_sec
+  service: fulfillment-worker
+  value: 1400.0
+  timestamp: '2026-10-20T11:31:00Z'
+logs:
+- service: fulfillment-worker
+  level: WARN
+  message: 'Netty transport connection drop across VPC peering interface: read timeout
+    after 5000ms'
+  timestamp: '2026-10-20T11:29:45Z'
+- service: fulfillment-worker
+  level: WARN
+  message: TCP socket retransmit counter escalated on interface eth0 (16% packet loss
+    observed)
+  timestamp: '2026-10-20T11:30:30Z'
+deployments: []
+dependencies:
+- warehouse-api

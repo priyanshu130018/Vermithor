@@ -1,0 +1,30 @@
+id: HELDOUT-CASE-03
+scenario_name: event_ingest_kafka_poison_pill_stall
+target_service: event-ingest-stream
+environment: production
+severity: HIGH
+agent_input:
+  incident_key: INC-HELDOUT-303
+  service: event-ingest-stream
+  lookback_minutes: 30
+  metrics:
+  - metric_name: kafka_consumer_lag_records
+    service: event-ingest-stream
+    value: 62000.0
+    timestamp: '2026-10-20T14:10:00Z'
+  - metric_name: kafka_fetch_error_rate
+    service: event-ingest-stream
+    value: 0.35
+    timestamp: '2026-10-20T14:15:00Z'
+  logs:
+  - service: event-ingest-stream
+    level: WARN
+    message: 'KafkaConsumer: Partition 2 offset 482019 stalled for 180s'
+    timestamp: '2026-10-20T14:11:00Z'
+  - service: event-ingest-stream
+    level: ERROR
+    message: 'DeserializationException: Malformed protobuf payload at offset 482019; poison pill blocking consumer thread'
+    timestamp: '2026-10-20T14:12:00Z'
+  deployments: []
+  dependencies:
+  - kafka-broker

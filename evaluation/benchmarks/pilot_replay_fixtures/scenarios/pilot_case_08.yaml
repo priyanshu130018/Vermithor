@@ -1,0 +1,31 @@
+id: PILOT-CASE-08
+scenario_name: fulfillment_stream_kafka_poison_pill_stall
+target_service: fulfillment-stream
+environment: production
+severity: HIGH
+agent_input:
+  incident_key: INC-PILOT-208
+  service: fulfillment-stream
+  lookback_minutes: 30
+  metrics:
+  - metric_name: kafka_consumer_lag_records
+    service: fulfillment-stream
+    value: 48000.0
+    timestamp: '2026-10-20T11:10:00Z'
+  - metric_name: kafka_fetch_error_rate
+    service: fulfillment-stream
+    value: 0.25
+    timestamp: '2026-10-20T11:15:00Z'
+  logs:
+  - service: fulfillment-stream
+    level: WARN
+    message: 'KafkaConsumer: Partition 3 offset 1294101 stalled for 120s'
+    timestamp: '2026-10-20T11:11:00Z'
+  - service: fulfillment-stream
+    level: ERROR
+    message: 'DeserializationException: Malformed JSON payload at offset 1294101;
+      poison pill blocking consumer thread'
+    timestamp: '2026-10-20T11:12:00Z'
+  deployments: []
+  dependencies:
+  - kafka-cluster

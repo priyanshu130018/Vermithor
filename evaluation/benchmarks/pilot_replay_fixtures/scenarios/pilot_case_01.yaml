@@ -1,0 +1,44 @@
+id: PILOT-CASE-01
+scenario_name: payment_hikari_connection_pool_exhaustion
+target_service: payment-core
+environment: production
+severity: CRITICAL
+agent_input:
+  incident_key: INC-PILOT-201
+  service: payment-core
+  lookback_minutes: 30
+  metrics:
+  - metric_name: db_connection_pool_utilization_ratio
+    service: payment-core
+    value: 1.0
+    timestamp: '2026-10-20T11:10:00Z'
+  - metric_name: hikari_active_connections_ratio
+    service: payment-core
+    value: 1.0
+    timestamp: '2026-10-20T11:10:00Z'
+  - metric_name: hikari_pending_threads
+    service: payment-core
+    value: 45.0
+    timestamp: '2026-10-20T11:10:00Z'
+  - metric_name: http_5xx_error_rate_ratio
+    service: payment-core
+    value: 0.32
+    timestamp: '2026-10-20T11:15:00Z'
+  logs:
+  - service: payment-core
+    level: WARN
+    message: 'HikariPool-1: Active connections 80/80 (idle: 0). Thread acquisition
+      queue depth: 45'
+    timestamp: '2026-10-20T11:11:00Z'
+  - service: payment-core
+    level: ERROR
+    message: 'SQLTransientConnectionException: Connection acquisition timeout from
+      HikariPool-1 after 15000ms'
+    timestamp: '2026-10-20T11:12:00Z'
+  deployments:
+  - service: payment-core
+    version: v2.4.1
+    change_summary: Tune connection pool parameters
+    timestamp: '2026-10-20T10:00:00Z'
+  dependencies:
+  - postgres-payment

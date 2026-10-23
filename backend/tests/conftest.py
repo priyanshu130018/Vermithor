@@ -50,10 +50,18 @@ common_db.engine = test_engine
 
 @pytest.fixture(autouse=True)
 def setup_clean_tables():
-    """Create fresh tables before each test."""
-    Base.metadata.drop_all(bind=test_engine)
-    Base.metadata.create_all(bind=test_engine)
+    try:
+        test_engine.dispose()
+        Base.metadata.drop_all(bind=test_engine, checkfirst=True)
+    except Exception:
+        pass
+    Base.metadata.create_all(bind=test_engine, checkfirst=True)
     yield
+    try:
+        test_engine.dispose()
+    except Exception:
+        pass
+    test_engine.dispose()
 
 
 @pytest.fixture(name="db_session")
@@ -77,7 +85,7 @@ def client_fixture() -> Generator[TestClient, None, None]:
             session.close()
 
     app.dependency_overrides[get_db] = override_get_db
-    valid_token = create_access_token({"sub": "sre-test-suite-user"})
+    valid_token = create_access_token({"sub": "sre-test-suite-user", "org_id": "vermithor", "role": "sre_lead"})
     with TestClient(app, headers={"Authorization": f"Bearer {valid_token}"}) as test_client:
         yield test_client
     app.dependency_overrides.clear()

@@ -5,6 +5,7 @@ import { useIncident } from '../hooks/useIncident';
 import { useRCA } from '../hooks/useRCA';
 import { useRAGContext } from '../hooks/useRetrieval';
 import { useSummary, useGenerateSummary } from '../hooks/useSummary';
+import { useInvestigation } from '../hooks/useInvestigation';
 import { IncidentHeader } from '../components/incident/IncidentHeader';
 import { IncidentOverview } from '../components/incident/IncidentOverview';
 import { AISummary } from '../components/incident/AISummary';
@@ -14,6 +15,7 @@ import { CorrelationGraph } from '../components/incident/CorrelationGraph';
 import { IncidentEvidence } from '../components/incident/IncidentEvidence';
 import { SimilarIncidents } from '../components/incident/SimilarIncidents';
 import { RunbookPanel } from '../components/incident/RunbookPanel';
+import { InvestigationPanel } from '../components/incident/InvestigationPanel';
 import { CodeRepairPanel } from '../components/incident/CodeRepairPanel';
 import { LoadingState } from '../components/common/LoadingState';
 import { ErrorState } from '../components/common/ErrorState';
@@ -33,6 +35,11 @@ export const IncidentDetails: React.FC = () => {
   const { data: ragContext, isLoading: isRAGLoading } = useRAGContext(incidentKey);
   const { data: summary, isLoading: isSummaryLoading } = useSummary(incidentKey);
   const generateSummaryMutation = useGenerateSummary(incidentKey || '');
+  const {
+    data: investigation,
+    isLoading: isInvestigationLoading,
+    refetch: refetchInvestigation,
+  } = useInvestigation(incidentKey);
 
   if (isIncidentLoading) {
     return <LoadingState message={`Loading telemetry for incident ${incidentKey}...`} />;
@@ -104,8 +111,19 @@ export const IncidentDetails: React.FC = () => {
         <RunbookPanel />
       </div>
 
+      {/* 5b. AI INVESTIGATION (LangGraph Evidence Grounding & Hypothesis Evaluation) */}
+      <InvestigationPanel
+        incidentKey={incidentKey || ''}
+        investigation={investigation}
+        isLoading={isInvestigationLoading}
+        onRefresh={() => refetchInvestigation()}
+      />
+
       {/* 6. CODE REPAIR? (AI Code Repair Agent & Sandboxed Validation) */}
-      <CodeRepairPanel incidentKey={incidentKey || ''} />
+      <CodeRepairPanel
+        incidentKey={incidentKey || ''}
+        investigationKey={investigation?.investigation_key}
+      />
     </div>
   );
 };

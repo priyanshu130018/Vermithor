@@ -1,0 +1,28 @@
+incident_key: INC-HOLDOUT-122
+service: b2b-gateway
+lookback_minutes: 60
+environment: production
+severity: CRITICAL
+metrics:
+- metric_name: http_401_unauthorized_rate_ratio
+  service: b2b-gateway
+  value: 0.89
+  timestamp: '2026-10-20T19:00:00Z'
+- metric_name: idp_validation_error_ratio
+  service: b2b-gateway
+  value: 0.92
+  timestamp: '2026-10-20T19:00:00Z'
+logs:
+- service: b2b-gateway
+  level: ERROR
+  message: 'TokenRevocationError: Bearer token validation failed; Okta JWKS endpoint
+    returned 401 Unauthorized for client credentials'
+  timestamp: '2026-10-20T18:58:10Z'
+- service: b2b-gateway
+  level: WARN
+  message: 'Failed to refresh JWKS public keyset: authentication handshake rejected
+    by auth.enterprise.okta.com'
+  timestamp: '2026-10-20T18:59:00Z'
+deployments: []
+dependencies:
+- okta-idp

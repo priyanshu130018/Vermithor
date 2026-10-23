@@ -58,6 +58,7 @@ class InvestigationService:
         rca_analyzer: Optional[RCAAnalyzer] = None,
         retrieval_engine: Optional[RetrievalEngine] = None,
         llm_provider: Optional[LLMProvider] = None,
+        org_id: str = "vermithor",
     ) -> InvestigationResponse:
         """
         Execute full LangGraph incident investigation workflow.
@@ -71,6 +72,7 @@ class InvestigationService:
                 select(Investigation)
                 .where(
                     Investigation.incident_key == incident_key,
+                    Investigation.org_id == org_id,
                     Investigation.status.in_(["COMPLETED", "INSUFFICIENT_EVIDENCE"]),
                 )
                 .order_by(Investigation.created_at.desc())
@@ -85,6 +87,12 @@ class InvestigationService:
         if not incident:
             logger.warning("Incident with key '%s' not found in database", incident_key)
 
+        # 2b. Policy Check: Ensure investigations are not paused
+        from backend.app.agent.db.models import PilotGovernancePolicy
+        pol = db.execute(select(PilotGovernancePolicy).where(PilotGovernancePolicy.org_id == org_id)).scalars().first()
+        if pol and pol.investigations_paused:
+            raise PermissionError(f"Incident investigations are paused for organization '{org_id}' under pilot policy.")
+
         # 3. Create initial Investigation record in database
         inv_key = self.generate_investigation_key(db)
         now = datetime.now(timezone.utc)
@@ -92,6 +100,7 @@ class InvestigationService:
         db_inv = Investigation(
             investigation_key=inv_key,
             incident_key=incident_key,
+            org_id=org_id,
             status=InvestigationStatus.INVESTIGATING.value,
             target_service="unknown",
             environment=incident.environment if incident else "production",
@@ -116,6 +125,7 @@ class InvestigationService:
         initial_state: InvestigationState = {
             "investigation_id": inv_key,
             "incident_key": incident_key,
+            "org_id": org_id,
             "lookback_minutes": req.lookback_minutes,
             "query_iteration": 0,
             "max_query_iterations": req.max_additional_queries if req.allow_additional_queries else 0,
@@ -146,6 +156,17 @@ class InvestigationService:
             db_inv.evidence_json = final_state.get("collected_evidence", [])
             db_inv.completed_at = completed_at
 
+            # Recheck: Verify investigation has not been purged and investigations have not been paused in flight
+            pol_recheck = db.execute(select(PilotGovernancePolicy).where(PilotGovernancePolicy.org_id == org_id)).scalars().first()
+            if pol_recheck and pol_recheck.investigations_paused:
+                db.rollback()
+                raise PermissionError(f"Investigation aborted before persistence: investigations paused for organization '{org_id}'")
+
+            inv_recheck = db.execute(select(Investigation).where(Investigation.investigation_key == inv_key)).scalars().first()
+            if not inv_recheck:
+                db.rollback()
+                raise RuntimeError(f"Investigation '{inv_key}' was purged during execution; persistence aborted.")
+
             db.commit()
             db.refresh(db_inv)
 
@@ -155,13 +176,18 @@ class InvestigationService:
         except Exception as exc:
             db.rollback()
             logger.error("Investigation '%s' execution failed: %s", inv_key, exc)
-            db_inv.status = InvestigationStatus.FAILED.value
-            db_inv.completed_at = datetime.now(timezone.utc)
-            db.commit()
+            try:
+                inv_still_exists = db.execute(select(Investigation).where(Investigation.investigation_key == inv_key)).scalars().first()
+                if inv_still_exists:
+                    inv_still_exists.status = InvestigationStatus.FAILED.value
+                    inv_still_exists.completed_at = datetime.now(timezone.utc)
+                    db.commit()
+            except Exception:
+                db.rollback()
             raise
 
-    def get_investigation(self, db: Session, key_or_id: str) -> Optional[InvestigationResponse]:
-        """Retrieve an investigation by key (INV-...) or UUID."""
+    def get_investigation(self, db: Session, key_or_id: str, org_id: Optional[str] = None) -> Optional[InvestigationResponse]:
+        """Retrieve an investigation by key (INV-...) or UUID, optionally filtered by org_id."""
         query = select(Investigation)
         try:
             val_uuid = uuid.UUID(key_or_id)
@@ -169,17 +195,21 @@ class InvestigationService:
         except ValueError:
             query = query.where(Investigation.investigation_key == key_or_id)
 
+        if org_id is not None:
+            query = query.where(Investigation.org_id == org_id)
+
         inv = db.execute(query).scalar_one_or_none()
         if not inv:
             return None
         return self._to_response(inv)
 
-    def get_latest_for_incident(self, db: Session, incident_key: str) -> Optional[InvestigationResponse]:
+    def get_latest_for_incident(self, db: Session, incident_key: str, org_id: Optional[str] = None) -> Optional[InvestigationResponse]:
         """Retrieve the most recent investigation report for an incident."""
+        query = select(Investigation).where(Investigation.incident_key == incident_key)
+        if org_id is not None:
+            query = query.where(Investigation.org_id == org_id)
         inv = db.execute(
-            select(Investigation)
-            .where(Investigation.incident_key == incident_key)
-            .order_by(Investigation.created_at.desc())
+            query.order_by(Investigation.created_at.desc())
         ).scalars().first()
 
         if not inv:
@@ -193,6 +223,7 @@ class InvestigationService:
         page_size: int = 20,
         incident_key: Optional[str] = None,
         status: Optional[str] = None,
+        org_id: Optional[str] = None,
     ) -> Tuple[List[InvestigationResponse], int]:
         """Retrieve paginated investigations."""
         query: Select = select(Investigation)
@@ -203,6 +234,8 @@ class InvestigationService:
             filters.append(Investigation.incident_key == incident_key)
         if status:
             filters.append(Investigation.status == status)
+        if org_id is not None:
+            filters.append(Investigation.org_id == org_id)
 
         if filters:
             query = query.where(*filters)
@@ -230,6 +263,15 @@ class InvestigationService:
             except Exception as exc:
                 logger.warning("Could not validate report_json: %s", exc)
 
+        model_call_records = []
+        review_assessment = None
+        if report:
+            model_call_records = report.model_call_records or []
+            review_assessment = report.review_assessment
+        elif isinstance(inv.report_json, dict):
+            model_call_records = inv.report_json.get("model_call_records", [])
+            review_assessment = inv.report_json.get("review_assessment")
+
         return InvestigationResponse(
             id=inv.id,
             investigation_key=inv.investigation_key,
@@ -243,6 +285,8 @@ class InvestigationService:
             model_provider=inv.model_provider,
             model_name=inv.model_name,
             report=report,
+            model_call_records=model_call_records,
+            review_assessment=review_assessment,
             created_at=inv.created_at,
             completed_at=inv.completed_at,
         )

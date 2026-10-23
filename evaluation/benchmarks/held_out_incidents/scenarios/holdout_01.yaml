@@ -1,0 +1,32 @@
+incident_key: INC-HOLDOUT-101
+service: billing-core
+lookback_minutes: 60
+environment: production
+severity: CRITICAL
+metrics:
+- metric_name: hikari_active_connections_ratio
+  service: billing-core
+  value: 1.0
+  timestamp: '2026-10-20T08:15:00Z'
+- metric_name: db_connection_acquisition_latency_ms
+  service: billing-core
+  value: 15400.0
+  timestamp: '2026-10-20T08:15:00Z'
+- metric_name: http_5xx_error_rate_ratio
+  service: billing-core
+  value: 0.44
+  timestamp: '2026-10-20T08:16:00Z'
+logs:
+- service: billing-core
+  level: WARN
+  message: 'HikariPool-billing: connection acquisition wait duration exceeded 5000ms
+    (active: 80/80, idle: 0)'
+  timestamp: '2026-10-20T08:14:30Z'
+- service: billing-core
+  level: ERROR
+  message: 'SQLTransientConnectionException: HikariPool-billing - Connection is not
+    available, request timed out after 30000ms'
+  timestamp: '2026-10-20T08:15:20Z'
+deployments: []
+dependencies:
+- postgres-billing

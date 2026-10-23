@@ -15,6 +15,7 @@ class DevTokenRequest(BaseModel):
     sub: Optional[str] = "sre-user-001"
     name: Optional[str] = "Incident Commander"
     role: Optional[str] = "admin"
+    org_id: Optional[str] = "vermithor"
 
 
 class TokenResponse(BaseModel):
@@ -37,10 +38,12 @@ def _issue_dev_token(req: Optional[DevTokenRequest] = None) -> TokenResponse:
     role = (req.role if req and req.role else "admin").strip()
 
     expires_delta_seconds = 86400  # 24 hours
+    org_id = (req.org_id if req and hasattr(req, "org_id") and req.org_id else "vermithor").strip().lower()
     payload = {
         "sub": sub,
         "name": name,
         "role": role,
+        "org_id": org_id,
     }
 
     token = create_access_token(data=payload, expires_delta_seconds=expires_delta_seconds)

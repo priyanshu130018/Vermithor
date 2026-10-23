@@ -1,0 +1,28 @@
+incident_key: INC-HOLDOUT-117
+service: user-profiles
+lookback_minutes: 60
+environment: production
+severity: CRITICAL
+metrics:
+- metric_name: pg_oldest_txid_age_ratio
+  service: user-profiles
+  value: 0.95
+  timestamp: '2026-10-20T16:30:00Z'
+- metric_name: db_read_iops_saturation_ratio
+  service: user-profiles
+  value: 0.98
+  timestamp: '2026-10-20T16:30:00Z'
+logs:
+- service: user-profiles
+  level: ERROR
+  message: 'PSQLException: database ''profiles'' must be vacuumed within 1000000 transactions
+    to prevent wraparound failure'
+  timestamp: '2026-10-20T16:28:10Z'
+- service: user-profiles
+  level: WARN
+  message: Autovacuum worker starved on table 'user_attributes_history' due to active
+    exclusive locks
+  timestamp: '2026-10-20T16:29:00Z'
+deployments: []
+dependencies:
+- postgres-profiles

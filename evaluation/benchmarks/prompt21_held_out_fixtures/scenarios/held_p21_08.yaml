@@ -1,0 +1,30 @@
+id: HELD-P21-08
+scenario_name: Prometheus Compaction Cycle with Healthy Network Connectivity
+root_cause_family: BENIGN_TELEMETRY_AND_ABSTENTION
+target_service: metric-store
+severity: LOW
+environment: production
+is_negative_control: true
+agent_input:
+  incident_key: INC-P21-08
+  service: metric-store
+  lookback_minutes: 15
+  metrics:
+  - metric_name: compaction_duration_seconds
+    value: 4.5
+    service: metric-store
+    timestamp: '2026-10-21T03:35:00Z'
+  - metric_name: network_packet_loss_ratio
+    value: 0.0
+    service: metric-store
+    timestamp: '2026-10-21T03:35:10Z'
+  logs:
+  - level: INFO
+    message: TSDB block compaction completed in 4.5s; 0 corrupt segments
+    service: metric-store
+    timestamp: '2026-10-21T03:35:30Z'
+  - level: INFO
+    message: Network interface eth0 operating nominally
+    service: metric-store
+    timestamp: '2026-10-21T03:35:50Z'
+  deployments: []

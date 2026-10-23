@@ -1,0 +1,27 @@
+incident_key: INC-HOLDOUT-121
+service: crypto-signer
+lookback_minutes: 60
+environment: production
+severity: CRITICAL
+metrics:
+- metric_name: process_resident_memory_bytes_ratio
+  service: crypto-signer
+  value: 0.97
+  timestamp: '2026-10-20T18:30:00Z'
+- metric_name: system_oom_killer_invocations
+  service: crypto-signer
+  value: 3.0
+  timestamp: '2026-10-20T18:30:00Z'
+logs:
+- service: crypto-signer
+  level: ERROR
+  message: 'Kernel: Out of memory: Kill process (crypto-signer) score 950 or sacrifice
+    child'
+  timestamp: '2026-10-20T18:28:15Z'
+- service: crypto-signer
+  level: WARN
+  message: Container crypto-signer terminated with exit code 137 (SIGKILL by oom-killer)
+  timestamp: '2026-10-20T18:29:00Z'
+deployments: []
+dependencies:
+- hsm-gateway

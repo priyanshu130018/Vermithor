@@ -1,0 +1,53 @@
+id: "SCN-08-QUEUE-BACKLOG"
+scenario_name: "async_worker_queue_stall"
+target_service: "notification-worker"
+environment: "production"
+severity: "HIGH"
+
+# Ground-truth labels
+ground_truth:
+  injected_cause: "Distributed deadlock in notification task consumer causing message consumption rate to stall and queue depth to surge to 52000"
+  root_cause_category: "queue_backlog"
+  expected_root_cause_keywords: ["queue", "backlog", "consumer", "worker", "celery", "stall", "deadlock"]
+  expected_services: ["notification-worker", "redis"]
+  expected_evidence_ids: ["EV-METRIC-QUEUE-DEPTH", "EV-LOG-CONSUMER-LOCK"]
+  plausible_alternatives:
+    - "Upstream marketing bulk email event burst"
+    - "Redis broker memory exhaustion dropping pubsub connections"
+  abstain_required: false
+  abstain_conditions:
+    - "If consumer throughput is normal and backlog is transiently clearing, do not diagnose worker stall"
+  repair_appropriate: true
+  repair_target_file: "backend/workers/notification_tasks.py"
+  repair_expected_defect: "Release acquired advisory lock inside finally block to prevent consumer worker deadlock"
+
+# Information presented to the agent
+agent_input:
+  incident_key: "INC-2026-9008"
+  service: "notification-worker"
+  lookback_minutes: 60
+  metrics:
+    - metric_name: "queue_depth_pending_messages"
+      service: "notification-worker"
+      value: 52400.0
+      timestamp: "2026-10-19T14:00:00Z"
+    - metric_name: "queue_message_age_seconds_p95"
+      service: "notification-worker"
+      value: 1840.0
+      timestamp: "2026-10-19T14:00:00Z"
+    - metric_name: "consumer_throughput_per_sec"
+      service: "notification-worker"
+      value: 0.05
+      timestamp: "2026-10-19T14:00:00Z"
+  logs:
+    - service: "notification-worker"
+      level: "ERROR"
+      message: "WorkerThreadStall: Consumer thread [worker-3] blocked waiting for lock 'lock:user:88219' for over 600s"
+      timestamp: "2026-10-19T13:55:00Z"
+    - service: "notification-worker"
+      level: "WARN"
+      message: "CeleryWorkerHeartbeat: 7 of 8 prefetch slots unacknowledged; consumer queue ingestion rate near zero"
+      timestamp: "2026-10-19T13:58:00Z"
+  deployments: []
+  dependencies:
+    - "redis"

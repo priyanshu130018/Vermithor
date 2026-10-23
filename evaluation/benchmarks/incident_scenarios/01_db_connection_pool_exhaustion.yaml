@@ -1,0 +1,57 @@
+id: "SCN-01-DB-POOL"
+scenario_name: "payment_connection_saturation"
+target_service: "payment-api"
+environment: "production"
+severity: "CRITICAL"
+
+# Ground-truth labels (held out from agent input)
+ground_truth:
+  injected_cause: "HikariCP database connection pool max_pool_size saturated (active=100/100, idle=0)"
+  root_cause_category: "database_saturation"
+  expected_root_cause_keywords: ["pool", "connection", "hikari", "database", "postgres", "saturation"]
+  expected_services: ["payment-api", "postgres"]
+  expected_evidence_ids: ["EV-METRIC-POOL-1", "EV-LOG-TIMEOUT-1"]
+  plausible_alternatives:
+    - "PostgreSQL host CPU / storage throttling"
+    - "Network packet loss between payment-api and postgres"
+  abstain_required: false
+  abstain_conditions:
+    - "If pool metrics show idle connections > 20, abstain from connection pool diagnosis"
+  repair_appropriate: true
+  repair_target_file: "src/config.py"
+  repair_expected_defect: "max_pool_size=10 is insufficient for peak concurrent charges"
+
+# Information presented to the agent during investigation
+agent_input:
+  incident_key: "INC-2026-9001"
+  service: "payment-api"
+  lookback_minutes: 60
+  metrics:
+    - metric_name: "db_connection_pool_utilization_ratio"
+      service: "payment-api"
+      value: 1.00
+      timestamp: "2026-10-19T10:10:00Z"
+    - metric_name: "db_query_latency_ms"
+      service: "postgres"
+      value: 3200.0
+      timestamp: "2026-10-19T10:10:00Z"
+    - metric_name: "http_5xx_error_rate_ratio"
+      service: "payment-api"
+      value: 0.28
+      timestamp: "2026-10-19T10:15:00Z"
+  logs:
+    - service: "payment-api"
+      level: "WARN"
+      message: "HikariCP pool 'PaymentPool': Active connections 100/100 (idle: 0). Wait time exceeds 2000ms"
+      timestamp: "2026-10-19T10:11:00Z"
+    - service: "payment-api"
+      level: "ERROR"
+      message: "ConnectionAcquisitionTimeoutException: Timeout waiting for connection from pool 'PaymentPool' after 5000ms"
+      timestamp: "2026-10-19T10:12:00Z"
+  deployments:
+    - service: "payment-api"
+      version: "v2.8.4"
+      change_summary: "Upgrade payment routing engine and enable persistent connection pooling"
+      timestamp: "2026-10-19T09:50:00Z"
+  dependencies:
+    - "postgres"

@@ -163,3 +163,42 @@ def test_investigation_not_found(client: TestClient):
     resp = client.get("/api/v1/agent/investigations/INV-NONEXISTENT")
     assert resp.status_code == 404
     assert "not found" in resp.json()["detail"].lower()
+
+
+def test_investigation_endpoints_enforce_org_boundary(unauthenticated_client: TestClient):
+    """
+    Verify that tokens from unauthorized organizations receive 403 Forbidden
+    when attempting to trigger or access investigations.
+    """
+    from backend.app.common.security import create_access_token
+
+    unauthorized_token = create_access_token({
+        "sub": "attacker_user",
+        "role": "engineer",
+        "org_id": "unauthorized_external_corp",
+    })
+    headers = {"Authorization": f"Bearer {unauthorized_token}"}
+
+    # Trigger investigation
+    resp = unauthenticated_client.post(
+        "/api/v1/agent/investigations",
+        json={"incident_key": "INC-2026-1042"},
+        headers=headers,
+    )
+    assert resp.status_code == 403
+    assert "not authorized" in resp.json()["detail"].lower()
+
+    # Get by ID
+    resp_get = unauthenticated_client.get(
+        "/api/v1/agent/investigations/INV-000001",
+        headers=headers,
+    )
+    assert resp_get.status_code == 403
+
+    # List investigations
+    resp_list = unauthenticated_client.get(
+        "/api/v1/agent/investigations",
+        headers=headers,
+    )
+    assert resp_list.status_code == 403
+

@@ -19,6 +19,20 @@ from backend.app.agent.schemas.repair import (
     ValidationStatus,
 )
 
+from backend.app.agent.schemas.repository import (
+    RepoConnectRequest,
+    RepoConnectResponse,
+    RepoDisconnectResponse,
+    RepoVerifyResponse,
+    RepositorySummaryResponse,
+    validate_repo_identifier,
+)
+from backend.app.agent.schemas.feedback import (
+    FeedbackStatus,
+    InvestigationFeedbackCreate,
+    InvestigationFeedbackResponse,
+)
+
 __all__ = [
     "DiagnosticStep",
     "HypothesisEvaluation",
@@ -36,4 +50,14 @@ __all__ = [
     "RepairStatus",
     "TestExecutionResult",
     "ValidationStatus",
+    "RepoConnectRequest",
+    "RepoConnectResponse",
+    "RepoDisconnectResponse",
+    "RepoVerifyResponse",
+    "RepositorySummaryResponse",
+    "validate_repo_identifier",
+    "FeedbackStatus",
+    "InvestigationFeedbackCreate",
+    "InvestigationFeedbackResponse",
 ]
+

@@ -26,9 +26,10 @@ from client import VermithorClient, generate_dev_jwt
 
 
 def run_e2e_incident_1042(
-    gateway_url: str = "http://localhost:8080",
+    gateway_url: Optional[str] = None,
     output_dir: Optional[str] = None,
 ) -> Dict[str, Any]:
+    gateway_url = gateway_url or os.getenv("VERMITHOR_API_URL", "http://localhost:8000")
     output_dir = output_dir or os.path.join(REPO_ROOT, "evaluation", "results")
     os.makedirs(output_dir, exist_ok=True)
     report_path = os.path.join(output_dir, "INC-2026-1042_report.md")
@@ -192,7 +193,7 @@ def run_e2e_incident_1042(
         "started_at": (base_time + datetime.timedelta(seconds=240)).isoformat(),
         "confidence": 0.94,
     }
-    with httpx.Client(base_url=gateway_url, timeout=10.0) as http_client:
+    with httpx.Client(base_url=gateway_url, timeout=90.0) as http_client:
         inc_res = http_client.post(
             "/api/v1/incidents",
             json=incident_data,
@@ -259,7 +260,7 @@ def run_e2e_incident_1042(
     except Exception as exc:
         print(f"    - In-process runbook seeding skipped: {exc}")
 
-    with httpx.Client(base_url=gateway_url, timeout=10.0) as http_client:
+    with httpx.Client(base_url=gateway_url, timeout=90.0) as http_client:
         rb_res = http_client.get("/api/v1/runbooks", headers=client._headers())
         if rb_res.status_code == 200:
             all_rbs = rb_res.json().get("items", [])
@@ -279,7 +280,7 @@ def run_e2e_incident_1042(
     # 8. Grounded AI Summary Generation
     print("\n[*] Phase 7: AI Summary Generation & Fallback Execution...")
     summary_data = None
-    with httpx.Client(base_url=gateway_url, timeout=30.0) as http_client:
+    with httpx.Client(base_url=gateway_url, timeout=90.0) as http_client:
         sum_res = http_client.post(
             f"/api/v1/summaries/incident/{incident_key}?regenerate=true",
             headers=client._headers(),

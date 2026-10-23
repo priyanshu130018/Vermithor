@@ -1,0 +1,31 @@
+id: BLIND-CASE-02
+scenario_name: Stripe Gateway 504 with Healthy 1.4ms DNS Lookup
+root_cause_family: DNS_AND_SERVICE_DISCOVERY
+target_service: checkout-gateway
+severity: HIGH
+environment: production
+is_negative_control: true
+agent_input:
+  incident_key: INC-BLIND-502
+  service: checkout-gateway
+  lookback_minutes: 15
+  metrics:
+  - metric_name: dns_resolution_latency_ms
+    value: 1.4
+    service: checkout-gateway
+    timestamp: '2026-10-21T02:05:00Z'
+  - metric_name: http_client_request_timeout_ratio
+    value: 0.75
+    service: checkout-gateway
+    timestamp: '2026-10-21T02:05:10Z'
+  logs:
+  - level: INFO
+    message: 'DNS resolution healthy: api.stripe.com resolved in 1.4ms via 10.96.0.10'
+    service: checkout-gateway
+    timestamp: '2026-10-21T02:05:30Z'
+  - level: ERROR
+    message: HTTP 504 Gateway Timeout received from external partner payment provider
+      https://api.stripe.com
+    service: checkout-gateway
+    timestamp: '2026-10-21T02:06:00Z'
+  deployments: []

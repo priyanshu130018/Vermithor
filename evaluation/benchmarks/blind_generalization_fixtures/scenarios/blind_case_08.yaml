@@ -1,0 +1,31 @@
+id: BLIND-CASE-08
+scenario_name: Long-Running Analytical Aggregate Query Without Deadlocks
+root_cause_family: DATABASE_DEADLOCKS_OR_LOCK_CONTENTION
+target_service: analytics-service
+severity: MEDIUM
+environment: production
+is_negative_control: true
+agent_input:
+  incident_key: INC-BLIND-508
+  service: analytics-service
+  lookback_minutes: 15
+  metrics:
+  - metric_name: db_query_duration_seconds
+    value: 24.5
+    service: analytics-service
+    timestamp: '2026-10-21T02:15:00Z'
+  - metric_name: db_deadlocks_total
+    value: 0.0
+    service: analytics-service
+    timestamp: '2026-10-21T02:15:10Z'
+  logs:
+  - level: INFO
+    message: 'Locks check: 0 deadlocks detected, lock wait count = 0'
+    service: analytics-service
+    timestamp: '2026-10-21T02:15:30Z'
+  - level: WARN
+    message: 'Slow query warning: SELECT count(*) FROM event_logs took 24500ms to
+      complete'
+    service: analytics-service
+    timestamp: '2026-10-21T02:16:00Z'
+  deployments: []

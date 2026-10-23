@@ -15,6 +15,8 @@ def sanitize_untrusted_text(text: str) -> str:
     cleaned = re.sub(r"\bdrop\s+table\b", "[REDACTED_SQL]", cleaned, flags=re.IGNORECASE)
     cleaned = re.sub(r"\bdelete\s+from\b", "[REDACTED_SQL]", cleaned, flags=re.IGNORECASE)
     cleaned = re.sub(r"\b(?:secret_)?api_key\b", "[REDACTED_SECRET]", cleaned, flags=re.IGNORECASE)
+    from backend.app.observability.security.safe_client import redact_sensitive_text
+    cleaned = redact_sensitive_text(cleaned)
     return cleaned.strip()
 
 

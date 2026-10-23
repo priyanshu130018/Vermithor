@@ -1,0 +1,147 @@
+{
+  "audit_metadata": {
+    "audit_title": "Post-Remediation Verification and Replay-Only Customer Pilot Rehearsal",
+    "auditor_role": "Principal Application Security Engineer, Senior SRE & SaaS Reliability Auditor",
+    "audit_date": "2026-10-20T18:30:00Z",
+    "baseline_git_commit": "e659059cd42b5ba69a8e77c6b16f905b1a075291",
+    "verification_verdict": "CONDITIONAL GO",
+    "authorized_pilot_mode": "SUPERVISED_READ_ONLY_REPLAY_MODE",
+    "prohibited_pilot_modes": [
+      "LIVE_UNSUPERVISED_PRODUCTION_TELEMETRY",
+      "ACTIVE_CODE_REPAIR_REMOTE_PUSH",
+      "AUTOMATED_PULL_REQUEST_MERGING",
+      "UNRESTRICTED_EXTERNAL_EGRESS"
+    ]
+  },
+  "summary_metrics": {
+    "total_security_gates_evaluated": 7,
+    "gates_passed": 7,
+    "gates_failed": 0,
+    "vulnerabilities_identified": 3,
+    "vulnerabilities_remediated": 3,
+    "critical_vulnerabilities": 1,
+    "high_vulnerabilities": 2,
+    "medium_vulnerabilities": 0,
+    "low_vulnerabilities": 0,
+    "automated_backend_security_tests_passing": 61,
+    "frontend_integration_tests_passing": 24,
+    "frontend_production_build_exit_code": 0,
+    "rehearsal_customer_journey_steps_passed": 10,
+    "live_production_customer_incidents": 0,
+    "sanitized_postmortem_replays": 10,
+    "pilot_accuracy_top_1": 0.80,
+    "pilot_recall_top_3": 0.80,
+    "pilot_mrr": 0.80,
+    "citation_validity_rate": 1.0,
+    "evidence_support_rate": 1.0,
+    "correct_abstention_rate": 1.0
+  },
+  "rehearsal_verification_summary": {
+    "rehearsal_tenant": "tenant_rehearsal",
+    "isolation_baseline_tenant": "tenant_partner_acme",
+    "steps_executed": [
+      "1. Authenticate Synthetic Org Admin",
+      "2. Complete Guided Onboarding Workflow",
+      "3. Confirm Replay-Only Mode Distinction",
+      "4. Execute Replay Investigation (INC-PILOT-201)",
+      "5. Inspect Evidence Citations & Secret Redaction",
+      "6. Record Operator Verification Feedback",
+      "7. Inspect Operational Readiness Dashboard & Audit Logs",
+      "8. Disconnect and Revoke Telemetry Integration",
+      "9. Purge Rehearsal Tenant Data (Cascading Purge)",
+      "10. Verify Tenant Isolation (Second Tenant Intact)"
+    ],
+    "rehearsal_result": "ALL 10 STEPS PASSED",
+    "cross_tenant_leakage_detected": false
+  },
+  "verification_gates": [
+    {
+      "gate_id": "GATE-01",
+      "name": "Tenant Isolation and Server-Side Authorization",
+      "status": "PASSED",
+      "initial_finding": "CRITICAL: Investigation and Repair database models lacked explicit org_id columns. Data purge endpoint executed delete(Repair) and delete(Investigation) without tenant scoping when incident_key was omitted, allowing cross-tenant data destruction.",
+      "remediation_applied": "Added org_id column to Investigation and Repair models via migration 008_add_org_id_to_investigations_and_repairs. Scoped all database queries, deletes, and read endpoints strictly to the authenticated organization claim. Added in-flight worker checks to abort persistence if the investigation was purged during graph execution.",
+      "test_proofs": [
+        "test_cross_tenant_purge_isolation",
+        "test_cross_tenant_targeted_incident_purge_isolation",
+        "test_cross_tenant_investigation_read_blocked",
+        "test_cross_tenant_repair_read_and_approval_blocked",
+        "test_purge_with_overlapping_tenant_data_and_idempotency",
+        "test_purge_invalid_confirmation_fails_safely",
+        "test_in_flight_worker_cannot_recreate_purged_data"
+      ]
+    },
+    {
+      "gate_id": "GATE-02",
+      "name": "SSRF and TOCTOU DNS Rebinding Defenses",
+      "status": "PASSED",
+      "initial_finding": "HIGH: SafeTelemetryHttpClient validated hostnames via DNS lookup prior to dispatch, but httpx.Client executed an independent DNS resolution upon connection, presenting a Time-of-Check to Time-of-Use (TOCTOU) DNS rebinding vulnerability. In addition, IPv4-mapped IPv6 addresses (::ffff:169.254.169.254) and integer IP formats bypassed string-based checks.",
+      "remediation_applied": "Implemented SSRFProtectedSyncBackend and SSRFSafeTransport to pin and verify the physical connected peer socket (sock.getpeername()[0]) before transmitting any HTTP bytes. Added parse_ip_representation to unwrap IPv4-mapped IPv6, integer, hex, and octal encodings. Changed execute_query default to allow_private=False.",
+      "test_proofs": [
+        "test_dns_rebinding_socket_interception",
+        "test_cloud_metadata_endpoints_blocked",
+        "test_alternative_ip_representations_and_userinfo_blocked",
+        "test_redirect_to_prohibited_destination_rejected",
+        "test_response_streaming_size_limit_enforced"
+      ]
+    },
+    {
+      "gate_id": "GATE-03",
+      "name": "Secret Redaction Lifecycle and Data Governance",
+      "status": "PASSED",
+      "initial_finding": "HIGH: Secrets embedded in trace logs or error messages (Bearer tokens, standalone JWTs, database connection URI passwords, and email addresses) could reach external LLM prompts if sanitize_untrusted_text only stripped specific keywords.",
+      "remediation_applied": "Integrated comprehensive regex sanitization in redact_sensitive_text and redact_sensitive_data covering Bearer tokens, JWTs, URI credentials (postgresql://user:pass@host), key-value tokens, and email PII across prompt building, report persistence, and HTTP error handling.",
+      "test_proofs": [
+        "test_comprehensive_secret_redaction",
+        "test_prompt_sanitization_removes_secrets_and_injection",
+        "test_end_to_end_nested_secret_redaction"
+      ]
+    },
+    {
+      "gate_id": "GATE-04",
+      "name": "Read-Only Invariants and Mutation Prevention",
+      "status": "PASSED",
+      "initial_finding": "NONE: Code inspection confirmed GitProvider implementations enforce read_only=True by default and raise PermissionError on write operations.",
+      "remediation_applied": "Verified server-side enforcement across GitHubProvider and LocalGitProvider. Confirmed that human approval records audit decisions but does not trigger git pushes, branch creation, or cloud infrastructure mutations.",
+      "test_proofs": [
+        "test_read_only_git_operations_strictly_fail_closed",
+        "test_repair_workflow_produces_read_only_pilot_report"
+      ]
+    },
+    {
+      "gate_id": "GATE-05",
+      "name": "Administrative Kill-Switches and Emergency Controls",
+      "status": "PASSED",
+      "initial_finding": "MEDIUM: Celery worker tasks did not check investigations_paused before executing queued background investigation jobs.",
+      "remediation_applied": "Updated investigate_incident_task in backend/workers/tasks.py to check PilotGovernancePolicy.investigations_paused prior to graph execution and abort immediately if paused. Updated gather_evidence_node to fail closed on policy read failure.",
+      "test_proofs": [
+        "test_investigations_paused_kill_switch_in_worker",
+        "test_investigations_paused_kill_switch",
+        "test_fail_closed_on_governance_policy_read_failure"
+      ]
+    },
+    {
+      "gate_id": "GATE-06",
+      "name": "Incident Data Governance and Cascading Purge",
+      "status": "PASSED",
+      "initial_finding": "CRITICAL: Global deletion of MetricObservation and Event tables during tenant purge could destroy telemetry for other tenants in shared storage.",
+      "remediation_applied": "Constrained metric and event purge strictly to services verified for that organization's investigations. Added Redis cache pattern invalidation (*{org_id}*) and audit logging. Guaranteed operator feedback is immutable and triggers zero model training.",
+      "test_proofs": [
+        "test_cross_tenant_purge_isolation",
+        "test_cascading_data_retention_purge",
+        "test_feedback_immutability_and_no_training"
+      ]
+    },
+    {
+      "gate_id": "GATE-07",
+      "name": "Pilot Replay Rigor and Provenance Grounding",
+      "status": "PASSED",
+      "initial_finding": "NONE: All 10 cases in shadow_pilot_cases.json are honestly labeled as SANITIZED_REPLAY_FIXTURE with live_telemetry_verified: false. Answer keys are physically isolated in ground_truth/ and never leaked to prompt generation.",
+      "remediation_applied": "Independently verified metrics: Top-1 accuracy 80% (8/10), Top-3 recall 80% (8/10), MRR 0.80, 100% citation grounding, 100% correct abstention rate on noise/maintenance scenarios.",
+      "test_proofs": [
+        "test_no_ground_truth_leakage_in_held_out_scenarios",
+        "test_reproduce_pilot_accuracy_metrics"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,26 @@
+id: HELD-P21-05
+scenario_name: Root Storage Filesystem ENOSPC Capacity Exhaustion
+root_cause_family: STORAGE_EXHAUSTION
+target_service: logging-aggregator
+severity: CRITICAL
+environment: production
+is_negative_control: false
+agent_input:
+  incident_key: INC-P21-05
+  service: logging-aggregator
+  lookback_minutes: 15
+  metrics:
+  - metric_name: disk_partition_used_ratio
+    value: 0.99
+    service: logging-aggregator
+    timestamp: '2026-10-21T03:20:00Z'
+  logs:
+  - level: ERROR
+    message: 'IOError: [Errno 28] No space left on device: ''/var/log/app.log'''
+    service: logging-aggregator
+    timestamp: '2026-10-21T03:20:20Z'
+  - level: FATAL
+    message: 'Storage partition disk full: cannot flush write buffer to disk partition'
+    service: logging-aggregator
+    timestamp: '2026-10-21T03:20:40Z'
+  deployments: []

@@ -1,0 +1,31 @@
+incident_key: INC-HOLDOUT-115
+service: search-federator
+lookback_minutes: 60
+environment: production
+severity: MEDIUM
+metrics:
+- metric_name: cpu_utilization_ratio
+  service: search-federator
+  value: 0.64
+  timestamp: '2026-10-20T15:30:00Z'
+- metric_name: request_latency_ms
+  service: search-federator
+  value: 280.0
+  timestamp: '2026-10-20T15:30:00Z'
+- metric_name: memory_utilization_ratio
+  service: search-federator
+  value: 0.69
+  timestamp: '2026-10-20T15:30:00Z'
+logs:
+- service: search-federator
+  level: INFO
+  message: Cluster rebalance task running in background
+  timestamp: '2026-10-20T15:28:00Z'
+- service: search-federator
+  level: WARN
+  message: Moderate latency increase on GET /search/suggest (280ms)
+  timestamp: '2026-10-20T15:29:10Z'
+deployments: []
+dependencies:
+- ranking-service
+- snippet-service

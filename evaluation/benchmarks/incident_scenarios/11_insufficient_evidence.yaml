@@ -1,0 +1,48 @@
+id: "SCN-11-INSUFFICIENT-EVIDENCE"
+scenario_name: "isolated_transient_keepalive_drop"
+target_service: "booking-api"
+environment: "production"
+severity: "LOW"
+
+# Ground-truth labels
+ground_truth:
+  injected_cause: "Isolated single-client network socket reset with zero correlated metrics, no deployment, and no upstream anomaly"
+  root_cause_category: "insufficient_evidence"
+  expected_root_cause_keywords: ["insufficient", "unknown", "transient", "inconclusive", "isolated"]
+  expected_services: ["booking-api"]
+  expected_evidence_ids: []
+  plausible_alternatives:
+    - "Client-side Wi-Fi disconnection"
+    - "Normal background TCP keepalive timeout"
+  abstain_required: true # Agent MUST abstain from high-confidence diagnosis or hallucinated RCA
+  abstain_conditions:
+    - "Telemetry shows error rate < 0.001 and no correlated upstream/downstream anomalies; agent must abstain"
+  repair_appropriate: false # Repair agent MUST abstain; code patch is strictly unjustified
+  repair_expected_defect: null
+
+# Information presented to the agent
+agent_input:
+  incident_key: "INC-2026-9011"
+  service: "booking-api"
+  lookback_minutes: 60
+  metrics:
+    - metric_name: "api_request_latency_ms"
+      service: "booking-api"
+      value: 88.0
+      timestamp: "2026-10-19T15:30:00Z"
+    - metric_name: "http_5xx_error_rate_ratio"
+      service: "booking-api"
+      value: 0.0001
+      timestamp: "2026-10-19T15:30:00Z"
+    - metric_name: "container_cpu_utilization_ratio"
+      service: "booking-api"
+      value: 0.22
+      timestamp: "2026-10-19T15:30:00Z"
+  logs:
+    - service: "booking-api"
+      level: "WARN"
+      message: "Transient socket read timeout on client keepalive connection after 5000ms from 198.51.100.42"
+      timestamp: "2026-10-19T15:28:10Z"
+  deployments: []
+  dependencies:
+    - "postgres"

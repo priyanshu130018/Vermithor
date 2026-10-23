@@ -1,0 +1,184 @@
+{
+  "metadata": {
+    "evaluation_title": "Track B: Held-Out DNS & Kafka Generalization Benchmark",
+    "evaluation_date": "2026-10-20T19:25:25.989982+00:00",
+    "sample_size": 4,
+    "dataset_version": "1.0.0",
+    "pilot_mode": "SUPERVISED_READ_ONLY_REPLAY",
+    "tenant_id": "held_out_eval_tenant"
+  },
+  "metrics": {
+    "cases_evaluated_total": 4,
+    "candidate_generation_coverage": {
+      "numerator": 4,
+      "denominator": 4,
+      "rate": 1.0
+    },
+    "top_1_diagnosis_accuracy": {
+      "numerator": 4,
+      "denominator": 4,
+      "rate": 1.0
+    },
+    "top_3_diagnosis_recall": {
+      "numerator": 4,
+      "denominator": 4,
+      "rate": 1.0
+    },
+    "mean_reciprocal_rank": 1.0,
+    "negative_control_discrimination": {
+      "numerator": 2,
+      "denominator": 2,
+      "rate": 1.0
+    },
+    "evidence_citation_validity": {
+      "numerator": 27,
+      "denominator": 35,
+      "rate": 0.7714
+    },
+    "unsupported_claims_count": 0,
+    "latency_ms": {
+      "min": 5441.67,
+      "median_p50": 5445.96,
+      "p90": 9831.55,
+      "max": 9831.55,
+      "average": 6540.65
+    }
+  },
+  "cases": [
+    {
+      "case_id": "HELDOUT-CASE-01",
+      "incident_key": "INC-HELDOUT-301",
+      "service": "billing-worker",
+      "is_negative_control": false,
+      "injected_cause": "CoreDNS timeout causing billing database connection stall",
+      "leading_hypothesis": "DNS resolution failure on worker",
+      "confidence": 0.8602,
+      "candidate_coverage": true,
+      "candidate_count": 3,
+      "ranked_candidates": [
+        "DNS resolution failure on worker",
+        "Service degradation on worker",
+        "Downstream dependency timeout on worker"
+      ],
+      "top_1_hit": true,
+      "top_3_hit": true,
+      "mrr": 1.0,
+      "latency_ms": 9831.55,
+      "citation_audit": {
+        "total_citations": 11,
+        "valid_citations": 9,
+        "invalid_citations": 2,
+        "validity_rate": 0.8182,
+        "breakdown": {
+          "valid": 9,
+          "missing_or_unresolved": 0,
+          "malformed": 0,
+          "cross_tenant": 0,
+          "cross_incident": 2,
+          "stale": 0
+        },
+        "uncited_material_count": 5
+      }
+    },
+    {
+      "case_id": "HELDOUT-CASE-02",
+      "incident_key": "INC-HELDOUT-302",
+      "service": "checkout-gateway",
+      "is_negative_control": true,
+      "injected_cause": "Downstream partner gateway timeout (DNS is healthy and must NOT be diagnosed)",
+      "leading_hypothesis": "Downstream dependency timeout on checkout-api",
+      "confidence": 0.8602,
+      "candidate_coverage": true,
+      "candidate_count": 2,
+      "ranked_candidates": [
+        "Downstream dependency timeout on checkout-api",
+        "DNS resolution failure on checkout-api"
+      ],
+      "top_1_hit": true,
+      "top_3_hit": true,
+      "mrr": 1.0,
+      "latency_ms": 5441.67,
+      "citation_audit": {
+        "total_citations": 10,
+        "valid_citations": 8,
+        "invalid_citations": 2,
+        "validity_rate": 0.8,
+        "breakdown": {
+          "valid": 8,
+          "missing_or_unresolved": 0,
+          "malformed": 0,
+          "cross_tenant": 0,
+          "cross_incident": 2,
+          "stale": 0
+        },
+        "uncited_material_count": 6
+      }
+    },
+    {
+      "case_id": "HELDOUT-CASE-03",
+      "incident_key": "INC-HELDOUT-303",
+      "service": "event-ingest-stream",
+      "is_negative_control": false,
+      "injected_cause": "Kafka consumer stall caused by poison pill message",
+      "leading_hypothesis": "Kafka consumer lag backlog on vermithor-backend",
+      "confidence": 0.8602,
+      "candidate_coverage": true,
+      "candidate_count": 1,
+      "ranked_candidates": [
+        "Kafka consumer lag backlog on vermithor-backend"
+      ],
+      "top_1_hit": true,
+      "top_3_hit": true,
+      "mrr": 1.0,
+      "latency_ms": 5445.96,
+      "citation_audit": {
+        "total_citations": 8,
+        "valid_citations": 6,
+        "invalid_citations": 2,
+        "validity_rate": 0.75,
+        "breakdown": {
+          "valid": 6,
+          "missing_or_unresolved": 0,
+          "malformed": 0,
+          "cross_tenant": 0,
+          "cross_incident": 2,
+          "stale": 0
+        },
+        "uncited_material_count": 4
+      }
+    },
+    {
+      "case_id": "HELDOUT-CASE-04",
+      "incident_key": "INC-HELDOUT-304",
+      "service": "notification-worker",
+      "is_negative_control": true,
+      "injected_cause": "Transient Kafka consumer lag backlog from rebalance (Poison pill must NOT be diagnosed)",
+      "leading_hypothesis": "Kafka consumer lag backlog on worker",
+      "confidence": 0.7697,
+      "candidate_coverage": true,
+      "candidate_count": 1,
+      "ranked_candidates": [
+        "Kafka consumer lag backlog on worker"
+      ],
+      "top_1_hit": true,
+      "top_3_hit": true,
+      "mrr": 1.0,
+      "latency_ms": 5443.41,
+      "citation_audit": {
+        "total_citations": 6,
+        "valid_citations": 4,
+        "invalid_citations": 2,
+        "validity_rate": 0.6667,
+        "breakdown": {
+          "valid": 4,
+          "missing_or_unresolved": 0,
+          "malformed": 0,
+          "cross_tenant": 0,
+          "cross_incident": 2,
+          "stale": 0
+        },
+        "uncited_material_count": 2
+      }
+    }
+  ]
+}

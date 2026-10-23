@@ -1,0 +1,35 @@
+id: PILOT-CASE-06
+scenario_name: ingest_worker_c_extension_memory_leak_oom
+target_service: ingest-worker
+environment: production
+severity: CRITICAL
+agent_input:
+  incident_key: INC-PILOT-206
+  service: ingest-worker
+  lookback_minutes: 30
+  metrics:
+  - metric_name: container_memory_working_set_bytes
+    service: ingest-worker
+    value: 4294967296.0
+    timestamp: '2026-10-20T11:10:00Z'
+  - metric_name: memory_rss_bytes
+    service: ingest-worker
+    value: 4194304000.0
+    timestamp: '2026-10-20T11:10:00Z'
+  - metric_name: worker_restart_count
+    service: ingest-worker
+    value: 8.0
+    timestamp: '2026-10-20T11:15:00Z'
+  logs:
+  - service: ingest-worker
+    level: WARN
+    message: 'CGroupMonitor: Worker container memory exceeds 95% of 4096MB limit'
+    timestamp: '2026-10-20T11:11:00Z'
+  - service: ingest-worker
+    level: ERROR
+    message: 'KernelNotice: Killed process 14210 (python) total-vm:4.2GB anon-rss:3.9GB
+      (OOM killer SIGKILL exit 137)'
+    timestamp: '2026-10-20T11:12:00Z'
+  deployments: []
+  dependencies:
+  - kafka-events

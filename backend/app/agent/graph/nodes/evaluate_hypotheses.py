@@ -1,6 +1,8 @@
+from datetime import datetime, timezone
 import json
 import logging
 import re
+import time
 from typing import Any, Dict, List, Optional
 from sqlalchemy.orm import Session
 
@@ -113,10 +115,14 @@ def _build_deterministic_evaluation(state: InvestigationState) -> Dict[str, Any]
 
     # 4. Confirmed Findings vs Unknowns
     confirmed_findings: List[str] = []
-    if primary_conf >= 0.70 and primary_cause != "Insufficient evidence":
+    is_uncertain_cause = any(
+        k in primary_cause.lower()
+        for k in ("insufficient", "inconclusive", "unknown", "transient", "ambiguous")
+    )
+    if primary_conf >= 0.70 and not is_uncertain_cause:
         confirmed_findings.append(f"{primary_cause} confirmed by telemetry evidence on {target_svc}.")
     else:
-        confirmed_findings.append("Root cause inconclusive: insufficient telemetry to definitively confirm single origin.")
+        confirmed_findings.append(f"Root cause inconclusive on {target_svc}: insufficient or ambiguous telemetry to confirm single origin.")
 
     # 5. Missing Evidence
     missing_evidence: List[str] = []
@@ -174,6 +180,19 @@ def _build_deterministic_evaluation(state: InvestigationState) -> Dict[str, Any]
         if c.get("candidate_name") != primary_cause
     ]
 
+    fallback_record = {
+        "provider": "fallback",
+        "actual_model_id": "deterministic-rules (non-LLM)",
+        "task": "investigation",
+        "request_latency_ms": 0.0,
+        "request_latency_seconds": 0.0,
+        "fallback_status": True,
+        "errors": state.get("errors", ["Fallback engaged"])[-1] if state.get("errors") else "Deterministic fallback engaged",
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+    }
+    existing_records = list(state.get("model_call_records", []))
+    existing_records.append(fallback_record)
+
     return {
         "observed_facts": observed_facts,
         "inferred_relationships": inferred_relationships,
@@ -182,11 +201,12 @@ def _build_deterministic_evaluation(state: InvestigationState) -> Dict[str, Any]
         "alternative_explanations": alternative_explanations,
         "missing_evidence": missing_evidence,
         "contradictory_evidence": [],
-        "uncertainty_assessment": uncertainty,
+        "uncertainty_assessment": f"[Deterministic Rule-Based Fallback (Non-LLM)] {uncertainty}",
         "recommended_diagnostic_steps": diagnostic_steps,
         "is_fallback": True,
         "llm_provider": "fallback",
-        "llm_model": "deterministic-rules",
+        "llm_model": "deterministic-rules (non-LLM)",
+        "model_call_records": existing_records,
     }
 
 
@@ -197,16 +217,20 @@ def evaluate_hypotheses_node(
     settings: Optional[Settings] = None,
 ) -> Dict[str, Any]:
     """
-    Step 7: Evaluate gathered evidence against candidate hypotheses using the configured LLM,
-    with automatic deterministic fallback if LLM is offline, times out, or fails.
+    Step 7: Evaluate gathered evidence against candidate hypotheses using the configured cloud LLM,
+    routed specifically to HF_INVESTIGATION_MODEL with automatic deterministic fallback if offline,
+    times out, or credits are exhausted.
     """
     cfg = settings or get_settings()
     provider = llm_provider
     if provider is None:
         try:
-            provider = ProviderFactory.get_provider(cfg)
+            try:
+                provider = ProviderFactory.get_provider(cfg, task="investigation")
+            except TypeError:
+                provider = ProviderFactory.get_provider(cfg)
         except Exception as exc:
-            logger.warning("Could not initialize LLM provider: %s", exc)
+            logger.warning("Could not initialize investigation LLM provider: %s", exc)
             provider = None
 
     incident_key = state.get("incident_key", "UNKNOWN")
@@ -218,9 +242,31 @@ def evaluate_hypotheses_node(
     rca_candidates = state.get("rca_candidates", [])
     runbooks = state.get("runbooks", [])
     deps = state.get("topology_dependencies", [])
+    call_records = list(state.get("model_call_records", []))
 
-    # Check if LLM provider is available
+    # Check if LLM provider is available and allowed under Pilot Data Governance
+    org_id = state.get("org_id") or "vermithor"
+    allow_external_llm = state.get("allow_external_llm", False)
+    pol_found = False
+    if db is not None:
+        try:
+            from backend.app.agent.db.models import PilotGovernancePolicy
+            pol = db.query(PilotGovernancePolicy).filter(PilotGovernancePolicy.org_id == org_id).first()
+            if pol:
+                allow_external_llm = pol.allow_external_llm
+                pol_found = True
+        except Exception:
+            pass
+
     use_llm = provider is not None and provider.is_available()
+    provider_name = (provider.get_provider_name() if provider else "").lower()
+    is_mock_or_local = any(k in provider_name for k in ("mock", "local", "deterministic", "fallback"))
+    if use_llm and pol_found and not allow_external_llm and not is_mock_or_local:
+        logger.info(
+            "Pilot data governance: external LLM dispatch blocked for org '%s' (allow_external_llm=False). Using deterministic evaluation.",
+            org_id,
+        )
+        use_llm = False
 
     if use_llm:
         try:
@@ -235,7 +281,29 @@ def evaluate_hypotheses_node(
                 runbooks=runbooks,
                 topology_deps=deps,
             )
-            raw_response = provider.generate(prompt)
+            raw_response = ""
+            call_rec: Optional[Dict[str, Any]] = None
+
+            if hasattr(provider, "generate_with_telemetry"):
+                raw_response, call_rec = provider.generate_with_telemetry(prompt, task="investigation")
+            else:
+                t0 = time.perf_counter()
+                raw_response = provider.generate(prompt)
+                lat = time.perf_counter() - t0
+                call_rec = {
+                    "provider": provider.get_provider_name(),
+                    "actual_model_id": provider.get_model_name(),
+                    "task": "investigation",
+                    "request_latency_ms": round(lat * 1000.0, 2),
+                    "request_latency_seconds": round(lat, 4),
+                    "fallback_status": False,
+                    "errors": None,
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                }
+
+            if call_rec:
+                call_records.append(call_rec)
+
             parsed = _extract_json_from_llm(raw_response)
 
             if parsed and "hypotheses_evaluated" in parsed:
@@ -258,12 +326,24 @@ def evaluate_hypotheses_node(
                     "is_fallback": False,
                     "llm_provider": provider.get_provider_name(),
                     "llm_model": provider.get_model_name(),
+                    "model_call_records": call_records,
                 }
             else:
                 logger.warning("LLM response did not parse into required schema. Falling back to deterministic rules.")
+                state_errors = state.get("errors", [])
+                state_errors.append("LLM response schema validation failure")
+                state["errors"] = state_errors
         except Exception as exc:
             logger.warning("LLM generation failed: %s. Falling back to deterministic rules.", exc)
+            state_errors = state.get("errors", [])
+            state_errors.append(f"LLM failure: {exc}")
+            state["errors"] = state_errors
+            if provider and hasattr(provider, "get_call_history"):
+                hist = provider.get_call_history()
+                if hist:
+                    call_records.append(hist[-1])
 
     # Deterministic Fallback Execution
     logger.info("Executing deterministic fallback evaluation for %s", incident_key)
+    state["model_call_records"] = call_records
     return _build_deterministic_evaluation(state)

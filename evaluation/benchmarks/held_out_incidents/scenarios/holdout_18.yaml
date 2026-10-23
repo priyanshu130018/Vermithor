@@ -1,0 +1,27 @@
+incident_key: INC-HOLDOUT-118
+service: notification-service
+lookback_minutes: 60
+environment: production
+severity: CRITICAL
+metrics:
+- metric_name: http_500_error_rate_ratio
+  service: notification-service
+  value: 0.88
+  timestamp: '2026-10-20T17:05:00Z'
+logs:
+- service: notification-service
+  level: ERROR
+  message: 'AlembicMigrationError: syntax error at or near ''CONSTRAIN'' in 008_delivery_pref.py:
+    relation does not exist'
+  timestamp: '2026-10-20T17:01:20Z'
+- service: notification-service
+  level: ERROR
+  message: 'Service startup failed: failed to apply database migration revision 008_delivery_pref'
+  timestamp: '2026-10-20T17:02:10Z'
+deployments:
+- service: notification-service
+  version: v3.2.0
+  change_summary: Added user delivery preferences schema migration
+  timestamp: '2026-10-20T17:00:00Z'
+dependencies:
+- postgres-notif

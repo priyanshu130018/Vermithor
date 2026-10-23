@@ -65,12 +65,15 @@ export interface RepairResponse {
   model_provider: string;
   model_name?: string;
   is_fallback: boolean;
+  is_read_only_pilot?: boolean;
+  pilot_audit_notice?: string;
   iteration_count: number;
   error_message?: string;
   report_json?: RepairReport;
   created_at: string;
   updated_at: string;
 }
+
 
 export interface TriggerRepairRequest {
   investigation_key: string;

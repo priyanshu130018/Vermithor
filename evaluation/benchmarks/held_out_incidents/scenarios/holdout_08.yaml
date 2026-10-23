@@ -1,0 +1,27 @@
+incident_key: INC-HOLDOUT-108
+service: order-fulfillment-consumer
+lookback_minutes: 60
+environment: production
+severity: HIGH
+metrics:
+- metric_name: kafka_consumer_lag_records
+  service: order-fulfillment-consumer
+  value: 85000.0
+  timestamp: '2026-10-20T12:00:00Z'
+- metric_name: consumer_rebalance_rate_per_hour
+  service: order-fulfillment-consumer
+  value: 12.0
+  timestamp: '2026-10-20T12:00:00Z'
+logs:
+- service: order-fulfillment-consumer
+  level: ERROR
+  message: 'CommitFailedException: Consumer group rebalance triggered; offset commit
+    expired due to max.poll.interval.ms exceedance'
+  timestamp: '2026-10-20T11:58:20Z'
+- service: order-fulfillment-consumer
+  level: WARN
+  message: Kafka partition revoked from worker consumer-1 during repeated group stabilization
+  timestamp: '2026-10-20T11:59:10Z'
+deployments: []
+dependencies:
+- kafka-cluster

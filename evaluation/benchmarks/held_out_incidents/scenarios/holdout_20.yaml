@@ -1,0 +1,23 @@
+incident_key: INC-HOLDOUT-120
+service: audit-logger
+lookback_minutes: 60
+environment: production
+severity: CRITICAL
+metrics:
+- metric_name: disk_space_used_bytes_ratio
+  service: audit-logger
+  value: 0.99
+  timestamp: '2026-10-20T18:00:00Z'
+logs:
+- service: audit-logger
+  level: ERROR
+  message: 'Logback Appender failed: no space left on device (/var/log/audit/audit.log)'
+  timestamp: '2026-10-20T17:58:10Z'
+- service: audit-logger
+  level: ERROR
+  message: 'POSIX error ENOSPC: volume /var/log capacity exhausted by verbose debug
+    trace logging'
+  timestamp: '2026-10-20T17:59:00Z'
+deployments: []
+dependencies:
+- local-disk

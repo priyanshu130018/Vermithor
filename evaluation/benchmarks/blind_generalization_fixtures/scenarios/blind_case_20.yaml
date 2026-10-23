@@ -1,0 +1,27 @@
+id: BLIND-CASE-20
+scenario_name: Environment Variable Misconfiguration Pointing to Wrong Port
+root_cause_family: DEPLOYMENT_OR_CONFIG_REGRESSION
+target_service: vault-agent
+severity: HIGH
+environment: production
+is_negative_control: false
+agent_input:
+  incident_key: INC-BLIND-520
+  service: vault-agent
+  lookback_minutes: 15
+  metrics:
+  - metric_name: vault_sync_failure_count
+    value: 35.0
+    service: vault-agent
+    timestamp: '2026-10-21T02:40:00Z'
+  logs:
+  - level: ERROR
+    message: 'ConfigurationError: Invalid environment variable VAULT_ADDR=''http://127.0.0.1:8201'':
+      connection refused'
+    service: vault-agent
+    timestamp: '2026-10-21T02:40:20Z'
+  - level: FATAL
+    message: Failed to initialize vault secret store due to configuration misconfiguration
+    service: vault-agent
+    timestamp: '2026-10-21T02:40:40Z'
+  deployments: []

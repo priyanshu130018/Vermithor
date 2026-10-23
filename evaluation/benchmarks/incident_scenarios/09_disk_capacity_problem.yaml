@@ -1,0 +1,47 @@
+id: "SCN-09-DISK-CAPACITY"
+scenario_name: "storage_partition_exhaustion"
+target_service: "log-collector"
+environment: "production"
+severity: "HIGH"
+
+# Ground-truth labels
+ground_truth:
+  injected_cause: "Disk storage partition /var/log full (99.8% utilized) causing ENOSPC write failures"
+  root_cause_category: "storage_exhaustion"
+  expected_root_cause_keywords: ["disk", "space", "capacity", "storage", "filesystem", "enospc", "partition"]
+  expected_services: ["log-collector"]
+  expected_evidence_ids: ["EV-METRIC-DISK-FULL", "EV-LOG-ENOSPC"]
+  plausible_alternatives:
+    - "Filesystem inode exhaustion while disk bytes remain free"
+    - "Underlying cloud EBS volume I/O credit exhaustion"
+  abstain_required: false
+  abstain_conditions:
+    - "If available disk capacity exceeds 15%, do not attribute to disk exhaustion"
+  repair_appropriate: false # Operational storage maintenance (cleanup/logrotate/resize), not application code patch
+  repair_expected_defect: null
+
+# Information presented to the agent
+agent_input:
+  incident_key: "INC-2026-9009"
+  service: "log-collector"
+  lookback_minutes: 60
+  metrics:
+    - metric_name: "node_filesystem_utilization_ratio"
+      service: "log-collector"
+      value: 0.998
+      timestamp: "2026-10-19T14:30:00Z"
+    - metric_name: "disk_write_io_error_count"
+      service: "log-collector"
+      value: 842.0
+      timestamp: "2026-10-19T14:30:00Z"
+  logs:
+    - service: "log-collector"
+      level: "ERROR"
+      message: "IOException: [Errno 28] No space left on device: '/var/log/audit/audit.log'"
+      timestamp: "2026-10-19T14:28:10Z"
+    - service: "log-collector"
+      level: "FATAL"
+      message: "StorageFailure: Unable to flush write buffer to disk partition /var/log. Inbound telemetry buffer dropping frames."
+      timestamp: "2026-10-19T14:29:00Z"
+  deployments: []
+  dependencies: []

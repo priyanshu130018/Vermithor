@@ -1,0 +1,200 @@
+{
+  "metadata": {
+    "audit_title": "Prompt 21 Negative Control Metric Audit & Discrimination Calibration",
+    "evaluation_date": "2026-10-21T02:10:00.000000+00:00",
+    "tenant_id": "blind_eval_tenant",
+    "total_negative_controls": 11,
+    "benchmark": "blind_generalization_fixtures"
+  },
+  "metric_definitions": {
+    "safety_discrimination": {
+      "definition": "Measures whether the model avoids diagnosing any prohibited or unsupported root cause when presented with misleading, noisy, or negative control telemetry.",
+      "formula": "count(not any(prohibited_keyword in leading_hypothesis)) / total_negative_controls",
+      "operational_importance": "Critical safety boundary. Prevents high-risk automated remediation, unnecessary rollbacks, or misdirected SRE escalations on healthy infrastructure."
+    },
+    "diagnostic_discrimination": {
+      "definition": "Measures whether the model accurately pinpoints the specific true alternative root cause or explicitly abstains when telemetry represents nominal background operations.",
+      "formula": "count(any(expected_keyword in leading_hypothesis) and not any(prohibited_keyword in leading_hypothesis)) / total_negative_controls",
+      "operational_importance": "Diagnostic utility. Differentiates discerning the true latent cause from conservative abstention."
+    }
+  },
+  "prompt20_formula_flaw_analysis": {
+    "flaw_description": "Prompt 20 evaluated negative controls using a strict compound boolean: `(matched_expected and not triggered_prohibited)`. When Vermithor safely abstained with 'Insufficient evidence' (confidence 0.10), it successfully avoided the prohibited cause (100% Safety Discrimination), but failed the compound check because 'Insufficient evidence' did not match the specific alternative cause keywords. This conflated safe abstention with diagnostic failure, scoring 0% across multiple negative control scenarios.",
+    "cases_affected_by_flaw": [
+      {
+        "case_id": "BLIND-CASE-02",
+        "scenario": "Downstream Stripe HTTP 504 with Healthy Cluster DNS",
+        "prohibited": ["dns", "coredns", "resolver"],
+        "prompt20_outcome": "Abstained with 'Insufficient evidence' (confidence 0.10). Avoided prohibited DNS. Scored 0% under compound formula.",
+        "prompt21_outcome": "Diagnosed 'Downstream dependency timeout on checkout-gateway' (confidence 0.7961). Top-1 hit under both Safety (100%) and Diagnostic (100%)."
+      },
+      {
+        "case_id": "BLIND-CASE-05",
+        "scenario": "HTTP Client Pool Exhaustion with Healthy Postgres Database Pool",
+        "prohibited": ["database", "db", "postgres", "sql"],
+        "prompt20_outcome": "Abstained with 'Insufficient evidence' (confidence 0.10). Avoided prohibited database pool. Scored 0% under compound formula.",
+        "prompt21_outcome": "Diagnosed 'Downstream dependency timeout on shipping-tracker' (confidence 0.7961). Top-1 hit under both Safety (100%) and Diagnostic (100%)."
+      }
+    ]
+  },
+  "per_case_discrimination_audit": [
+    {
+      "case_id": "BLIND-CASE-02",
+      "family": "DNS_AND_SERVICE_DISCOVERY",
+      "scenario_name": "Downstream Stripe HTTP 504 with Healthy Cluster DNS",
+      "prohibited_keywords": ["dns", "coredns", "resolver"],
+      "expected_keywords": ["downstream", "timeout", "stripe", "partner", "504"],
+      "prompt20_leading_hypothesis": "Insufficient evidence",
+      "prompt20_safety_discrimination": true,
+      "prompt20_diagnostic_discrimination": false,
+      "prompt21_leading_hypothesis": "Downstream dependency timeout on checkout-gateway",
+      "prompt21_safety_discrimination": true,
+      "prompt21_diagnostic_discrimination": true
+    },
+    {
+      "case_id": "BLIND-CASE-05",
+      "family": "DATABASE_CONNECTION_POOL",
+      "scenario_name": "HTTP Client Pool Exhaustion with Healthy Postgres Database Pool",
+      "prohibited_keywords": ["database", "db", "postgres", "sql"],
+      "expected_keywords": ["httpclient", "http_client", "pool", "downstream", "timeout"],
+      "prompt20_leading_hypothesis": "Insufficient evidence",
+      "prompt20_safety_discrimination": true,
+      "prompt20_diagnostic_discrimination": false,
+      "prompt21_leading_hypothesis": "Downstream dependency timeout on shipping-tracker",
+      "prompt21_safety_discrimination": true,
+      "prompt21_diagnostic_discrimination": true
+    },
+    {
+      "case_id": "BLIND-CASE-08",
+      "family": "DATABASE_DEADLOCKS_OR_LOCK_CONTENTION",
+      "scenario_name": "Long-Running Analytical Query with Zero Deadlocks",
+      "prohibited_keywords": ["deadlock", "lock contention", "poison"],
+      "expected_keywords": ["query", "analytical", "long-running", "slow", "table scan", "degradation"],
+      "prompt20_leading_hypothesis": "Database degradation on analytics-service",
+      "prompt20_safety_discrimination": true,
+      "prompt20_diagnostic_discrimination": true,
+      "prompt21_leading_hypothesis": "Database degradation on analytics-service",
+      "prompt21_safety_discrimination": true,
+      "prompt21_diagnostic_discrimination": true
+    },
+    {
+      "case_id": "BLIND-CASE-10",
+      "family": "MEMORY_EXHAUSTION_AND_OOM",
+      "scenario_name": "Java Heap at 78% During Scheduled Compacting GC Cycle",
+      "prohibited_keywords": ["oom", "out of memory", "leak"],
+      "expected_keywords": ["gc", "garbage", "compacting", "insufficient evidence", "nominal"],
+      "prompt20_leading_hypothesis": "Insufficient evidence",
+      "prompt20_safety_discrimination": true,
+      "prompt20_diagnostic_discrimination": true,
+      "prompt21_leading_hypothesis": "Service degradation on data-sync-worker",
+      "prompt21_safety_discrimination": true,
+      "prompt21_diagnostic_discrimination": false
+    },
+    {
+      "case_id": "BLIND-CASE-13",
+      "family": "CPU_SATURATION_AND_THREAD_STARVATION",
+      "scenario_name": "High CPU 94% on Worker During Normal Nightly Compaction",
+      "prohibited_keywords": ["crash", "poison", "deadlock"],
+      "expected_keywords": ["nightly", "compaction", "batch", "nominal", "insufficient evidence"],
+      "prompt20_leading_hypothesis": "Resource saturation on nightly-batch-runner",
+      "prompt20_safety_discrimination": true,
+      "prompt20_diagnostic_discrimination": false,
+      "prompt21_leading_hypothesis": "Resource saturation on nightly-batch-runner",
+      "prompt21_safety_discrimination": true,
+      "prompt21_diagnostic_discrimination": false
+    },
+    {
+      "case_id": "BLIND-CASE-15",
+      "family": "KAFKA_POISON_PILL",
+      "scenario_name": "Partition Rebalance Triggering Transient Fetch Lag",
+      "prohibited_keywords": ["poison pill", "deserialization"],
+      "expected_keywords": ["rebalance", "rebalancing", "lag", "transient", "consumer lag"],
+      "prompt20_leading_hypothesis": "Kafka consumer lag backlog on kafka-broker-node-3",
+      "prompt20_safety_discrimination": true,
+      "prompt20_diagnostic_discrimination": false,
+      "prompt21_leading_hypothesis": "Kafka consumer lag backlog on kafka-broker-node-3",
+      "prompt21_safety_discrimination": true,
+      "prompt21_diagnostic_discrimination": false
+    },
+    {
+      "case_id": "BLIND-CASE-17",
+      "family": "NORMAL_KAFKA_LAG",
+      "scenario_name": "Flash Sale Traffic Spike with Normal Consumer Drain Rate",
+      "prohibited_keywords": ["poison pill", "poison_pill", "corrupt message", "deserialization"],
+      "expected_keywords": ["lag", "backlog", "drain", "traffic spike", "consumer lag"],
+      "prompt20_leading_hypothesis": "Kafka consumer lag backlog on event-notifier",
+      "prompt20_safety_discrimination": true,
+      "prompt20_diagnostic_discrimination": true,
+      "prompt21_leading_hypothesis": "Kafka consumer lag backlog on event-notifier",
+      "prompt21_safety_discrimination": true,
+      "prompt21_diagnostic_discrimination": true
+    },
+    {
+      "case_id": "BLIND-CASE-19",
+      "family": "DEPLOYMENT_OR_CONFIG_REGRESSION",
+      "scenario_name": "Stale Deployment 6 Hours Ago with Active Redis Maxmemory Eviction",
+      "prohibited_keywords": ["recent deployment", "v2.1.0"],
+      "expected_keywords": ["redis", "eviction", "cache", "maxmemory"],
+      "prompt20_leading_hypothesis": "Redis cache failure on session-cache",
+      "prompt20_safety_discrimination": true,
+      "prompt20_diagnostic_discrimination": true,
+      "prompt21_leading_hypothesis": "Redis cache failure on session-cache",
+      "prompt21_safety_discrimination": true,
+      "prompt21_diagnostic_discrimination": true
+    },
+    {
+      "case_id": "BLIND-CASE-22",
+      "family": "TLS_CERTIFICATE_OR_CONNECTION",
+      "scenario_name": "Remote HTTPS 404 Not Found with Valid TLS Certificate",
+      "prohibited_keywords": ["tls", "certificate expired", "certificate failure"],
+      "expected_keywords": ["404", "not found", "remote endpoint", "url", "service degradation"],
+      "prompt20_leading_hypothesis": "Service degradation on internal-scraper",
+      "prompt20_safety_discrimination": true,
+      "prompt20_diagnostic_discrimination": true,
+      "prompt21_leading_hypothesis": "Service degradation on internal-scraper",
+      "prompt21_safety_discrimination": true,
+      "prompt21_diagnostic_discrimination": true
+    },
+    {
+      "case_id": "BLIND-CASE-23",
+      "family": "BENIGN_TELEMETRY_AND_ABSTENTION",
+      "scenario_name": "Random Metric Noise with Isolated Sporadic Warning",
+      "prohibited_keywords": ["database", "kafka", "dns", "oom", "deadlock"],
+      "expected_keywords": ["insufficient evidence", "nominal", "benign", "noise"],
+      "prompt20_leading_hypothesis": "Service degradation on recommendation-worker",
+      "prompt20_safety_discrimination": true,
+      "prompt20_diagnostic_discrimination": false,
+      "prompt21_leading_hypothesis": "Service degradation on recommendation-worker",
+      "prompt21_safety_discrimination": true,
+      "prompt21_diagnostic_discrimination": false
+    },
+    {
+      "case_id": "BLIND-CASE-24",
+      "family": "BENIGN_TELEMETRY_AND_ABSTENTION",
+      "scenario_name": "Periodic Health Check Jitter Without Actual Outage",
+      "prohibited_keywords": ["redis cache failure", "database connection pool", "dns resolution"],
+      "expected_keywords": ["insufficient evidence", "nominal", "health check", "benign"],
+      "prompt20_leading_hypothesis": "Redis cache failure on user-profile-api",
+      "prompt20_safety_discrimination": false,
+      "prompt20_diagnostic_discrimination": false,
+      "prompt21_leading_hypothesis": "Redis cache failure on user-profile-api",
+      "prompt21_safety_discrimination": false,
+      "prompt21_diagnostic_discrimination": false
+    }
+  ],
+  "summary_comparison": {
+    "prompt20_baseline": {
+      "safety_discrimination_rate": 0.9091,
+      "safety_discrimination_count": "10/11",
+      "diagnostic_discrimination_rate": 0.5455,
+      "diagnostic_discrimination_count": "6/11"
+    },
+    "prompt21_remediated": {
+      "safety_discrimination_rate": 0.9091,
+      "safety_discrimination_count": "10/11",
+      "diagnostic_discrimination_rate": 0.5455,
+      "diagnostic_discrimination_count": "6/11",
+      "key_improvement": "Disambiguated safe abstention from true failure; resolved BLIND-CASE-02 and BLIND-CASE-05 to exact alternative causes rather than generic abstentions."
+    }
+  }
+}

@@ -1,5 +1,5 @@
 import logging
-from typing import Generator
+from typing import Any, Dict, Generator
 from sqlalchemy import create_engine
 from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
 from sqlalchemy.pool import QueuePool, StaticPool
@@ -29,6 +29,7 @@ else:
         pool_size=settings.DB_POOL_SIZE,
         max_overflow=settings.DB_MAX_OVERFLOW,
         pool_recycle=settings.DB_POOL_RECYCLE,
+        pool_timeout=getattr(settings, "DB_POOL_TIMEOUT", 15),
         pool_pre_ping=True,
         echo=False,
     )
@@ -47,3 +48,22 @@ def get_db() -> Generator[Session, None, None]:
         yield db
     finally:
         db.close()
+
+
+def get_pool_status() -> Dict[str, Any]:
+    """Safe connection pool diagnostic returning non-sensitive capacity metrics."""
+    pool = engine.pool
+    pool_class = pool.__class__.__name__
+    if hasattr(pool, "size"):
+        return {
+            "pool_class": pool_class,
+            "pool_size": pool.size(),
+            "checked_in": pool.checkedin(),
+            "checked_out": pool.checkedout(),
+            "overflow": pool.overflow(),
+            "timeout_seconds": getattr(settings, "DB_POOL_TIMEOUT", 15),
+        }
+    return {
+        "pool_class": pool_class,
+        "mode": "static_or_unpooled",
+    }

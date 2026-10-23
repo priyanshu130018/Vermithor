@@ -1,0 +1,31 @@
+id: BLIND-CASE-11
+scenario_name: HTTP 502 Bad Gateway Caused by Upstream Kernel OOM Kill
+root_cause_family: MEMORY_EXHAUSTION_AND_OOM
+target_service: auth-service
+severity: CRITICAL
+environment: production
+is_negative_control: false
+agent_input:
+  incident_key: INC-BLIND-511
+  service: auth-service
+  lookback_minutes: 15
+  metrics:
+  - metric_name: container_memory_usage_bytes
+    value: 1073741824.0
+    service: auth-service
+    timestamp: '2026-10-21T02:20:00Z'
+  - metric_name: container_memory_limit_bytes
+    value: 1073741824.0
+    service: auth-service
+    timestamp: '2026-10-21T02:20:10Z'
+  logs:
+  - level: FATAL
+    message: 'kernel: oom-killer invoked on auth-service pid 2894 container memory
+      exhaustion'
+    service: auth-service
+    timestamp: '2026-10-21T02:20:30Z'
+  - level: ERROR
+    message: Service process terminated abnormally (exit code 137 OOMKilled)
+    service: auth-service
+    timestamp: '2026-10-21T02:20:45Z'
+  deployments: []

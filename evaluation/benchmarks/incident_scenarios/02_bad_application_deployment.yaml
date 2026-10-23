@@ -1,0 +1,54 @@
+id: "SCN-02-BAD-DEPLOYMENT"
+scenario_name: "booking_release_regression"
+target_service: "booking-api"
+environment: "production"
+severity: "HIGH"
+
+# Ground-truth labels
+ground_truth:
+  injected_cause: "NullPointerException in BookingConfirmationHandler introduced in release v2.4.8"
+  root_cause_category: "deployment_regression"
+  expected_root_cause_keywords: ["deployment", "release", "v2.4.8", "nullpointer", "regression", "rollback"]
+  expected_services: ["booking-api"]
+  expected_evidence_ids: ["EV-DEP-v2.4.8", "EV-LOG-NPE-1"]
+  plausible_alternatives:
+    - "Downstream inventory service payload contract breaking change"
+    - "Corrupt session state store"
+  abstain_required: false
+  abstain_conditions:
+    - "If deployment succeeded > 48h prior without immediate error surge, do not flag deployment regression"
+  repair_appropriate: true
+  repair_target_file: "src/booking_handler.py"
+  repair_expected_defect: "Missing null safety check on user reservation confirmation token"
+
+# Information presented to the agent
+agent_input:
+  incident_key: "INC-2026-9002"
+  service: "booking-api"
+  lookback_minutes: 60
+  metrics:
+    - metric_name: "http_5xx_error_rate_ratio"
+      service: "booking-api"
+      value: 0.35
+      timestamp: "2026-10-19T11:05:00Z"
+    - metric_name: "api_request_latency_ms"
+      service: "booking-api"
+      value: 420.0
+      timestamp: "2026-10-19T11:05:00Z"
+  logs:
+    - service: "booking-api"
+      level: "ERROR"
+      message: "java.lang.NullPointerException: Cannot invoke 'String.trim()' because reservationToken is null at BookingConfirmationHandler.java:84"
+      timestamp: "2026-10-19T11:02:00Z"
+    - service: "booking-api"
+      level: "ERROR"
+      message: "Unhandled exception in POST /api/v1/bookings/confirm: NullPointerException"
+      timestamp: "2026-10-19T11:03:00Z"
+  deployments:
+    - service: "booking-api"
+      version: "v2.4.8"
+      change_summary: "Optimized reservation token parsing pipeline and updated validation"
+      timestamp: "2026-10-19T10:58:00Z"
+  dependencies:
+    - "inventory-service"
+    - "postgres"

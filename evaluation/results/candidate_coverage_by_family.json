@@ -1,0 +1,133 @@
+{
+  "metadata": {
+    "benchmark_version": "2.0.0",
+    "total_families": 10,
+    "total_cases": 24
+  },
+  "family_breakdown": {
+    "DNS_AND_SERVICE_DISCOVERY": {
+      "total_cases": 3,
+      "candidate_coverage_rate": 1.0,
+      "top_1_accuracy": 1.0,
+      "top_3_recall": 1.0,
+      "mean_reciprocal_rank": 1.0,
+      "negative_control_discrimination": 1.0,
+      "case_ids": [
+        "BLIND-CASE-01",
+        "BLIND-CASE-02",
+        "BLIND-CASE-03"
+      ]
+    },
+    "DATABASE_CONNECTION_POOL": {
+      "total_cases": 3,
+      "candidate_coverage_rate": 1.0,
+      "top_1_accuracy": 1.0,
+      "top_3_recall": 1.0,
+      "mean_reciprocal_rank": 1.0,
+      "negative_control_discrimination": 1.0,
+      "case_ids": [
+        "BLIND-CASE-04",
+        "BLIND-CASE-05",
+        "BLIND-CASE-06"
+      ]
+    },
+    "DATABASE_DEADLOCKS_OR_LOCK_CONTENTION": {
+      "total_cases": 2,
+      "candidate_coverage_rate": 1.0,
+      "top_1_accuracy": 1.0,
+      "top_3_recall": 1.0,
+      "mean_reciprocal_rank": 1.0,
+      "negative_control_discrimination": 1.0,
+      "case_ids": [
+        "BLIND-CASE-07",
+        "BLIND-CASE-08"
+      ]
+    },
+    "MEMORY_EXHAUSTION_AND_OOM": {
+      "total_cases": 3,
+      "candidate_coverage_rate": 0.6667,
+      "top_1_accuracy": 0.0,
+      "top_3_recall": 0.6667,
+      "mean_reciprocal_rank": 0.2778,
+      "negative_control_discrimination": 0.0,
+      "case_ids": [
+        "BLIND-CASE-09",
+        "BLIND-CASE-10",
+        "BLIND-CASE-11"
+      ]
+    },
+    "CPU_SATURATION_AND_THREAD_STARVATION": {
+      "total_cases": 2,
+      "candidate_coverage_rate": 0.5,
+      "top_1_accuracy": 0.5,
+      "top_3_recall": 0.5,
+      "mean_reciprocal_rank": 0.5,
+      "negative_control_discrimination": 0.0,
+      "case_ids": [
+        "BLIND-CASE-12",
+        "BLIND-CASE-13"
+      ]
+    },
+    "KAFKA_POISON_PILL": {
+      "total_cases": 2,
+      "candidate_coverage_rate": 0.5,
+      "top_1_accuracy": 0.5,
+      "top_3_recall": 0.5,
+      "mean_reciprocal_rank": 0.5,
+      "negative_control_discrimination": 0.0,
+      "case_ids": [
+        "BLIND-CASE-14",
+        "BLIND-CASE-15"
+      ]
+    },
+    "NORMAL_KAFKA_LAG": {
+      "total_cases": 2,
+      "candidate_coverage_rate": 1.0,
+      "top_1_accuracy": 1.0,
+      "top_3_recall": 1.0,
+      "mean_reciprocal_rank": 1.0,
+      "negative_control_discrimination": 1.0,
+      "case_ids": [
+        "BLIND-CASE-16",
+        "BLIND-CASE-17"
+      ]
+    },
+    "DEPLOYMENT_OR_CONFIG_REGRESSION": {
+      "total_cases": 3,
+      "candidate_coverage_rate": 1.0,
+      "top_1_accuracy": 1.0,
+      "top_3_recall": 1.0,
+      "mean_reciprocal_rank": 1.0,
+      "negative_control_discrimination": 1.0,
+      "case_ids": [
+        "BLIND-CASE-18",
+        "BLIND-CASE-19",
+        "BLIND-CASE-20"
+      ]
+    },
+    "TLS_CERTIFICATE_OR_CONNECTION": {
+      "total_cases": 2,
+      "candidate_coverage_rate": 1.0,
+      "top_1_accuracy": 1.0,
+      "top_3_recall": 1.0,
+      "mean_reciprocal_rank": 1.0,
+      "negative_control_discrimination": 1.0,
+      "case_ids": [
+        "BLIND-CASE-21",
+        "BLIND-CASE-22"
+      ]
+    },
+    "BENIGN_TELEMETRY_AND_ABSTENTION": {
+      "total_cases": 2,
+      "candidate_coverage_rate": 0.0,
+      "top_1_accuracy": 0.0,
+      "top_3_recall": 0.0,
+      "mean_reciprocal_rank": 0.0,
+      "negative_control_discrimination": 0.0,
+      "case_ids": [
+        "BLIND-CASE-23",
+        "BLIND-CASE-24"
+      ]
+    }
+  }
+}

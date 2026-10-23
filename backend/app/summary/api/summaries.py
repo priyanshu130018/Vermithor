@@ -17,7 +17,7 @@ summary_service = IncidentSummaryService()
     summary="Get LLM provider connectivity and configuration status",
 )
 def get_provider_status() -> Dict[str, Any]:
-    """Inspect configured LLM provider (Ollama or Hugging Face) connectivity and model status."""
+    """Inspect configured cloud LLM provider (Hugging Face Inference Providers) connectivity and model status."""
     provider = summary_service.llm_provider
     is_avail = provider.is_available()
     return {
@@ -26,6 +26,11 @@ def get_provider_status() -> Dict[str, Any]:
         "available": is_avail,
         "status": "connected" if is_avail else "unreachable",
         "fallback_enabled": summary_service.settings.LLM_FALLBACK_ENABLED,
+        "routing": {
+            "investigation_model": summary_service.settings.get_model_for_task("investigation"),
+            "summary_model": summary_service.settings.get_model_for_task("summary"),
+            "review_model": summary_service.settings.get_model_for_task("report_review"),
+        },
     }
 
 

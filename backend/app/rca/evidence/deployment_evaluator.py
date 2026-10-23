@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 import logging
 from typing import Any, Dict, List, Optional, Tuple
 from backend.app.topology.service_graph import ServiceTopologyGraph, get_service_topology_graph
@@ -36,7 +36,7 @@ class DeploymentEvidenceResult:
             "deployment_signal_id": self.deployment_signal_id,
             "service": self.service,
             "version": self.version,
-            "timestamp": self.timestamp.isoformat(),
+            "timestamp": self.timestamp.isoformat() if self.timestamp else None,
             "score": round(self.score, 4),
             "time_delta_seconds": round(self.time_delta_seconds, 1),
             "is_causally_plausible": self.is_causally_plausible,
@@ -65,10 +65,20 @@ class DeploymentEvidenceEvaluator:
         """
         Scan signals for deployment events and evaluate causal strength against symptom signals.
         """
-        def parse_ts(ts: Any) -> datetime:
+        def parse_ts(ts: Any) -> Optional[datetime]:
+            if ts is None:
+                return None
             if isinstance(ts, datetime):
+                if ts.tzinfo is None:
+                    return ts.replace(tzinfo=timezone.utc)
                 return ts
-            return datetime.fromisoformat(str(ts).replace("Z", "+00:00"))
+            try:
+                d = datetime.fromisoformat(str(ts).replace("Z", "+00:00"))
+                if d.tzinfo is None:
+                    return d.replace(tzinfo=timezone.utc)
+                return d
+            except (ValueError, TypeError):
+                return None
 
         deployment_signals = [s for s in signals if s.get("signal_type") == "DEPLOYMENT"]
         if not deployment_signals:
@@ -84,10 +94,28 @@ class DeploymentEvidenceEvaluator:
             dep_meta = dep.get("metadata") or dep.get("metadata_json") or {}
             version = dep_meta.get("version") or dep_meta.get("release") or "latest"
 
+            if dep_ts is None:
+                results.append(
+                    DeploymentEvidenceResult(
+                        deployment_signal_id=dep_id,
+                        service=dep_svc,
+                        version=version,
+                        timestamp=None,
+                        score=0.20,
+                        time_delta_seconds=-1.0,
+                        is_causally_plausible=False,
+                        description=f"Deployment '{version}' on {dep_svc} has missing or unparseable timestamp; temporal correlation inconclusive.",
+                        post_deploy_anomalies=[],
+                    )
+                )
+                continue
+
             # Check post-deployment symptom signals
             post_deploy_signals = []
             for s in non_deployment_signals:
                 s_ts = parse_ts(s.get("timestamp"))
+                if s_ts is None:
+                    continue
                 delta_sec = (s_ts - dep_ts).total_seconds()
                 if 0 <= delta_sec <= 900:  # within 15 mins after deployment
                     post_deploy_signals.append((s, delta_sec))
@@ -142,9 +170,15 @@ class DeploymentEvidenceEvaluator:
             has_anomaly = any(s.get("signal_type") == "ANOMALY" for s, _ in post_deploy_signals)
             deg_score = 1.0 if (has_critical and has_anomaly) else (0.75 if (has_critical or has_anomaly) else 0.50)
 
+            # Causally plausible only if accompanied by actual errors or anomalies within the window
+            is_causal = (has_critical or has_anomaly) and (earliest_delta <= 900)
+
             # Combined weighted score
             deployment_score = (time_score * 0.45) + (svc_score * 0.35) + (deg_score * 0.20)
-            deployment_score = min(1.0, max(0.05, deployment_score))
+            if not is_causal:
+                deployment_score = min(0.35, deployment_score * 0.40)
+            else:
+                deployment_score = min(1.0, max(0.05, deployment_score))
 
             anomaly_descs = [
                 f"{s.get('signal_type')}:{s.get('service')} (+{int(delta)}s)"
@@ -154,6 +188,7 @@ class DeploymentEvidenceEvaluator:
             desc = (
                 f"{version} deployed on {dep_svc} {mins_before}m prior to degradation; "
                 f"followed by {len(post_deploy_signals)} failure signals on {', '.join(sorted(affected_svcs)[:3])}."
+                if is_causal else f"Routine deployment '{version}' on {dep_svc} lacking consequential failure spikes."
             )
 
             results.append(
@@ -164,9 +199,9 @@ class DeploymentEvidenceEvaluator:
                     timestamp=dep_ts,
                     score=deployment_score,
                     time_delta_seconds=earliest_delta,
-                    is_causally_plausible=True,
+                    is_causally_plausible=is_causal,
                     description=desc,
-                    post_deploy_anomalies=anomaly_descs,
+                    post_deploy_anomalies=anomaly_descs if is_causal else [],
                 )
             )
 

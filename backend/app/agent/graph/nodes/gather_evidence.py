@@ -37,69 +37,119 @@ def gather_evidence_node(
     # Track seen IDs to prevent duplicate evidence
     seen_source_ids = {e.get("source_id") for e in evidence_items}
 
+    # Check if telemetry collection is enabled under pilot data governance policy (fail-closed)
+    org_id = state.get("org_id") or "vermithor"
+    collection_enabled = True
+    if db is not None:
+        try:
+            from backend.app.agent.db.models import PilotGovernancePolicy, TelemetryIntegration
+            pol = db.query(PilotGovernancePolicy).filter(PilotGovernancePolicy.org_id == org_id).first()
+            if pol is not None:
+                collection_enabled = pol.collection_enabled
+                # Live telemetry collection requires an explicitly verified live customer telemetry integration
+                if telemetry_service is None and collection_enabled:
+                    live_int = db.query(TelemetryIntegration).filter(
+                        TelemetryIntegration.org_id == org_id,
+                        TelemetryIntegration.status == "VERIFIED",
+                        TelemetryIntegration.telemetry_provenance == "LIVE_CUSTOMER_TELEMETRY",
+                    ).first()
+                    if not live_int:
+                        collection_enabled = False
+        except Exception as exc:
+            logger.warning("Failed to query governance policy for org '%s' - failing closed: %s", org_id, exc)
+            collection_enabled = False
+
     # 1. Live Telemetry from Prometheus & Jaeger (via TelemetryEvidenceService)
-    telem = telemetry_service or TelemetryEvidenceService()
-    try:
-        snapshot = telem.get_telemetry_snapshot(service=target_svc, lookback_minutes=lookback)
-        prom_metrics = snapshot.get("sources", {}).get("prometheus", {}).get("metrics", {})
-        jaeger_traces = snapshot.get("sources", {}).get("jaeger", {}).get("summaries", [])
+    if not collection_enabled:
+        msg = f"Telemetry collection paused for org '{org_id}' under pilot data governance policy"
+        logger.info(msg)
+        errors.append(msg)
+    else:
+        telem = telemetry_service or TelemetryEvidenceService()
+        try:
+            snapshot = telem.get_telemetry_snapshot(service=target_svc, lookback_minutes=lookback)
+            prom_metrics = snapshot.get("sources", {}).get("prometheus", {}).get("metrics", {})
+            jaeger_traces = snapshot.get("sources", {}).get("jaeger", {}).get("summaries", [])
 
-        raw_metrics.update(prom_metrics)
-        raw_traces.extend(jaeger_traces)
+            raw_metrics.update(prom_metrics)
+            raw_traces.extend(jaeger_traces)
 
-        # Ingest metrics as evidence items
-        for name, data in prom_metrics.items():
-            val = data.get("value")
-            if val is not None:
-                src_id = f"prom-{target_svc}-{name}"
-                if src_id not in seen_source_ids:
-                    seen_source_ids.add(src_id)
+            # Ingest metrics as evidence items
+            for name, data in prom_metrics.items():
+                val = data.get("value")
+                if val is not None:
+                    src_id = f"prom-{target_svc}-{name}"
+                    if src_id not in seen_source_ids:
+                        seen_source_ids.add(src_id)
+                        evidence_items.append({
+                            "evidence_id": f"EV-PROM-{len(evidence_items) + 1}",
+                            "source_type": "PROMETHEUS",
+                            "source_id": src_id,
+                            "service": target_svc,
+                            "timestamp": data.get("timestamp") or snapshot.get("collected_at"),
+                            "claim": f"Prometheus metric {name} = {val:.4f}",
+                            "data": {"metric_name": name, "value": float(val), "query": data.get("query", ""), "timestamp": data.get("timestamp")},
+                        })
+
+            # Ingest traces as evidence items
+            for tr in jaeger_traces:
+                t_id = tr.get("trace_id", "")
+                if t_id and t_id not in seen_source_ids:
+                    seen_source_ids.add(t_id)
+                    dur = tr.get("duration_ms", 0.0)
+                    err = tr.get("has_error", False)
+                    claim_txt = f"Jaeger trace {t_id[:16]} root={tr.get('root_operation')} dur={dur}ms error={err}"
                     evidence_items.append({
-                        "evidence_id": f"EV-PROM-{len(evidence_items) + 1}",
-                        "source_type": "PROMETHEUS",
-                        "source_id": src_id,
-                        "service": target_svc,
-                        "timestamp": snapshot.get("collected_at"),
-                        "claim": f"Prometheus metric {name} = {val:.4f}",
-                        "data": {"metric_name": name, "value": float(val), "query": data.get("query", "")},
+                        "evidence_id": f"EV-TRACE-{len(evidence_items) + 1}",
+                        "source_type": "JAEGER",
+                        "source_id": t_id,
+                        "service": tr.get("root_service") or target_svc,
+                        "timestamp": tr.get("start_time"),
+                        "claim": claim_txt,
+                        "data": tr,
                     })
 
-        # Ingest traces as evidence items
-        for tr in jaeger_traces:
-            t_id = tr.get("trace_id", "")
-            if t_id and t_id not in seen_source_ids:
-                seen_source_ids.add(t_id)
-                dur = tr.get("duration_ms", 0.0)
-                err = tr.get("has_error", False)
-                claim_txt = f"Jaeger trace {t_id[:16]} root={tr.get('root_operation')} dur={dur}ms error={err}"
-                evidence_items.append({
-                    "evidence_id": f"EV-TRACE-{len(evidence_items) + 1}",
-                    "source_type": "JAEGER",
-                    "source_id": t_id,
-                    "service": tr.get("root_service") or target_svc,
-                    "timestamp": tr.get("start_time"),
-                    "claim": claim_txt,
-                    "data": tr,
-                })
-
-    except Exception as exc:
-        msg = f"Telemetry snapshot degraded for service '{target_svc}': {exc}"
-        logger.warning(msg)
-        errors.append(msg)
+        except Exception as exc:
+            msg = f"Telemetry snapshot degraded for service '{target_svc}': {exc}"
+            logger.warning(msg)
+            errors.append(msg)
 
     # 2. Database Evidence: Metric Observations & Canonical Events (fallback if live snapshot returned empty)
     if db is not None:
         try:
-            # Query observations for this service if no live metrics collected
+            # Parse investigation window boundaries for temporal isolation
+            win_start_str = state.get("window_start")
+            win_end_str = state.get("window_end")
+            win_start_dt = None
+            win_end_dt = None
+            if win_start_str:
+                try:
+                    win_start_dt = datetime.fromisoformat(str(win_start_str).replace("Z", "+00:00"))
+                    if win_start_dt.tzinfo is not None:
+                        win_start_dt = win_start_dt.replace(tzinfo=None)
+                except Exception:
+                    pass
+            if win_end_str:
+                try:
+                    win_end_dt = datetime.fromisoformat(str(win_end_str).replace("Z", "+00:00"))
+                    if win_end_dt.tzinfo is not None:
+                        win_end_dt = win_end_dt.replace(tzinfo=None)
+                except Exception:
+                    pass
+
+            # Query observations for this service within window if no live metrics collected
             if not evidence_items:
+                obs_stmt = select(MetricObservation).where(MetricObservation.service == target_svc)
+                if win_start_dt:
+                    obs_stmt = obs_stmt.where(MetricObservation.timestamp >= win_start_dt)
+                if win_end_dt:
+                    obs_stmt = obs_stmt.where(MetricObservation.timestamp <= win_end_dt)
                 db_obs = list(
                     db.execute(
-                        select(MetricObservation)
-                        .where(MetricObservation.service == target_svc)
-                        .order_by(MetricObservation.timestamp.desc())
-                        .limit(50)
+                        obs_stmt.order_by(MetricObservation.timestamp.desc()).limit(50)
                     ).scalars().all()
                 )
+                now = datetime.now(timezone.utc)
                 for obs in db_obs:
                     if obs.observation_id not in seen_source_ids:
                         seen_source_ids.add(obs.observation_id)
@@ -118,16 +168,35 @@ def gather_evidence_node(
                             },
                         })
 
-            # Query database events for this service if no live events collected
+            # Query database events for this service within window if no live events collected
             if not raw_events:
-                db_events = list(
-                    db.execute(
-                        select(Event)
-                        .where(Event.service == target_svc)
-                        .order_by(Event.timestamp.desc())
-                        .limit(50)
-                    ).scalars().all()
-                )
+                db_events = []
+                if incident_key:
+                    inc_stmt = select(Event).where(
+                        Event.event_id.like(f"%{incident_key}%"),
+                    )
+                    db_events = list(db.execute(inc_stmt.order_by(Event.timestamp.desc()).limit(50)).scalars().all())
+                    if db_events and (not target_svc or target_svc in ("unknown", "vermithor-backend")):
+                        target_svc = db_events[0].service
+
+                if not db_events and incident_key:
+                    assoc_events = IncidentService.get_incident_events(db, incident_key) or []
+                    if assoc_events:
+                        assoc_ids = [a.event_id for a in assoc_events]
+                        db_events = list(db.execute(select(Event).where(Event.event_id.in_(assoc_ids))).scalars().all())
+
+                if not db_events:
+                    evt_stmt = select(Event).where(Event.service == target_svc)
+                    if win_start_dt:
+                        evt_stmt = evt_stmt.where(Event.timestamp >= win_start_dt)
+                    if win_end_dt:
+                        evt_stmt = evt_stmt.where(Event.timestamp <= win_end_dt)
+                    db_events = list(
+                        db.execute(
+                            evt_stmt.order_by(Event.timestamp.desc()).limit(50)
+                        ).scalars().all()
+                    )
+                now = datetime.now(timezone.utc)
                 for evt in db_events:
                     if evt.event_id not in seen_source_ids:
                         seen_source_ids.add(evt.event_id)

@@ -13,6 +13,8 @@ import {
   ThumbsDown,
   Loader2,
   RefreshCw,
+  GitBranch,
+  Lock,
 } from 'lucide-react';
 import {
   RepairResponse,
@@ -20,6 +22,7 @@ import {
   triggerCodeRepair,
   submitRepairApproval,
 } from '../../api/repairs';
+
 
 interface CodeRepairPanelProps {
   incidentKey: string;
@@ -36,6 +39,13 @@ export const CodeRepairPanel: React.FC<CodeRepairPanelProps> = ({
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [approvalNotes, setApprovalNotes] = useState<string>('');
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [repoDisconnected, setRepoDisconnected] = useState<boolean>(false);
+
+  const handleDisconnectRepo = () => {
+    setRepoDisconnected(true);
+    setErrorMsg('Repository disconnected. Inspection and write operations are revoked.');
+  };
+
 
   const loadRepairs = async () => {
     setIsLoading(true);
@@ -257,7 +267,61 @@ export const CodeRepairPanel: React.FC<CodeRepairPanelProps> = ({
               </div>
             </div>
 
+            {/* Connected Repository & Pilot Status Card */}
+            <div className="p-4 rounded-xl bg-slate-950/80 border border-slate-800 space-y-3">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="flex items-center gap-2.5">
+                  <div className="p-2 rounded-lg bg-sky-500/10 text-sky-400 border border-sky-500/20">
+                    <GitBranch className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <div className="text-xs font-semibold text-slate-200 flex items-center gap-2">
+                      <span>{selectedRepair.repository_url || 'vermithor/payment-service'}</span>
+                      {repoDisconnected ? (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-rose-500/10 text-rose-400 border border-rose-500/20">
+                          REVOKED (Disconnected)
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                          <Lock className="w-2.5 h-2.5" /> CONNECTED (Read-Only Pilot)
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-[11px] font-mono text-slate-400">
+                      Branch: <span className="text-slate-300">{selectedRepair.target_branch || 'main'}</span>
+                      {selectedRepair.base_commit && (
+                        <>
+                          {' • '}
+                          Inspected Commit:{' '}
+                          <span className="text-slate-300 font-mono" title={selectedRepair.base_commit}>
+                            {selectedRepair.base_commit.substring(0, 10)}...
+                          </span>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                {!repoDisconnected && (
+                  <button
+                    onClick={handleDisconnectRepo}
+                    className="text-[11px] px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-200 border border-slate-700 transition-colors"
+                  >
+                    Disconnect
+                  </button>
+                )}
+              </div>
+
+              <div className="p-2.5 rounded-lg bg-sky-500/5 border border-sky-500/15 text-[11px] text-sky-300/90 flex items-start gap-2">
+                <Lock className="w-3.5 h-3.5 text-sky-400 shrink-0 mt-0.5" />
+                <span>
+                  <strong>Read-Only Pilot:</strong> No branches, pull requests, or code modifications are published to GitHub.
+                  Inspections and sandbox testing are conducted in isolated read-only copies.
+                </span>
+              </div>
+            </div>
+
             {/* Suspected Defect & Telemetry Citations */}
+
             <div className="space-y-2">
               <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-400">
                 Suspected Code Defect
@@ -409,6 +473,14 @@ export const CodeRepairPanel: React.FC<CodeRepairPanelProps> = ({
                 <ShieldCheck className="w-4 h-4 text-sky-400" />
                 Human Review Boundary
               </h4>
+
+              <div className="text-[11px] text-sky-300/90 bg-sky-500/10 p-2.5 rounded-lg border border-sky-500/20 flex items-start gap-2">
+                <Lock className="w-3.5 h-3.5 text-sky-400 shrink-0 mt-0.5" />
+                <span>
+                  <strong>Pilot Mode Approval Notice:</strong> Approving this repair records engineering authorization of the validated patch artifact. In read-only pilot mode, approval will NOT merge code, push branches, or trigger production deployment.
+                </span>
+              </div>
+
 
               {selectedRepair.approval_status === 'APPROVED' ? (
                 <div className="p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-xs text-emerald-300 space-y-1">

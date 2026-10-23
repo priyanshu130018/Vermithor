@@ -1,0 +1,52 @@
+id: "SCN-07-NETWORK-LATENCY"
+scenario_name: "cross_az_network_degradation"
+target_service: "order-service"
+environment: "production"
+severity: "HIGH"
+
+# Ground-truth labels
+ground_truth:
+  injected_cause: "Underlying cloud availability zone network degradation with 14% packet loss and 480ms round-trip latency"
+  root_cause_category: "network_degradation"
+  expected_root_cause_keywords: ["network", "latency", "packet", "zone", "rtt", "retransmit", "degradation"]
+  expected_services: ["order-service", "inventory-service"]
+  expected_evidence_ids: ["EV-METRIC-NET-LOSS", "EV-LOG-TCP-RETRANSMIT"]
+  plausible_alternatives:
+    - "Target service garbage collection stop-the-world pause"
+    - "Application deadlock on lock acquisition"
+  abstain_required: false
+  abstain_conditions:
+    - "If network packet loss is under 1% and round-trip time is normal, do not attribute to network degradation"
+  repair_appropriate: false # Cloud network issue; reroute traffic across AZs or alert cloud provider
+  repair_expected_defect: null
+
+# Information presented to the agent
+agent_input:
+  incident_key: "INC-2026-9007"
+  service: "order-service"
+  lookback_minutes: 60
+  metrics:
+    - metric_name: "network_packet_loss_ratio"
+      service: "order-service"
+      value: 0.14
+      timestamp: "2026-10-19T13:30:00Z"
+    - metric_name: "network_round_trip_latency_ms"
+      service: "order-service"
+      value: 485.0
+      timestamp: "2026-10-19T13:30:00Z"
+    - metric_name: "tcp_retrans_rate_per_sec"
+      service: "order-service"
+      value: 1240.0
+      timestamp: "2026-10-19T13:31:00Z"
+  logs:
+    - service: "order-service"
+      level: "WARN"
+      message: "gRPC Transport: Keepalive ping timeout after 4500ms communicating across us-east-1a to us-east-1b"
+      timestamp: "2026-10-19T13:30:45Z"
+    - service: "order-service"
+      level: "WARN"
+      message: "TCP connection reset by peer on socket [10.244.12.8:50051] due to high retransmission timeout"
+      timestamp: "2026-10-19T13:31:30Z"
+  deployments: []
+  dependencies:
+    - "inventory-service"

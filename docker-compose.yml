@@ -25,7 +25,7 @@ services:
     restart: unless-stopped
     command: ["redis-server", "--appendonly", "yes"]
     ports:
-      - "127.0.0.1:6379:6379"
+      - "6379:6379"
     volumes:
       - redis_data:/data
     healthcheck:
@@ -133,12 +133,13 @@ services:
       EMBEDDING_MODEL_NAME: sentence-transformers/all-MiniLM-L6-v2
       EMBEDDING_DIMENSION: 384
       HF_EMBEDDING_BASE_URL: ${HF_EMBEDDING_BASE_URL:-https://router.huggingface.co/hf-inference}
-      LLM_PROVIDER: ${LLM_PROVIDER:-ollama}
+      LLM_PROVIDER: ${LLM_PROVIDER:-huggingface}
       HF_TOKEN: ${HF_TOKEN:-}
-      HF_MODEL: ${HF_MODEL:-meta-llama/Llama-3.1-8B-Instruct}
       HF_BASE_URL: ${HF_BASE_URL:-https://router.huggingface.co/v1}
-      OLLAMA_BASE_URL: ${OLLAMA_CONTAINER_BASE_URL:-http://host.docker.internal:11434}
-      OLLAMA_MODEL: ${OLLAMA_MODEL:-llama3.2}
+      HF_MODEL: ${HF_MODEL:-meta-llama/Llama-3.1-8B-Instruct}
+      HF_INVESTIGATION_MODEL: ${HF_INVESTIGATION_MODEL:-meta-llama/Llama-3.1-8B-Instruct}
+      HF_SUMMARY_MODEL: ${HF_SUMMARY_MODEL:-meta-llama/Llama-3.1-8B-Instruct}
+      HF_REVIEW_MODEL: ${HF_REVIEW_MODEL:-meta-llama/Llama-3.1-8B-Instruct}
       LLM_FALLBACK_ENABLED: ${LLM_FALLBACK_ENABLED:-true}
       OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4318
       OTEL_SERVICE_NAME: vermithor-backend
@@ -149,9 +150,9 @@ services:
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:8000/health || exit 1"]
       interval: 5s
-      timeout: 3s
-      retries: 5
-      start_period: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 45s
     depends_on:
       redis:
         condition: service_healthy
@@ -183,12 +184,13 @@ services:
       EMBEDDING_MODEL_NAME: sentence-transformers/all-MiniLM-L6-v2
       EMBEDDING_DIMENSION: 384
       HF_EMBEDDING_BASE_URL: ${HF_EMBEDDING_BASE_URL:-https://router.huggingface.co/hf-inference}
-      LLM_PROVIDER: ${LLM_PROVIDER:-ollama}
+      LLM_PROVIDER: ${LLM_PROVIDER:-huggingface}
       HF_TOKEN: ${HF_TOKEN:-}
-      HF_MODEL: ${HF_MODEL:-meta-llama/Llama-3.1-8B-Instruct}
       HF_BASE_URL: ${HF_BASE_URL:-https://router.huggingface.co/v1}
-      OLLAMA_BASE_URL: ${OLLAMA_CONTAINER_BASE_URL:-http://host.docker.internal:11434}
-      OLLAMA_MODEL: ${OLLAMA_MODEL:-llama3.2}
+      HF_MODEL: ${HF_MODEL:-meta-llama/Llama-3.1-8B-Instruct}
+      HF_INVESTIGATION_MODEL: ${HF_INVESTIGATION_MODEL:-meta-llama/Llama-3.1-8B-Instruct}
+      HF_SUMMARY_MODEL: ${HF_SUMMARY_MODEL:-meta-llama/Llama-3.1-8B-Instruct}
+      HF_REVIEW_MODEL: ${HF_REVIEW_MODEL:-meta-llama/Llama-3.1-8B-Instruct}
       LLM_FALLBACK_ENABLED: ${LLM_FALLBACK_ENABLED:-true}
       OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4318
       OTEL_SERVICE_NAME: vermithor-worker

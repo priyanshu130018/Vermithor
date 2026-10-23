@@ -224,3 +224,87 @@ def test_async_mode_dispatch_celery(client: TestClient, persisted_investigation:
     assert data["repair_key"].startswith("REP-")
     assert data["status"] == RepairStatus.PENDING.value
     assert mock_delay.called
+
+
+def test_repair_endpoints_enforce_org_boundary(unauthenticated_client: TestClient):
+    """
+    Verify that tokens from unauthorized organizations receive 403 Forbidden
+    when attempting to trigger, view, or approve code repairs.
+    """
+    from backend.app.common.security import create_access_token
+
+    unauthorized_token = create_access_token({
+        "sub": "attacker_user",
+        "role": "engineer",
+        "org_id": "unauthorized_external_corp",
+    })
+    headers = {"Authorization": f"Bearer {unauthorized_token}"}
+
+    # Trigger repair
+    resp = unauthenticated_client.post(
+        "/api/v1/agent/repairs",
+        json={"investigation_key": "INV-API-TEST"},
+        headers=headers,
+    )
+    assert resp.status_code == 403
+    assert "not authorized" in resp.json()["detail"].lower()
+
+    # Get repair by ID
+    resp_get = unauthenticated_client.get(
+        "/api/v1/agent/repairs/REP-000001",
+        headers=headers,
+    )
+    assert resp_get.status_code == 403
+
+    # Approve repair
+    resp_appr = unauthenticated_client.post(
+        "/api/v1/agent/repairs/REP-000001/approve",
+        json={"action": "APPROVE"},
+        headers=headers,
+    )
+    assert resp_appr.status_code == 403
+
+
+def test_repair_idempotency_returns_existing_repair(
+    client: TestClient,
+    persisted_investigation: Investigation,
+    monkeypatch,
+):
+    """
+    Verify that triggering repair with force_refresh=False returns the existing
+    validated/awaiting repair and does not create unintended duplicates.
+    """
+    fixture_dir = Path(__file__).parent.parent / "fixtures" / "payment_service"
+    monkeypatch.setattr(
+        "backend.app.agent.git.factory.GitProviderFactory.get_provider",
+        lambda *args, **kwargs: LocalGitProvider(root_dir=fixture_dir),
+    )
+
+    # First request: generates repair
+    resp1 = client.post(
+        "/api/v1/agent/repairs",
+        json={
+            "investigation_key": persisted_investigation.investigation_key,
+            "repository_url": "local",
+            "custom_test_command": "pytest tests/test_payment_pool.py",
+            "force_refresh": True,
+        },
+    )
+    assert resp1.status_code == 200
+    rep_key1 = resp1.json()["repair_key"]
+
+    # Second request with force_refresh=False: returns existing repair
+    resp2 = client.post(
+        "/api/v1/agent/repairs",
+        json={
+            "investigation_key": persisted_investigation.investigation_key,
+            "repository_url": "local",
+            "custom_test_command": "pytest tests/test_payment_pool.py",
+            "force_refresh": False,
+        },
+    )
+    assert resp2.status_code == 200
+    rep_key2 = resp2.json()["repair_key"]
+
+    assert rep_key1 == rep_key2
+

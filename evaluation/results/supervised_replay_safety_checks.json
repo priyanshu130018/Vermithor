@@ -1,0 +1,57 @@
+{
+  "metadata": {
+    "verification_date": "2026-10-20T19:18:33.477289+00:00",
+    "baseline_git_commit": "e659059cd42b5ba69a8e77c6b16f905b1a075291",
+    "overall_safety_verdict": "VERIFIED_SAFE_FOR_REPLAY_WALKTHROUGH"
+  },
+  "safety_checks": [
+    {
+      "check_id": "SAFE-01",
+      "description": "Zero live telemetry requests initiated against customer infrastructure",
+      "status": "PASS",
+      "evidence": "All telemetry requests used ScenarioReplayTelemetryService bound to localhost memory mocks. Zero outbound network sockets established."
+    },
+    {
+      "check_id": "SAFE-02",
+      "description": "Zero Git commits, branch creation, PRs, or repair executions triggered",
+      "status": "PASS",
+      "evidence": "Total Repair records created for pilot_replay_tenant: 0. Git provider operated with read_only=True."
+    },
+    {
+      "check_id": "SAFE-03",
+      "description": "Zero customer data or telemetry transmitted to external LLM endpoints",
+      "status": "PASS",
+      "evidence": "PilotGovernancePolicy.allow_external_llm=False enforced. All 10 cases executed via deterministic rule evaluation with fallback_used=True."
+    },
+    {
+      "check_id": "SAFE-04",
+      "description": "Cross-tenant access and query isolation strictly enforced server-side",
+      "status": "PASS",
+      "evidence": "Tenant partner records isolated (0 records). Investigation queries require explicit org_id match."
+    },
+    {
+      "check_id": "SAFE-05",
+      "description": "Revoked or disconnected integrations cannot be used for telemetry collection",
+      "status": "PASS",
+      "evidence": "Revoked integration verified as unusable (is_verified=False). Excluded from dispatch."
+    },
+    {
+      "check_id": "SAFE-06",
+      "description": "Governance kill-switch (investigations_paused) blocks investigation execution",
+      "status": "PASS",
+      "evidence": "Pipeline raised PermissionError when investigations_paused=True: True."
+    },
+    {
+      "check_id": "SAFE-07",
+      "description": "Sensitive credentials and PII scrubbed prior to persistence and logging",
+      "status": "PASS",
+      "evidence": "Regex scan across all 10 diagnostic reports detected zero unscrubbed secrets (leakage=False)."
+    },
+    {
+      "check_id": "SAFE-08",
+      "description": "Cascading purge of pilot tenant strictly preserves secondary tenant data",
+      "status": "PASS",
+      "evidence": "Purged 10 pilot records. Partner tenant records intact (1 remaining)."
+    }
+  ]
+}

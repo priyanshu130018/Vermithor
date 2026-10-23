@@ -1,0 +1,27 @@
+incident_key: INC-HOLDOUT-124
+service: analytics-collector
+lookback_minutes: 60
+environment: production
+severity: LOW
+metrics:
+- metric_name: api_request_latency_ms
+  service: analytics-collector
+  value: 210.0
+  timestamp: '2026-10-20T20:00:00Z'
+- metric_name: http_5xx_error_rate_ratio
+  service: analytics-collector
+  value: 0.005
+  timestamp: '2026-10-20T20:00:00Z'
+- metric_name: cpu_utilization_ratio
+  service: analytics-collector
+  value: 0.48
+  timestamp: '2026-10-20T20:00:00Z'
+logs:
+- service: analytics-collector
+  level: INFO
+  message: 'Processed 45,000 analytics events successfully in 210ms (latency threshold:
+    1000ms)'
+  timestamp: '2026-10-20T19:58:30Z'
+deployments: []
+dependencies:
+- kafka

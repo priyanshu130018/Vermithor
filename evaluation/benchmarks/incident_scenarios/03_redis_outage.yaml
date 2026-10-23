@@ -1,0 +1,52 @@
+id: "SCN-03-REDIS-OUTAGE"
+scenario_name: "session_cache_cluster_failure"
+target_service: "cache-service"
+environment: "production"
+severity: "HIGH"
+
+# Ground-truth labels
+ground_truth:
+  injected_cause: "Redis primary node crash leading to RedisConnectionException and connection refusal on cache-service"
+  root_cause_category: "dependency_failure"
+  expected_root_cause_keywords: ["redis", "cache", "connection", "circuit breaker", "dependency"]
+  expected_services: ["cache-service", "booking-api"]
+  expected_evidence_ids: ["EV-METRIC-REDIS-DOWN", "EV-LOG-REDIS-REFUSED"]
+  plausible_alternatives:
+    - "Internal DNS resolution failure for cache cluster"
+    - "VPC security group / egress route dropped"
+  abstain_required: false
+  abstain_conditions:
+    - "If redis cluster responds to health ping with PONG, do not diagnose redis failure"
+  repair_appropriate: false # Infrastructure failure requires node restart/failover, not code patch
+  repair_expected_defect: null
+
+# Information presented to the agent
+agent_input:
+  incident_key: "INC-2026-9003"
+  service: "cache-service"
+  lookback_minutes: 60
+  metrics:
+    - metric_name: "cache_hit_ratio"
+      service: "cache-service"
+      value: 0.02
+      timestamp: "2026-10-19T11:30:00Z"
+    - metric_name: "redis_connected_clients"
+      service: "cache-service"
+      value: 0.0
+      timestamp: "2026-10-19T11:30:00Z"
+    - metric_name: "circuit_breaker_state_open"
+      service: "booking-api"
+      value: 1.0
+      timestamp: "2026-10-19T11:31:00Z"
+  logs:
+    - service: "cache-service"
+      level: "ERROR"
+      message: "io.lettuce.core.RedisConnectionException: Unable to connect to redis-cluster-node-01.internal:6379: Connection refused"
+      timestamp: "2026-10-19T11:29:45Z"
+    - service: "booking-api"
+      level: "WARN"
+      message: "CacheCircuitBreaker: State OPEN for Redis cluster. Falling back to direct database reads."
+      timestamp: "2026-10-19T11:30:15Z"
+  deployments: []
+  dependencies:
+    - "redis"

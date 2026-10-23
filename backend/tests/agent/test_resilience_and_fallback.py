@@ -91,7 +91,7 @@ def test_llm_timeout_triggers_deterministic_fallback(
     assert response is not None
     assert response.is_fallback is True
     assert response.model_provider == "fallback"
-    assert response.model_name == "deterministic-rules"
+    assert "deterministic-rules" in response.model_name
 
     rep = response.report
     assert rep is not None

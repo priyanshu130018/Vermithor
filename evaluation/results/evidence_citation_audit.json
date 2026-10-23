@@ -1,0 +1,1358 @@
+{
+  "metadata": {
+    "evaluation_title": "Comprehensive Evidence Citation & Provenance Audit",
+    "evaluation_date": "2026-10-20T19:18:33.477289+00:00",
+    "baseline_git_commit": "e659059cd42b5ba69a8e77c6b16f905b1a075291",
+    "tenant_id": "pilot_replay_tenant",
+    "total_cases_audited": 10
+  },
+  "audit_summary": {
+    "total_citations_evaluated": 113,
+    "valid_citations_count": 93,
+    "invalid_citations_count": 20,
+    "overall_validity_rate": 0.823,
+    "denominator_accounting": {
+      "total_catalog_evidence_items": 113,
+      "verified_direct_telemetry_citations": 93,
+      "unverified_cross_incident_rag_references": 20,
+      "difficult_citations_silently_removed": 0
+    },
+    "breakdown": {
+      "valid": 93,
+      "missing_or_unresolved": 0,
+      "malformed": 0,
+      "cross_tenant": 0,
+      "cross_incident": 20,
+      "stale": 0
+    },
+    "uncited_material_count": 68
+  },
+  "root_cause_of_citation_invalidity": "All 20 invalid citations across the 10 postmortem cases are cross-incident historical references (EV-SIM-1 and EV-SIM-2) retrieved from the RAG knowledge repository. They reference historical incidents from previous test postmortems rather than direct telemetry of the incident under active investigation. The EvidenceCitationValidator correctly flags these as CROSS_INCIDENT references and prevents the UI from presenting them as verified direct telemetry.",
+  "case_by_case_audits": [
+    {
+      "case_id": "PILOT-CASE-01",
+      "incident_key": "INC-PILOT-201",
+      "service": "payment-core",
+      "audit": {
+        "total_citations_evaluated": 15,
+        "valid_citations_count": 13,
+        "invalid_citations_count": 2,
+        "citation_validity_rate": 0.8667,
+        "breakdown": {
+          "valid": 13,
+          "missing_or_unresolved": 0,
+          "malformed": 0,
+          "cross_tenant": 0,
+          "cross_incident": 2,
+          "stale": 0
+        },
+        "uncited_material_count": 9,
+        "uncited_material": [
+          "[EV-PROM-1] Prometheus metric db_connection_pool_utilization_ratio = 1.0000",
+          "[EV-PROM-2] Prometheus metric hikari_active_connections_ratio = 1.0000",
+          "[EV-PROM-3] Prometheus metric hikari_pending_threads = 45.0000",
+          "[EV-PROM-4] Prometheus metric http_5xx_error_rate_ratio = 0.3200",
+          "[EV-TRACE-5] Jaeger trace trace-payment--0 root=HANDLE /payment-core dur=1500.0ms error=False",
+          "[EV-TRACE-6] Jaeger trace trace-payment--0 root=HANDLE /payment-core dur=4500.0ms error=True",
+          "[EV-EVT-7] [ERROR] SQLTransientConnectionException: Connection acquisition timeout from Hik",
+          "[EV-EVT-8] [WARN] HikariPool-1: Active connections 80/80 (idle: 0). Thread acquisition queu",
+          "[EV-EVT-9] [INFO] Deployment v2.4.1: Tune connection pool parameters"
+        ],
+        "item_details": [
+          {
+            "evidence_id": "EV-PROM-1",
+            "source_type": "PROMETHEUS",
+            "source_id": "prom-payment-core-db_connection_pool_utilization_ratio",
+            "service": "payment-core",
+            "status": "VALID",
+            "is_verified": true,
+            "explanation": "Verified against current incident telemetry for payment-core."
+          },
+          {
+            "evidence_id": "EV-PROM-2",
+            "source_type": "PROMETHEUS",
+            "source_id": "prom-payment-core-hikari_active_connections_ratio",
+            "service": "payment-core",
+            "status": "VALID",
+            "is_verified": true,
+            "explanation": "Verified against current incident telemetry for payment-core."
+          },
+          {
+            "evidence_id": "EV-PROM-3",
+            "source_type": "PROMETHEUS",
+            "source_id": "prom-payment-core-hikari_pending_threads",
+            "service": "payment-core",
+            "status": "VALID",
+            "is_verified": true,
+            "explanation": "Verified against current incident telemetry for payment-core."
+          },
+          {
+            "evidence_id": "EV-PROM-4",
+            "source_type": "PROMETHEUS",
+            "source_id": "prom-payment-core-http_5xx_error_rate_ratio",
+            "service": "payment-core",
+            "status": "VALID",
+            "is_verified": true,
+            "explanation": "Verified against current incident telemetry for payment-core."
+          },
+          {
+            "evidence_id": "EV-TRACE-5",
+            "source_type": "JAEGER",
+            "source_id": "trace-payment--0000",
+            "service": "payment-core",
+            "status": "VALID",
+            "is_verified": true,
+            "explanation": "Verified against current incident telemetry for payment-core."
+          },
+          {
+            "evidence_id": "EV-TRACE-6",
+            "source_type": "JAEGER",
+            "source_id": "trace-payment--0001",
+            "service": "payment-core",
+            "status": "VALID",
+            "is_verified": true,
+            "explanation": "Verified against current incident telemetry for payment-core."
+          },
+          {
+            "evidence_id": "EV-EVT-7",
+            "source_type": "EVENT",
+            "source_id": "evt-INC-PILOT-201-0001",
+            "service": "payment-core",
+            "status": "VALID",
+            "is_verified": true,
+            "explanation": "Verified against current incident telemetry for payment-core."
+          },
+          {
+            "evidence_id": "EV-EVT-8",
+            "source_type": "EVENT",
+            "source_id": "evt-INC-PILOT-201-0000",
+            "service": "payment-core",
+            "status": "VALID",
+            "is_verified": true,
+            "explanation": "Verified against current incident telemetry for payment-core."
+          },
+          {
+            "evidence_id": "EV-EVT-9",
+            "source_type": "DEPLOYMENT",
+            "source_id": "dep-INC-PILOT-201-0000",
+            "service": "payment-core",
+            "status": "VALID",
+            "is_verified": true,
+            "explanation": "Verified against current incident telemetry for payment-core."
+          },
+          {
+            "evidence_id": "EV-CORR-10",
+            "source_type": "CORRELATION",
+            "source_id": "corr-GRP-INC-PILOT-201",
+            "service": "payment-core",
+            "status": "VALID",
+            "is_verified": true,
+            "explanation": "Verified against current incident telemetry for payment-core."
+          },
+          {
+            "evidence_id": "EV-RCA-1",
+            "source_type": "RCA",
+            "source_id": "rca-cand-1-DATABASE",
+            "service": "payment-core",
+            "status": "VALID",
+            "is_verified": true,
+            "explanation": "Verified against current incident telemetry for payment-core."
+          },
+          {
+            "evidence_id": "EV-RCA-2",
+            "source_type": "RCA",
+            "source_id": "rca-cand-2-SERVICE",
+            "service": "payment-core",
+            "status": "VALID",
+            "is_verified": true,
+            "explanation": "Verified against current incident telemetry for payment-core."
+          },
+          {
+            "evidence_id": "EV-RCA-3",
+            "source_type": "RCA",
+            "source_id": "rca-cand-3-SERVICE",
+            "service": "payment-core",
+            "status": "VALID",
+            "is_verified": true,
+            "explanation": "Verified against current incident telemetry for payment-core."
+          },
+          {
+            "evidence_id": "EV-SIM-1",
+            "source_type": "HISTORICAL_INCIDENT",
+            "source_id": "INC-HOLDOUT-124",
+            "service": "payment-core",
+            "status": "CROSS_INCIDENT",
+            "is_verified": false,
+            "explanation": "Evidence 'EV-SIM-1' references historical incident 'INC-HOLDOUT-124', which does not belong to current incident 'INC-PILOT-201'."
+          },
+          {
+            "evidence_id": "EV-SIM-2",
+            "source_type": "HISTORICAL_INCIDENT",
+            "source_id": "INC-HOLDOUT-123",
+            "service": "payment-core",
+            "status": "CROSS_INCIDENT",
+            "is_verified": false,
+            "explanation": "Evidence 'EV-SIM-2' references historical incident 'INC-HOLDOUT-123', which does not belong to current incident 'INC-PILOT-201'."
+          }
+        ]
+      }
+    },
+    {
+      "case_id": "PILOT-CASE-02",
+      "incident_key": "INC-PILOT-202",
+      "service": "identity-auth",
+      "audit": {
+        "total_citations_evaluated": 12,
+        "valid_citations_count": 10,
+        "invalid_citations_count": 2,
+        "citation_validity_rate": 0.8333,
+        "breakdown": {
+          "valid": 10,
+          "missing_or_unresolved": 0,
+          "malformed": 0,
+          "cross_tenant": 0,
+          "cross_incident": 2,
+          "stale": 0
+        },
+        "uncited_material_count": 7,
+        "uncited_material": [
+          "[EV-PROM-1] Prometheus metric auth_failure_ratio = 0.8800",
+          "[EV-PROM-2] Prometheus metric jwt_validation_error_rate = 0.9400",
+          "[EV-PROM-3] Prometheus metric http_401_error_rate_ratio = 0.8500",
+          "[EV-TRACE-4] Jaeger trace trace-identity-0 root=HANDLE /identity-auth dur=1500.0ms error=Fals",
+          "[EV-TRACE-5] Jaeger trace trace-identity-0 root=HANDLE /identity-auth dur=4500.0ms error=True",
+          "[EV-EVT-6] [ERROR] CertificateExpiredException: Okta IdP certificate thumbprint 7B:3A expir",
+          "[EV-EVT-7] [WARN] JWKSCache: Stale signing keys encountered during token signature verifica"
+        ],
+        "item_details": [
+          {
+            "evidence_id": "EV-PROM-1",
+            "source_type": "PROMETHEUS",
+            "source_id": "prom-identity-auth-auth_failure_ratio",
+            "service": "identity-auth",
+            "status": "VALID",
+            "is_verified": true,
+            "explanation": "Verified against current incident telemetry for identity-auth."
+          },
+          {
+            "evidence_id": "EV-PROM-2",
+            "source_type": "PROMETHEUS",
+            "source_id": "prom-identity-auth-jwt_validation_error_rate",
+            "service": "identity-auth",
+            "status": "VALID",
+            "is_verified": true,
+            "explanation": "Verified against current incident telemetry for identity-auth."
+          },
+          {
+            "evidence_id": "EV-PROM-3",
+            "source_type": "PROMETHEUS",
+            "source_id": "prom-identity-auth-http_401_error_rate_ratio",
+            "service": "identity-auth",
+            "status": "VALID",
+            "is_verified": true,
+            "explanation": "Verified against current incident telemetry for identity-auth."
+          },
+          {
+            "evidence_id": "EV-TRACE-4",
+            "source_type": "JAEGER",
+            "source_id": "trace-identity-0000",
+            "service": "identity-auth",
+            "status": "VALID",
+            "is_verified": true,
+            "explanation": "Verified against current incident telemetry for identity-auth."
+          },
+          {
+            "evidence_id": "EV-TRACE-5",
+            "source_type": "JAEGER",
+            "source_id": "trace-identity-0001",
+            "service": "identity-auth",
+            "status": "VALID",
+            "is_verified": true,
+            "explanation": "Verified against current incident telemetry for identity-auth."
+          },
+          {
+            "evidence_id": "EV-EVT-6",
+            "source_type": "EVENT",
+            "source_id": "evt-INC-PILOT-202-0001",
+            "service": "identity-auth",
+            "status": "VALID",
+            "is_verified": true,
+            "explanation": "Verified against current incident telemetry for identity-auth."
+          },
+          {
+            "evidence_id": "EV-EVT-7",
+            "source_type": "EVENT",
+            "source_id": "evt-INC-PILOT-202-0000",
+            "service": "identity-auth",
+            "status": "VALID",
+            "is_verified": true,
+            "explanation": "Verified against current incident telemetry for identity-auth."
+          },
+          {
+            "evidence_id": "EV-CORR-8",
+            "source_type": "CORRELATION",
+            "source_id": "corr-GRP-INC-PILOT-202",
+            "service": "identity-auth",
+            "status": "VALID",
+            "is_verified": true,
+            "explanation": "Verified against current incident telemetry for identity-auth."
+          },
+          {
+            "evidence_id": "EV-RCA-1",
+            "source_type": "RCA",
+            "source_id": "rca-cand-1-DEPENDENCY",
+            "service": "identity-auth",
+            "status": "VALID",
+            "is_verified": true,
+            "explanation": "Verified against current incident telemetry for identity-auth."
+          },
+          {
+            "evidence_id": "EV-RCA-2",
+            "source_type": "RCA",
+            "source_id": "rca-cand-2-SERVICE",
+            "service": "identity-auth",
+            "status": "VALID",
+            "is_verified": true,
+            "explanation": "Verified against current incident telemetry for identity-auth."
+          },
+          {
+            "evidence_id": "EV-SIM-1",
+            "source_type": "HISTORICAL_INCIDENT",
+            "source_id": "INC-HOLDOUT-124",
+            "service": "identity-auth",
+            "status": "CROSS_INCIDENT",
+            "is_verified": false,
+            "explanation": "Evidence 'EV-SIM-1' references historical incident 'INC-HOLDOUT-124', which does not belong to current incident 'INC-PILOT-202'."
+          },
+          {
+            "evidence_id": "EV-SIM-2",
+            "source_type": "HISTORICAL_INCIDENT",
+            "source_id": "INC-HOLDOUT-123",
+            "service": "identity-auth",
+            "status": "CROSS_INCIDENT",
+            "is_verified": false,
+            "explanation": "Evidence 'EV-SIM-2' references historical incident 'INC-HOLDOUT-123', which does not belong to current incident 'INC-PILOT-202'."
+          }
+        ]
+      }
+    },
+    {
+      "case_id": "PILOT-CASE-03",
+      "incident_key": "INC-PILOT-203",
+      "service": "catalog-cache",
+      "audit": {
+        "total_citations_evaluated": 11,
+        "valid_citations_count": 9,
+        "invalid_citations_count": 2,
+        "citation_validity_rate": 0.8182,
+        "breakdown": {
+          "valid": 9,
+          "missing_or_unresolved": 0,
+          "malformed": 0,
+          "cross_tenant": 0,
+          "cross_incident": 2,
+          "stale": 0
+        },
+        "uncited_material_count": 8,
+        "uncited_material": [
+          "[EV-PROM-1] Prometheus metric redis_memory_used_ratio = 1.0000",
+          "[EV-PROM-2] Prometheus metric redis_evicted_keys_rate = 1520.0000",
+          "[EV-PROM-3] Prometheus metric cache_miss_ratio = 0.7800",
+          "[EV-TRACE-4] Jaeger trace trace-catalog--0 root=HANDLE /catalog-cache dur=1500.0ms error=Fals",
+          "[EV-TRACE-5] Jaeger trace trace-catalog--0 root=HANDLE /catalog-cache dur=4500.0ms error=True",
+          "[EV-EVT-6] [ERROR] RedisOOMException: OOM command not allowed when used memory > 'maxmemory",
+          "[EV-EVT-7] [WARN] RedisClient: High key eviction rate observed under maxmemory constraint",
+          "[EV-CORR-8] Correlation group GRP-INC-PILOT-203: score=0.54. Reasons: signals occurred withi"
+        ],
+        "item_details": [
+          {
+            "evidence_id": "EV-PROM-1",
+            "source_type": "PROMETHEUS",
+            "source_id": "prom-catalog-cache-redis_memory_used_ratio",
+            "service": "catalog-cache",
+            "status": "VALID",
+            "is_verified": true,
+            "explanation": "Verified against current incident telemetry for catalog-cache."
+          },
+          {
+            "evidence_id": "EV-PROM-2",
+            "source_type": "PROMETHEUS",
+            "source_id": "prom-catalog-cache-redis_evicted_keys_rate",
+            "service": "catalog-cache",
+            "status": "VALID",
+            "is_verified": true,
+            "explanation": "Verified against current incident telemetry for catalog-cache."
+          },
+          {
+            "evidence_id": "EV-PROM-3",
+            "source_type": "PROMETHEUS",
+            "source_id": "prom-catalog-cache-cache_miss_ratio",
+            "service": "catalog-cache",
+            "status": "VALID",
+            "is_verified": true,
+            "explanation": "Verified against current incident telemetry for catalog-cache."
+          },
+          {
+            "evidence_id": "EV-TRACE-4",
+            "source_type": "JAEGER",
+            "source_id": "trace-catalog--0000",
+            "service": "catalog-cache",
+            "status": "VALID",
+            "is_verified": true,
+            "explanation": "Verified against current incident telemetry for catalog-cache."
+          },
+          {
+            "evidence_id": "EV-TRACE-5",
+            "source_type": "JAEGER",
+            "source_id": "trace-catalog--0001",
+            "service": "catalog-cache",
+            "status": "VALID",
+            "is_verified": true,
+            "explanation": "Verified against current incident telemetry for catalog-cache."
+          },
+          {
+            "evidence_id": "EV-EVT-6",
+            "source_type": "EVENT",
+            "source_id": "evt-INC-PILOT-203-0001",
+            "service": "catalog-cache",
+            "status": "VALID",
+            "is_verified": true,
+            "explanation": "Verified against current incident telemetry for catalog-cache."
+          },
+          {
+            "evidence_id": "EV-EVT-7",
+            "source_type": "EVENT",
+            "source_id": "evt-INC-PILOT-203-0000",
+            "service": "catalog-cache",
+            "status": "VALID",
+            "is_verified": true,
+            "explanation": "Verified against current incident telemetry for catalog-cache."
+          },
+          {
+            "evidence_id": "EV-CORR-8",
+            "source_type": "CORRELATION",
+            "source_id": "corr-GRP-INC-PILOT-203",
+            "service": "catalog-cache",
+            "status": "VALID",
+            "is_verified": true,
+            "explanation": "Verified against current incident telemetry for catalog-cache."
+          },
+          {
+            "evidence_id": "EV-RCA-1",
+            "source_type": "RCA",
+            "source_id": "rca-cand-1-DEPENDENCY",
+            "service": "catalog-cache",
+            "status": "VALID",
+            "is_verified": true,
+            "explanation": "Verified against current incident telemetry for catalog-cache."
+          },
+          {
+            "evidence_id": "EV-SIM-1",
+            "source_type": "HISTORICAL_INCIDENT",
+            "source_id": "INC-HOLDOUT-124",
+            "service": "catalog-cache",
+            "status": "CROSS_INCIDENT",
+            "is_verified": false,
+            "explanation": "Evidence 'EV-SIM-1' references historical incident 'INC-HOLDOUT-124', which does not belong to current incident 'INC-PILOT-203'."
+          },
+          {
+            "evidence_id": "EV-SIM-2",
+            "source_type": "HISTORICAL_INCIDENT",
+            "source_id": "INC-HOLDOUT-123",
+            "service": "catalog-cache",
+            "status": "CROSS_INCIDENT",
+            "is_verified": false,
+            "explanation": "Evidence 'EV-SIM-2' references historical incident 'INC-HOLDOUT-123', which does not belong to current incident 'INC-PILOT-203'."
+          }
+        ]
+      }
+    },
+    {
+      "case_id": "PILOT-CASE-04",
+      "incident_key": "INC-PILOT-204",
+      "service": "checkout-api",
+      "audit": {
+        "total_citations_evaluated": 13,
+        "valid_citations_count": 11,
+        "invalid_citations_count": 2,
+        "citation_validity_rate": 0.8462,
+        "breakdown": {
+          "valid": 11,
+          "missing_or_unresolved": 0,
+          "malformed": 0,
+          "cross_tenant": 0,
+          "cross_incident": 2,
+          "stale": 0
+        },
+        "uncited_material_count": 7,
+        "uncited_material": [
+          "[EV-PROM-1] Prometheus metric http_client_request_timeout_ratio = 0.4000",
+          "[EV-PROM-2] Prometheus metric dns_resolution_latency_ms = 2800.0000",
+          "[EV-PROM-3] Prometheus metric checkout_latency_p99_ms = 6500.0000",
+          "[EV-TRACE-4] Jaeger trace trace-checkout-0 root=HANDLE /checkout-api dur=1500.0ms error=False",
+          "[EV-TRACE-5] Jaeger trace trace-checkout-0 root=HANDLE /checkout-api dur=4500.0ms error=True",
+          "[EV-EVT-6] [ERROR] ConnectTimeoutException: Timeout resolving partner-pay.external.net (Cor",
+          "[EV-EVT-7] [WARN] CoreDNS: Resolving partner-pay.external.net via upstream UDP 10.96.0.10:5"
+        ],
+        "item_details": [
+          {
+            "evidence_id": "EV-PROM-1",
+            "source_type": "PROMETHEUS",
+            "source_id": "prom-checkout-api-http_client_request_timeout_ratio",
+            "service": "checkout-api",
+            "status": "VALID",
+            "is_verified": true,
+            "explanation": "Verified against current incident telemetry for checkout-api."
+          },
+          {
+            "evidence_id": "EV-PROM-2",
+            "source_type": "PROMETHEUS",
+            "source_id": "prom-checkout-api-dns_resolution_latency_ms",
+            "service": "checkout-api",
+            "status": "VALID",
+            "is_verified": true,
+            "explanation": "Verified against current incident telemetry for checkout-api."
+          },
+          {
+            "evidence_id": "EV-PROM-3",
+            "source_type": "PROMETHEUS",
+            "source_id": "prom-checkout-api-checkout_latency_p99_ms",
+            "service": "checkout-api",
+            "status": "VALID",
+            "is_verified": true,
+            "explanation": "Verified against current incident telemetry for checkout-api."
+          },
+          {
+            "evidence_id": "EV-TRACE-4",
+            "source_type": "JAEGER",
+            "source_id": "trace-checkout-0000",
+            "service": "checkout-api",
+            "status": "VALID",
+            "is_verified": true,
+            "explanation": "Verified against current incident telemetry for checkout-api."
+          },
+          {
+            "evidence_id": "EV-TRACE-5",
+            "source_type": "JAEGER",
+            "source_id": "trace-checkout-0001",
+            "service": "checkout-api",
+            "status": "VALID",
+            "is_verified": true,
+            "explanation": "Verified against current incident telemetry for checkout-api."
+          },
+          {
+            "evidence_id": "EV-EVT-6",
+            "source_type": "EVENT",
+            "source_id": "evt-INC-PILOT-204-0001",
+            "service": "checkout-api",
+            "status": "VALID",
+            "is_verified": true,
+            "explanation": "Verified against current incident telemetry for checkout-api."
+          },
+          {
+            "evidence_id": "EV-EVT-7",
+            "source_type": "EVENT",
+            "source_id": "evt-INC-PILOT-204-0000",
+            "service": "checkout-api",
+            "status": "VALID",
+            "is_verified": true,
+            "explanation": "Verified against current incident telemetry for checkout-api."
+          },
+          {
+            "evidence_id": "EV-CORR-8",
+            "source_type": "CORRELATION",
+            "source_id": "corr-GRP-INC-PILOT-204",
+            "service": "checkout-api",
+            "status": "VALID",
+            "is_verified": true,
+            "explanation": "Verified against current incident telemetry for checkout-api."
+          },
+          {
+            "evidence_id": "EV-RCA-1",
+            "source_type": "RCA",
+            "source_id": "rca-cand-1-DEPENDENCY",
+            "service": "checkout-api",
+            "status": "VALID",
+            "is_verified": true,
+            "explanation": "Verified against current incident telemetry for checkout-api."
+          },
+          {
+            "evidence_id": "EV-RCA-2",
+            "source_type": "RCA",
+            "source_id": "rca-cand-2-SERVICE",
+            "service": "checkout-api",
+            "status": "VALID",
+            "is_verified": true,
+            "explanation": "Verified against current incident telemetry for checkout-api."
+          },
+          {
+            "evidence_id": "EV-RCA-3",
+            "source_type": "RCA",
+            "source_id": "rca-cand-3-DEPENDENCY",
+            "service": "checkout-api",
+            "status": "VALID",
+            "is_verified": true,
+            "explanation": "Verified against current incident telemetry for checkout-api."
+          },
+          {
+            "evidence_id": "EV-SIM-1",
+            "source_type": "HISTORICAL_INCIDENT",
+            "source_id": "INC-HOLDOUT-124",
+            "service": "checkout-api",
+            "status": "CROSS_INCIDENT",
+            "is_verified": false,
+            "explanation": "Evidence 'EV-SIM-1' references historical incident 'INC-HOLDOUT-124', which does not belong to current incident 'INC-PILOT-204'."
+          },
+          {
+            "evidence_id": "EV-SIM-2",
+            "source_type": "HISTORICAL_INCIDENT",
+            "source_id": "INC-HOLDOUT-123",
+            "service": "checkout-api",
+            "status": "CROSS_INCIDENT",
+            "is_verified": false,
+            "explanation": "Evidence 'EV-SIM-2' references historical incident 'INC-HOLDOUT-123', which does not belong to current incident 'INC-PILOT-204'."
+          }
+        ]
+      }
+    },
+    {
+      "case_id": "PILOT-CASE-05",
+      "incident_key": "INC-PILOT-205",
+      "service": "doc-renderer",
+      "audit": {
+        "total_citations_evaluated": 12,
+        "valid_citations_count": 10,
+        "invalid_citations_count": 2,
+        "citation_validity_rate": 0.8333,
+        "breakdown": {
+          "valid": 10,
+          "missing_or_unresolved": 0,
+          "malformed": 0,
+          "cross_tenant": 0,
+          "cross_incident": 2,
+          "stale": 0
+        },
+        "uncited_material_count": 7,
+        "uncited_material": [
+          "[EV-PROM-1] Prometheus metric disk_inode_usage_ratio = 1.0000",
+          "[EV-PROM-2] Prometheus metric disk_space_available_bytes = 52428800.0000",
+          "[EV-PROM-3] Prometheus metric document_render_failure_rate = 0.6500",
+          "[EV-TRACE-4] Jaeger trace trace-doc-rend-0 root=HANDLE /doc-renderer dur=1500.0ms error=False",
+          "[EV-TRACE-5] Jaeger trace trace-doc-rend-0 root=HANDLE /doc-renderer dur=4500.0ms error=True",
+          "[EV-EVT-6] [ERROR] IOException: No space left on device while creating temporary render buf",
+          "[EV-EVT-7] [WARN] DiskMonitor: Filesystem /tmp inode utilization reached 99.8%"
+        ],
+        "item_details": [
+          {
+            "evidence_id": "EV-PROM-1",
+            "source_type": "PROMETHEUS",
+            "source_id": "prom-doc-renderer-disk_inode_usage_ratio",
+            "service": "doc-renderer",
+            "status": "VALID",
+            "is_verified": true,
+            "explanation": "Verified against current incident telemetry for doc-renderer."
+          },
+          {
+            "evidence_id": "EV-PROM-2",
+            "source_type": "PROMETHEUS",
+            "source_id": "prom-doc-renderer-disk_space_available_bytes",
+            "service": "doc-renderer",
+            "status": "VALID",
+            "is_verified": true,
+            "explanation": "Verified against current incident telemetry for doc-renderer."
+          },
+          {
+            "evidence_id": "EV-PROM-3",
+            "source_type": "PROMETHEUS",
+            "source_id": "prom-doc-renderer-document_render_failure_rate",
+            "service": "doc-renderer",
+            "status": "VALID",
+            "is_verified": true,
+            "explanation": "Verified against current incident telemetry for doc-renderer."
+          },
+          {
+            "evidence_id": "EV-TRACE-4",
+            "source_type": "JAEGER",
+            "source_id": "trace-doc-rend-0000",
+            "service": "doc-renderer",
+            "status": "VALID",
+            "is_verified": true,
+            "explanation": "Verified against current incident telemetry for doc-renderer."
+          },
+          {
+            "evidence_id": "EV-TRACE-5",
+            "source_type": "JAEGER",
+            "source_id": "trace-doc-rend-0001",
+            "service": "doc-renderer",
+            "status": "VALID",
+            "is_verified": true,
+            "explanation": "Verified against current incident telemetry for doc-renderer."
+          },
+          {
+            "evidence_id": "EV-EVT-6",
+            "source_type": "EVENT",
+            "source_id": "evt-INC-PILOT-205-0001",
+            "service": "doc-renderer",
+            "status": "VALID",
+            "is_verified": true,
+            "explanation": "Verified against current incident telemetry for doc-renderer."
+          },
+          {
+            "evidence_id": "EV-EVT-7",
+            "source_type": "EVENT",
+            "source_id": "evt-INC-PILOT-205-0000",
+            "service": "doc-renderer",
+            "status": "VALID",
+            "is_verified": true,
+            "explanation": "Verified against current incident telemetry for doc-renderer."
+          },
+          {
+            "evidence_id": "EV-CORR-8",
+            "source_type": "CORRELATION",
+            "source_id": "corr-GRP-INC-PILOT-205",
+            "service": "doc-renderer",
+            "status": "VALID",
+            "is_verified": true,
+            "explanation": "Verified against current incident telemetry for doc-renderer."
+          },
+          {
+            "evidence_id": "EV-RCA-1",
+            "source_type": "RCA",
+            "source_id": "rca-cand-1-RESOURCE",
+            "service": "doc-renderer",
+            "status": "VALID",
+            "is_verified": true,
+            "explanation": "Verified against current incident telemetry for doc-renderer."
+          },
+          {
+            "evidence_id": "EV-RCA-2",
+            "source_type": "RCA",
+            "source_id": "rca-cand-2-SERVICE",
+            "service": "doc-renderer",
+            "status": "VALID",
+            "is_verified": true,
+            "explanation": "Verified against current incident telemetry for doc-renderer."
+          },
+          {
+            "evidence_id": "EV-SIM-1",
+            "source_type": "HISTORICAL_INCIDENT",
+            "source_id": "INC-HOLDOUT-124",
+            "service": "doc-renderer",
+            "status": "CROSS_INCIDENT",
+            "is_verified": false,
+            "explanation": "Evidence 'EV-SIM-1' references historical incident 'INC-HOLDOUT-124', which does not belong to current incident 'INC-PILOT-205'."
+          },
+          {
+            "evidence_id": "EV-SIM-2",
+            "source_type": "HISTORICAL_INCIDENT",
+            "source_id": "INC-HOLDOUT-123",
+            "service": "doc-renderer",
+            "status": "CROSS_INCIDENT",
+            "is_verified": false,
+            "explanation": "Evidence 'EV-SIM-2' references historical incident 'INC-HOLDOUT-123', which does not belong to current incident 'INC-PILOT-205'."
+          }
+        ]
+      }
+    },
+    {
+      "case_id": "PILOT-CASE-06",
+      "incident_key": "INC-PILOT-206",
+      "service": "ingest-worker",
+      "audit": {
+        "total_citations_evaluated": 12,
+        "valid_citations_count": 10,
+        "invalid_citations_count": 2,
+        "citation_validity_rate": 0.8333,
+        "breakdown": {
+          "valid": 10,
+          "missing_or_unresolved": 0,
+          "malformed": 0,
+          "cross_tenant": 0,
+          "cross_incident": 2,
+          "stale": 0
+        },
+        "uncited_material_count": 7,
+        "uncited_material": [
+          "[EV-PROM-1] Prometheus metric container_memory_working_set_bytes = 4294967296.0000",
+          "[EV-PROM-2] Prometheus metric memory_rss_bytes = 4194304000.0000",
+          "[EV-PROM-3] Prometheus metric worker_restart_count = 8.0000",
+          "[EV-TRACE-4] Jaeger trace trace-ingest-w-0 root=HANDLE /ingest-worker dur=1500.0ms error=Fals",
+          "[EV-TRACE-5] Jaeger trace trace-ingest-w-0 root=HANDLE /ingest-worker dur=4500.0ms error=True",
+          "[EV-EVT-6] [ERROR] KernelNotice: Killed process 14210 (python) total-vm:4.2GB anon-rss:3.9G",
+          "[EV-EVT-7] [WARN] CGroupMonitor: Worker container memory exceeds 95% of 4096MB limit"
+        ],
+        "item_details": [
+          {
+            "evidence_id": "EV-PROM-1",
+            "source_type": "PROMETHEUS",
+            "source_id": "prom-ingest-worker-container_memory_working_set_bytes",
+            "service": "ingest-worker",
+            "status": "VALID",
+            "is_verified": true,
+            "explanation": "Verified against current incident telemetry for ingest-worker."
+          },
+          {
+            "evidence_id": "EV-PROM-2",
+            "source_type": "PROMETHEUS",
+            "source_id": "prom-ingest-worker-memory_rss_bytes",
+            "service": "ingest-worker",
+            "status": "VALID",
+            "is_verified": true,
+            "explanation": "Verified against current incident telemetry for ingest-worker."
+          },
+          {
+            "evidence_id": "EV-PROM-3",
+            "source_type": "PROMETHEUS",
+            "source_id": "prom-ingest-worker-worker_restart_count",
+            "service": "ingest-worker",
+            "status": "VALID",
+            "is_verified": true,
+            "explanation": "Verified against current incident telemetry for ingest-worker."
+          },
+          {
+            "evidence_id": "EV-TRACE-4",
+            "source_type": "JAEGER",
+            "source_id": "trace-ingest-w-0000",
+            "service": "ingest-worker",
+            "status": "VALID",
+            "is_verified": true,
+            "explanation": "Verified against current incident telemetry for ingest-worker."
+          },
+          {
+            "evidence_id": "EV-TRACE-5",
+            "source_type": "JAEGER",
+            "source_id": "trace-ingest-w-0001",
+            "service": "ingest-worker",
+            "status": "VALID",
+            "is_verified": true,
+            "explanation": "Verified against current incident telemetry for ingest-worker."
+          },
+          {
+            "evidence_id": "EV-EVT-6",
+            "source_type": "EVENT",
+            "source_id": "evt-INC-PILOT-206-0001",
+            "service": "ingest-worker",
+            "status": "VALID",
+            "is_verified": true,
+            "explanation": "Verified against current incident telemetry for ingest-worker."
+          },
+          {
+            "evidence_id": "EV-EVT-7",
+            "source_type": "EVENT",
+            "source_id": "evt-INC-PILOT-206-0000",
+            "service": "ingest-worker",
+            "status": "VALID",
+            "is_verified": true,
+            "explanation": "Verified against current incident telemetry for ingest-worker."
+          },
+          {
+            "evidence_id": "EV-CORR-8",
+            "source_type": "CORRELATION",
+            "source_id": "corr-GRP-INC-PILOT-206",
+            "service": "ingest-worker",
+            "status": "VALID",
+            "is_verified": true,
+            "explanation": "Verified against current incident telemetry for ingest-worker."
+          },
+          {
+            "evidence_id": "EV-RCA-1",
+            "source_type": "RCA",
+            "source_id": "rca-cand-1-RESOURCE",
+            "service": "ingest-worker",
+            "status": "VALID",
+            "is_verified": true,
+            "explanation": "Verified against current incident telemetry for ingest-worker."
+          },
+          {
+            "evidence_id": "EV-RCA-2",
+            "source_type": "RCA",
+            "source_id": "rca-cand-2-SERVICE",
+            "service": "ingest-worker",
+            "status": "VALID",
+            "is_verified": true,
+            "explanation": "Verified against current incident telemetry for ingest-worker."
+          },
+          {
+            "evidence_id": "EV-SIM-1",
+            "source_type": "HISTORICAL_INCIDENT",
+            "source_id": "INC-HOLDOUT-124",
+            "service": "ingest-worker",
+            "status": "CROSS_INCIDENT",
+            "is_verified": false,
+            "explanation": "Evidence 'EV-SIM-1' references historical incident 'INC-HOLDOUT-124', which does not belong to current incident 'INC-PILOT-206'."
+          },
+          {
+            "evidence_id": "EV-SIM-2",
+            "source_type": "HISTORICAL_INCIDENT",
+            "source_id": "INC-HOLDOUT-123",
+            "service": "ingest-worker",
+            "status": "CROSS_INCIDENT",
+            "is_verified": false,
+            "explanation": "Evidence 'EV-SIM-2' references historical incident 'INC-HOLDOUT-123', which does not belong to current incident 'INC-PILOT-206'."
+          }
+        ]
+      }
+    },
+    {
+      "case_id": "PILOT-CASE-07",
+      "incident_key": "INC-PILOT-207",
+      "service": "inventory-sync",
+      "audit": {
+        "total_citations_evaluated": 8,
+        "valid_citations_count": 6,
+        "invalid_citations_count": 2,
+        "citation_validity_rate": 0.75,
+        "breakdown": {
+          "valid": 6,
+          "missing_or_unresolved": 0,
+          "malformed": 0,
+          "cross_tenant": 0,
+          "cross_incident": 2,
+          "stale": 0
+        },
+        "uncited_material_count": 5,
+        "uncited_material": [
+          "[EV-PROM-1] Prometheus metric sync_latency_ms = 450.0000",
+          "[EV-PROM-2] Prometheus metric error_rate_ratio = 0.0100",
+          "[EV-EVT-3] [INFO] Backup snapshot checkpoint completed in 180s",
+          "[EV-EVT-4] [INFO] Nightly scheduled database snapshot backup initiated; read queries runnin",
+          "[EV-CORR-5] Correlation group GRP-INC-PILOT-207: score=0.53. Reasons: signals occurred withi"
+        ],
+        "item_details": [
+          {
+            "evidence_id": "EV-PROM-1",
+            "source_type": "PROMETHEUS",
+            "source_id": "prom-inventory-sync-sync_latency_ms",
+            "service": "inventory-sync",
+            "status": "VALID",
+            "is_verified": true,
+            "explanation": "Verified against current incident telemetry for inventory-sync."
+          },
+          {
+            "evidence_id": "EV-PROM-2",
+            "source_type": "PROMETHEUS",
+            "source_id": "prom-inventory-sync-error_rate_ratio",
+            "service": "inventory-sync",
+            "status": "VALID",
+            "is_verified": true,
+            "explanation": "Verified against current incident telemetry for inventory-sync."
+          },
+          {
+            "evidence_id": "EV-EVT-3",
+            "source_type": "EVENT",
+            "source_id": "evt-INC-PILOT-207-0001",
+            "service": "inventory-sync",
+            "status": "VALID",
+            "is_verified": true,
+            "explanation": "Verified against current incident telemetry for inventory-sync."
+          },
+          {
+            "evidence_id": "EV-EVT-4",
+            "source_type": "EVENT",
+            "source_id": "evt-INC-PILOT-207-0000",
+            "service": "inventory-sync",
+            "status": "VALID",
+            "is_verified": true,
+            "explanation": "Verified against current incident telemetry for inventory-sync."
+          },
+          {
+            "evidence_id": "EV-CORR-5",
+            "source_type": "CORRELATION",
+            "source_id": "corr-GRP-INC-PILOT-207",
+            "service": "inventory-sync",
+            "status": "VALID",
+            "is_verified": true,
+            "explanation": "Verified against current incident telemetry for inventory-sync."
+          },
+          {
+            "evidence_id": "EV-RCA-1",
+            "source_type": "RCA",
+            "source_id": "rca-cand-1-UNKNOWN",
+            "service": "inventory-sync",
+            "status": "VALID",
+            "is_verified": true,
+            "explanation": "Verified against current incident telemetry for inventory-sync."
+          },
+          {
+            "evidence_id": "EV-SIM-1",
+            "source_type": "HISTORICAL_INCIDENT",
+            "source_id": "INC-HOLDOUT-124",
+            "service": "inventory-sync",
+            "status": "CROSS_INCIDENT",
+            "is_verified": false,
+            "explanation": "Evidence 'EV-SIM-1' references historical incident 'INC-HOLDOUT-124', which does not belong to current incident 'INC-PILOT-207'."
+          },
+          {
+            "evidence_id": "EV-SIM-2",
+            "source_type": "HISTORICAL_INCIDENT",
+            "source_id": "INC-HOLDOUT-123",
+            "service": "inventory-sync",
+            "status": "CROSS_INCIDENT",
+            "is_verified": false,
+            "explanation": "Evidence 'EV-SIM-2' references historical incident 'INC-HOLDOUT-123', which does not belong to current incident 'INC-PILOT-207'."
+          }
+        ]
+      }
+    },
+    {
+      "case_id": "PILOT-CASE-08",
+      "incident_key": "INC-PILOT-208",
+      "service": "fulfillment-stream",
+      "audit": {
+        "total_citations_evaluated": 10,
+        "valid_citations_count": 8,
+        "invalid_citations_count": 2,
+        "citation_validity_rate": 0.8,
+        "breakdown": {
+          "valid": 8,
+          "missing_or_unresolved": 0,
+          "malformed": 0,
+          "cross_tenant": 0,
+          "cross_incident": 2,
+          "stale": 0
+        },
+        "uncited_material_count": 6,
+        "uncited_material": [
+          "[EV-PROM-1] Prometheus metric kafka_consumer_lag_records = 48000.0000",
+          "[EV-PROM-2] Prometheus metric kafka_fetch_error_rate = 0.2500",
+          "[EV-TRACE-3] Jaeger trace trace-fulfillm-0 root=HANDLE /fulfillment-stream dur=1500.0ms error",
+          "[EV-TRACE-4] Jaeger trace trace-fulfillm-0 root=HANDLE /fulfillment-stream dur=4500.0ms error",
+          "[EV-EVT-5] [ERROR] DeserializationException: Malformed JSON payload at offset 1294101; pois",
+          "[EV-EVT-6] [WARN] KafkaConsumer: Partition 3 offset 1294101 stalled for 120s"
+        ],
+        "item_details": [
+          {
+            "evidence_id": "EV-PROM-1",
+            "source_type": "PROMETHEUS",
+            "source_id": "prom-fulfillment-stream-kafka_consumer_lag_records",
+            "service": "fulfillment-stream",
+            "status": "VALID",
+            "is_verified": true,
+            "explanation": "Verified against current incident telemetry for fulfillment-stream."
+          },
+          {
+            "evidence_id": "EV-PROM-2",
+            "source_type": "PROMETHEUS",
+            "source_id": "prom-fulfillment-stream-kafka_fetch_error_rate",
+            "service": "fulfillment-stream",
+            "status": "VALID",
+            "is_verified": true,
+            "explanation": "Verified against current incident telemetry for fulfillment-stream."
+          },
+          {
+            "evidence_id": "EV-TRACE-3",
+            "source_type": "JAEGER",
+            "source_id": "trace-fulfillm-0000",
+            "service": "fulfillment-stream",
+            "status": "VALID",
+            "is_verified": true,
+            "explanation": "Verified against current incident telemetry for fulfillment-stream."
+          },
+          {
+            "evidence_id": "EV-TRACE-4",
+            "source_type": "JAEGER",
+            "source_id": "trace-fulfillm-0001",
+            "service": "fulfillment-stream",
+            "status": "VALID",
+            "is_verified": true,
+            "explanation": "Verified against current incident telemetry for fulfillment-stream."
+          },
+          {
+            "evidence_id": "EV-EVT-5",
+            "source_type": "EVENT",
+            "source_id": "evt-INC-PILOT-208-0001",
+            "service": "fulfillment-stream",
+            "status": "VALID",
+            "is_verified": true,
+            "explanation": "Verified against current incident telemetry for fulfillment-stream."
+          },
+          {
+            "evidence_id": "EV-EVT-6",
+            "source_type": "EVENT",
+            "source_id": "evt-INC-PILOT-208-0000",
+            "service": "fulfillment-stream",
+            "status": "VALID",
+            "is_verified": true,
+            "explanation": "Verified against current incident telemetry for fulfillment-stream."
+          },
+          {
+            "evidence_id": "EV-CORR-7",
+            "source_type": "CORRELATION",
+            "source_id": "corr-GRP-INC-PILOT-208",
+            "service": "fulfillment-stream",
+            "status": "VALID",
+            "is_verified": true,
+            "explanation": "Verified against current incident telemetry for fulfillment-stream."
+          },
+          {
+            "evidence_id": "EV-RCA-1",
+            "source_type": "RCA",
+            "source_id": "rca-cand-1-SERVICE",
+            "service": "fulfillment-stream",
+            "status": "VALID",
+            "is_verified": true,
+            "explanation": "Verified against current incident telemetry for fulfillment-stream."
+          },
+          {
+            "evidence_id": "EV-SIM-1",
+            "source_type": "HISTORICAL_INCIDENT",
+            "source_id": "INC-HOLDOUT-124",
+            "service": "fulfillment-stream",
+            "status": "CROSS_INCIDENT",
+            "is_verified": false,
+            "explanation": "Evidence 'EV-SIM-1' references historical incident 'INC-HOLDOUT-124', which does not belong to current incident 'INC-PILOT-208'."
+          },
+          {
+            "evidence_id": "EV-SIM-2",
+            "source_type": "HISTORICAL_INCIDENT",
+            "source_id": "INC-HOLDOUT-123",
+            "service": "fulfillment-stream",
+            "status": "CROSS_INCIDENT",
+            "is_verified": false,
+            "explanation": "Evidence 'EV-SIM-2' references historical incident 'INC-HOLDOUT-123', which does not belong to current incident 'INC-PILOT-208'."
+          }
+        ]
+      }
+    },
+    {
+      "case_id": "PILOT-CASE-09",
+      "incident_key": "INC-PILOT-209",
+      "service": "subscription-billing",
+      "audit": {
+        "total_citations_evaluated": 12,
+        "valid_citations_count": 10,
+        "invalid_citations_count": 2,
+        "citation_validity_rate": 0.8333,
+        "breakdown": {
+          "valid": 10,
+          "missing_or_unresolved": 0,
+          "malformed": 0,
+          "cross_tenant": 0,
+          "cross_incident": 2,
+          "stale": 0
+        },
+        "uncited_material_count": 7,
+        "uncited_material": [
+          "[EV-PROM-1] Prometheus metric postgres_deadlocks_count = 24.0000",
+          "[EV-PROM-2] Prometheus metric db_query_latency_ms = 4800.0000",
+          "[EV-PROM-3] Prometheus metric transaction_rollback_rate = 0.4200",
+          "[EV-TRACE-4] Jaeger trace trace-subscrip-0 root=HANDLE /subscription-billing dur=1500.0ms err",
+          "[EV-TRACE-5] Jaeger trace trace-subscrip-0 root=HANDLE /subscription-billing dur=4500.0ms err",
+          "[EV-EVT-6] [ERROR] DeadlockDetected: Process 48192 waits for ExclusiveLock on tuple (142, 1",
+          "[EV-EVT-7] [WARN] PostgresBackend: Lock contention on relation subscriptions_idx"
+        ],
+        "item_details": [
+          {
+            "evidence_id": "EV-PROM-1",
+            "source_type": "PROMETHEUS",
+            "source_id": "prom-subscription-billing-postgres_deadlocks_count",
+            "service": "subscription-billing",
+            "status": "VALID",
+            "is_verified": true,
+            "explanation": "Verified against current incident telemetry for subscription-billing."
+          },
+          {
+            "evidence_id": "EV-PROM-2",
+            "source_type": "PROMETHEUS",
+            "source_id": "prom-subscription-billing-db_query_latency_ms",
+            "service": "subscription-billing",
+            "status": "VALID",
+            "is_verified": true,
+            "explanation": "Verified against current incident telemetry for subscription-billing."
+          },
+          {
+            "evidence_id": "EV-PROM-3",
+            "source_type": "PROMETHEUS",
+            "source_id": "prom-subscription-billing-transaction_rollback_rate",
+            "service": "subscription-billing",
+            "status": "VALID",
+            "is_verified": true,
+            "explanation": "Verified against current incident telemetry for subscription-billing."
+          },
+          {
+            "evidence_id": "EV-TRACE-4",
+            "source_type": "JAEGER",
+            "source_id": "trace-subscrip-0000",
+            "service": "subscription-billing",
+            "status": "VALID",
+            "is_verified": true,
+            "explanation": "Verified against current incident telemetry for subscription-billing."
+          },
+          {
+            "evidence_id": "EV-TRACE-5",
+            "source_type": "JAEGER",
+            "source_id": "trace-subscrip-0001",
+            "service": "subscription-billing",
+            "status": "VALID",
+            "is_verified": true,
+            "explanation": "Verified against current incident telemetry for subscription-billing."
+          },
+          {
+            "evidence_id": "EV-EVT-6",
+            "source_type": "EVENT",
+            "source_id": "evt-INC-PILOT-209-0001",
+            "service": "subscription-billing",
+            "status": "VALID",
+            "is_verified": true,
+            "explanation": "Verified against current incident telemetry for subscription-billing."
+          },
+          {
+            "evidence_id": "EV-EVT-7",
+            "source_type": "EVENT",
+            "source_id": "evt-INC-PILOT-209-0000",
+            "service": "subscription-billing",
+            "status": "VALID",
+            "is_verified": true,
+            "explanation": "Verified against current incident telemetry for subscription-billing."
+          },
+          {
+            "evidence_id": "EV-CORR-8",
+            "source_type": "CORRELATION",
+            "source_id": "corr-GRP-INC-PILOT-209",
+            "service": "subscription-billing",
+            "status": "VALID",
+            "is_verified": true,
+            "explanation": "Verified against current incident telemetry for subscription-billing."
+          },
+          {
+            "evidence_id": "EV-RCA-1",
+            "source_type": "RCA",
+            "source_id": "rca-cand-1-DATABASE",
+            "service": "subscription-billing",
+            "status": "VALID",
+            "is_verified": true,
+            "explanation": "Verified against current incident telemetry for subscription-billing."
+          },
+          {
+            "evidence_id": "EV-RCA-2",
+            "source_type": "RCA",
+            "source_id": "rca-cand-2-SERVICE",
+            "service": "subscription-billing",
+            "status": "VALID",
+            "is_verified": true,
+            "explanation": "Verified against current incident telemetry for subscription-billing."
+          },
+          {
+            "evidence_id": "EV-SIM-1",
+            "source_type": "HISTORICAL_INCIDENT",
+            "source_id": "INC-HOLDOUT-124",
+            "service": "subscription-billing",
+            "status": "CROSS_INCIDENT",
+            "is_verified": false,
+            "explanation": "Evidence 'EV-SIM-1' references historical incident 'INC-HOLDOUT-124', which does not belong to current incident 'INC-PILOT-209'."
+          },
+          {
+            "evidence_id": "EV-SIM-2",
+            "source_type": "HISTORICAL_INCIDENT",
+            "source_id": "INC-HOLDOUT-123",
+            "service": "subscription-billing",
+            "status": "CROSS_INCIDENT",
+            "is_verified": false,
+            "explanation": "Evidence 'EV-SIM-2' references historical incident 'INC-HOLDOUT-123', which does not belong to current incident 'INC-PILOT-209'."
+          }
+        ]
+      }
+    },
+    {
+      "case_id": "PILOT-CASE-10",
+      "incident_key": "INC-PILOT-210",
+      "service": "search-federator",
+      "audit": {
+        "total_citations_evaluated": 8,
+        "valid_citations_count": 6,
+        "invalid_citations_count": 2,
+        "citation_validity_rate": 0.75,
+        "breakdown": {
+          "valid": 6,
+          "missing_or_unresolved": 0,
+          "malformed": 0,
+          "cross_tenant": 0,
+          "cross_incident": 2,
+          "stale": 0
+        },
+        "uncited_material_count": 5,
+        "uncited_material": [
+          "[EV-PROM-1] Prometheus metric network_packet_loss = 0.0020",
+          "[EV-PROM-2] Prometheus metric search_query_p95_latency_ms = 180.0000",
+          "[EV-EVT-3] [INFO] Federated query dispatch completed in 140ms",
+          "[EV-EVT-4] [INFO] BGP route convergence transit latency nominal; 0 connection drops",
+          "[EV-CORR-5] Correlation group GRP-INC-PILOT-210: score=0.53. Reasons: signals occurred withi"
+        ],
+        "item_details": [
+          {
+            "evidence_id": "EV-PROM-1",
+            "source_type": "PROMETHEUS",
+            "source_id": "prom-search-federator-network_packet_loss",
+            "service": "search-federator",
+            "status": "VALID",
+            "is_verified": true,
+            "explanation": "Verified against current incident telemetry for search-federator."
+          },
+          {
+            "evidence_id": "EV-PROM-2",
+            "source_type": "PROMETHEUS",
+            "source_id": "prom-search-federator-search_query_p95_latency_ms",
+            "service": "search-federator",
+            "status": "VALID",
+            "is_verified": true,
+            "explanation": "Verified against current incident telemetry for search-federator."
+          },
+          {
+            "evidence_id": "EV-EVT-3",
+            "source_type": "EVENT",
+            "source_id": "evt-INC-PILOT-210-0001",
+            "service": "search-federator",
+            "status": "VALID",
+            "is_verified": true,
+            "explanation": "Verified against current incident telemetry for search-federator."
+          },
+          {
+            "evidence_id": "EV-EVT-4",
+            "source_type": "EVENT",
+            "source_id": "evt-INC-PILOT-210-0000",
+            "service": "search-federator",
+            "status": "VALID",
+            "is_verified": true,
+            "explanation": "Verified against current incident telemetry for search-federator."
+          },
+          {
+            "evidence_id": "EV-CORR-5",
+            "source_type": "CORRELATION",
+            "source_id": "corr-GRP-INC-PILOT-210",
+            "service": "search-federator",
+            "status": "VALID",
+            "is_verified": true,
+            "explanation": "Verified against current incident telemetry for search-federator."
+          },
+          {
+            "evidence_id": "EV-RCA-1",
+            "source_type": "RCA",
+            "source_id": "rca-cand-1-UNKNOWN",
+            "service": "search-federator",
+            "status": "VALID",
+            "is_verified": true,
+            "explanation": "Verified against current incident telemetry for search-federator."
+          },
+          {
+            "evidence_id": "EV-SIM-1",
+            "source_type": "HISTORICAL_INCIDENT",
+            "source_id": "INC-HOLDOUT-124",
+            "service": "search-federator",
+            "status": "CROSS_INCIDENT",
+            "is_verified": false,
+            "explanation": "Evidence 'EV-SIM-1' references historical incident 'INC-HOLDOUT-124', which does not belong to current incident 'INC-PILOT-210'."
+          },
+          {
+            "evidence_id": "EV-SIM-2",
+            "source_type": "HISTORICAL_INCIDENT",
+            "source_id": "INC-HOLDOUT-123",
+            "service": "search-federator",
+            "status": "CROSS_INCIDENT",
+            "is_verified": false,
+            "explanation": "Evidence 'EV-SIM-2' references historical incident 'INC-HOLDOUT-123', which does not belong to current incident 'INC-PILOT-210'."
+          }
+        ]
+      }
+    }
+  ]
+}

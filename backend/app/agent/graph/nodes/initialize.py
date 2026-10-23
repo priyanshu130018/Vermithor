@@ -12,7 +12,16 @@ logger = logging.getLogger(__name__)
 
 def infer_service_from_incident(title: str, description: Optional[str] = None) -> str:
     """Infer primary service from incident metadata if not explicitly provided."""
+    import re
     text = f"{title or ''} {description or ''}".lower()
+
+    # Check for explicit bracket tag like [payment-api] or [booking-api]
+    match = re.search(r"\[([a-z0-9_-]+)\]", text)
+    if match:
+        tag = match.group(1).strip()
+        if tag and tag not in ("incident", "sev1", "sev2", "sev3", "critical", "major", "production", "staging"):
+            return tag
+
     if "payment" in text:
         return "payment-api"
     if "booking" in text:
@@ -25,6 +34,10 @@ def infer_service_from_incident(title: str, description: Optional[str] = None) -
         return "cache-service"
     if "database" in text or "postgres" in text:
         return "postgres"
+    if "checkout" in text:
+        return "checkout-api"
+    if "worker" in text or "queue" in text or "celery" in text:
+        return "worker"
     return "vermithor-backend"
 
 
@@ -50,7 +63,20 @@ def initialize_investigation_node(state: InvestigationState, db: Optional[Sessio
     incident_id = str(incident.id) if incident else None
 
     target_svc = state.get("target_service")
-    if not target_svc or target_svc == "unknown":
+    if not target_svc or target_svc in ("unknown", "vermithor-backend"):
+        if db is not None and incident_key:
+            try:
+                from sqlalchemy import select
+                from backend.app.ingestion.db.models import Event
+                evt_svc = db.execute(
+                    select(Event.service).where(Event.event_id.like(f"%{incident_key}%")).limit(1)
+                ).scalar_one_or_none()
+                if evt_svc and evt_svc != "unknown":
+                    target_svc = evt_svc
+            except Exception as exc:
+                logger.debug("Could not resolve service from incident events: %s", exc)
+
+    if not target_svc or target_svc in ("unknown", "vermithor-backend"):
         target_svc = infer_service_from_incident(title, description)
 
     lookback = state.get("lookback_minutes", 30)

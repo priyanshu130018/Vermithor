@@ -1,0 +1,35 @@
+id: PILOT-CASE-02
+scenario_name: identity_auth_okta_idp_cert_expiration
+target_service: identity-auth
+environment: production
+severity: CRITICAL
+agent_input:
+  incident_key: INC-PILOT-202
+  service: identity-auth
+  lookback_minutes: 30
+  metrics:
+  - metric_name: auth_failure_ratio
+    service: identity-auth
+    value: 0.88
+    timestamp: '2026-10-20T11:10:00Z'
+  - metric_name: jwt_validation_error_rate
+    service: identity-auth
+    value: 0.94
+    timestamp: '2026-10-20T11:10:00Z'
+  - metric_name: http_401_error_rate_ratio
+    service: identity-auth
+    value: 0.85
+    timestamp: '2026-10-20T11:15:00Z'
+  logs:
+  - service: identity-auth
+    level: WARN
+    message: 'JWKSCache: Stale signing keys encountered during token signature verification'
+    timestamp: '2026-10-20T11:11:00Z'
+  - service: identity-auth
+    level: ERROR
+    message: 'CertificateExpiredException: Okta IdP certificate thumbprint 7B:3A expired
+      at 2026-10-20T00:00:00Z'
+    timestamp: '2026-10-20T11:12:00Z'
+  deployments: []
+  dependencies:
+  - okta-idp

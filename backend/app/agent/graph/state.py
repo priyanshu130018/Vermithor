@@ -71,6 +71,8 @@ class InvestigationState(TypedDict, total=False):
     is_fallback: bool
     status: str
     errors: List[str]
+    model_call_records: List[Dict[str, Any]]
+    review_assessment: Optional[Dict[str, Any]]
 
     # Final Structured Report Output
     final_report: Optional[Dict[str, Any]]

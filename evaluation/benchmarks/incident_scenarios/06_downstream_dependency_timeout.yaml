@@ -1,0 +1,52 @@
+id: "SCN-06-DOWNSTREAM-TIMEOUT"
+scenario_name: "external_payment_gateway_timeout"
+target_service: "checkout-api"
+environment: "production"
+severity: "HIGH"
+
+# Ground-truth labels
+ground_truth:
+  injected_cause: "External banking partner API latency degradation exceeding 15000ms causing downstream socket timeouts"
+  root_cause_category: "dependency_failure"
+  expected_root_cause_keywords: ["timeout", "downstream", "gateway", "partner", "external", "dependency", "socket"]
+  expected_services: ["checkout-api", "partner-bank-gateway"]
+  expected_evidence_ids: ["EV-METRIC-TIMEOUT-504", "EV-LOG-SOCKET-TIMEOUT"]
+  plausible_alternatives:
+    - "VPC Egress NAT Gateway bandwidth saturation"
+    - "Local TLS renegotiation timeout on outbound requests"
+  abstain_required: false
+  abstain_conditions:
+    - "If partner gateway latency is under 500ms, do not diagnose downstream dependency timeout"
+  repair_appropriate: false # External partner outage; operational escalation required, not internal code patch
+  repair_expected_defect: null
+
+# Information presented to the agent
+agent_input:
+  incident_key: "INC-2026-9006"
+  service: "checkout-api"
+  lookback_minutes: 60
+  metrics:
+    - metric_name: "downstream_request_duration_ms"
+      service: "checkout-api"
+      value: 15400.0
+      timestamp: "2026-10-19T13:00:00Z"
+    - metric_name: "http_504_gateway_timeout_rate_ratio"
+      service: "checkout-api"
+      value: 0.42
+      timestamp: "2026-10-19T13:05:00Z"
+    - metric_name: "active_http_client_connections"
+      service: "checkout-api"
+      value: 500.0
+      timestamp: "2026-10-19T13:05:00Z"
+  logs:
+    - service: "checkout-api"
+      level: "ERROR"
+      message: "SocketTimeoutException: Read timed out after 15000ms calling https://api.partnerbank.com/v2/settle"
+      timestamp: "2026-10-19T13:02:15Z"
+    - service: "checkout-api"
+      level: "WARN"
+      message: "HTTPClientPool: Maximum connections reached (500/500). Requests queued waiting for downstream partner response."
+      timestamp: "2026-10-19T13:03:00Z"
+  deployments: []
+  dependencies:
+    - "partner-bank-gateway"

@@ -1,0 +1,27 @@
+id: BLIND-CASE-17
+scenario_name: Traffic Spike Lag Backlog With Zero Message Deserialization Errors
+root_cause_family: NORMAL_KAFKA_LAG
+target_service: event-notifier
+severity: MEDIUM
+environment: production
+is_negative_control: true
+agent_input:
+  incident_key: INC-BLIND-517
+  service: event-notifier
+  lookback_minutes: 15
+  metrics:
+  - metric_name: kafka_consumer_lag_records
+    value: 14200.0
+    service: event-notifier
+    timestamp: '2026-10-21T02:35:00Z'
+  logs:
+  - level: INFO
+    message: Ingestion backlog increasing due to marketing campaign push; processing
+      1200 msg/sec
+    service: event-notifier
+    timestamp: '2026-10-21T02:35:30Z'
+  - level: INFO
+    message: Offset commit succeeded for all active consumer partitions; zero errors
+    service: event-notifier
+    timestamp: '2026-10-21T02:36:00Z'
+  deployments: []

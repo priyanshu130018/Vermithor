@@ -1,0 +1,15 @@
+incident_key: INC-HOLDOUT-116
+service: recommendation-engine
+lookback_minutes: 60
+environment: production
+severity: LOW
+metrics: []
+logs:
+- service: recommendation-engine
+  level: WARN
+  message: Client closed HTTP connection prematurely before response payload fully
+    streamed
+  timestamp: '2026-10-20T16:00:00Z'
+deployments: []
+dependencies:
+- user-graph-db

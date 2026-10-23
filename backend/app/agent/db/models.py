@@ -28,6 +28,13 @@ class Investigation(Base):
         index=True,
         nullable=False,
     )
+    org_id: Mapped[str] = mapped_column(
+        String(64),
+        index=True,
+        nullable=False,
+        default="vermithor",
+        server_default="vermithor",
+    )
     incident_key: Mapped[str] = mapped_column(
         String(64),
         index=True,
@@ -117,6 +124,13 @@ class Repair(Base):
         unique=True,
         index=True,
         nullable=False,
+    )
+    org_id: Mapped[str] = mapped_column(
+        String(64),
+        index=True,
+        nullable=False,
+        default="vermithor",
+        server_default="vermithor",
     )
     investigation_key: Mapped[str] = mapped_column(
         String(64),
@@ -254,5 +268,335 @@ class Repair(Base):
         DateTime(timezone=True),
         server_default=func.now(),
         onupdate=lambda: datetime.now(timezone.utc),
+        nullable=False,
+    )
+
+
+class InvestigationFeedback(Base):
+    """Database model for immutable operator verification feedback on incident investigations."""
+
+    __tablename__ = "investigation_feedback"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True).with_variant(PG_UUID(as_uuid=True), "postgresql"),
+        primary_key=True,
+        default=uuid.uuid4,
+    )
+    investigation_key: Mapped[str] = mapped_column(
+        String(64),
+        index=True,
+        nullable=False,
+    )
+    incident_key: Mapped[str] = mapped_column(
+        String(64),
+        index=True,
+        nullable=False,
+    )
+    org_id: Mapped[str] = mapped_column(
+        String(64),
+        index=True,
+        nullable=False,
+    )
+    feedback_status: Mapped[str] = mapped_column(
+        String(32),  # "CONFIRMED", "REJECTED", "UNRESOLVED"
+        nullable=False,
+    )
+    operator_id: Mapped[str] = mapped_column(
+        String(128),
+        nullable=False,
+    )
+    confirmed_root_cause: Mapped[Optional[str]] = mapped_column(
+        String(255),
+        nullable=True,
+    )
+    evidence_reference: Mapped[Optional[str]] = mapped_column(
+        Text,
+        nullable=True,
+    )
+    explanation: Mapped[Optional[str]] = mapped_column(
+        Text,
+        nullable=True,
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        nullable=False,
+    )
+
+
+class RepositoryConnection(Base):
+    """Database model for connected Git repositories in read-only pilot mode."""
+
+    __tablename__ = "repository_connections"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True).with_variant(PG_UUID(as_uuid=True), "postgresql"),
+        primary_key=True,
+        default=uuid.uuid4,
+    )
+    org_id: Mapped[str] = mapped_column(
+        String(64),
+        index=True,
+        nullable=False,
+    )
+    repo_identifier: Mapped[str] = mapped_column(
+        String(255),
+        nullable=False,
+    )
+    installation_id: Mapped[Optional[str]] = mapped_column(
+        String(64),
+        nullable=True,
+    )
+    read_only: Mapped[bool] = mapped_column(
+        Boolean,
+        default=True,
+        nullable=False,
+    )
+    status: Mapped[str] = mapped_column(
+        String(32),
+        default="CONNECTED",
+        index=True,
+        nullable=False,
+    )
+    connected_by: Mapped[Optional[str]] = mapped_column(
+        String(128),
+        nullable=True,
+    )
+    connected_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        nullable=False,
+    )
+    revoked_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        nullable=False,
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        onupdate=lambda: datetime.now(timezone.utc),
+        nullable=False,
+    )
+
+
+class TelemetryIntegration(Base):
+    """Database model for organization telemetry providers with explicit verification states."""
+
+    __tablename__ = "telemetry_integrations"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True).with_variant(PG_UUID(as_uuid=True), "postgresql"),
+        primary_key=True,
+        default=uuid.uuid4,
+    )
+    org_id: Mapped[str] = mapped_column(
+        String(64),
+        index=True,
+        nullable=False,
+    )
+    integration_type: Mapped[str] = mapped_column(
+        String(32),
+        index=True,
+        nullable=False,
+    )  # "PROMETHEUS", "JAEGER", "OPENTELEMETRY", "REPLAY_MODE"
+    name: Mapped[str] = mapped_column(
+        String(128),
+        nullable=False,
+    )
+    endpoint_url: Mapped[Optional[str]] = mapped_column(
+        String(255),
+        nullable=True,
+    )
+    status: Mapped[str] = mapped_column(
+        String(32),
+        default="NOT_CONFIGURED",
+        index=True,
+        nullable=False,
+    )  # "NOT_CONFIGURED", "CONFIGURED_UNVERIFIED", "VERIFIED", "DEGRADED", "REVOKED"
+    is_verified: Mapped[bool] = mapped_column(
+        Boolean,
+        default=False,
+        nullable=False,
+    )
+    verified_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
+    last_checked_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
+    last_error: Mapped[Optional[str]] = mapped_column(
+        Text,
+        nullable=True,
+    )
+    approved_by: Mapped[Optional[str]] = mapped_column(
+        String(128),
+        nullable=True,
+    )
+    approved_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
+    auth_type: Mapped[str] = mapped_column(
+        String(32),
+        default="NONE",
+        nullable=False,
+    )  # "NONE", "BEARER", "BASIC", "API_KEY"
+    auth_credentials_masked: Mapped[Optional[str]] = mapped_column(
+        String(128),
+        nullable=True,
+    )
+    telemetry_provenance: Mapped[str] = mapped_column(
+        String(64),
+        default="NOT_VERIFIED",
+        nullable=False,
+    )  # "LIVE_CUSTOMER_TELEMETRY", "SANITIZED_REPLAY_FIXTURE", "MOCKED_FIXTURE", "NOT_VERIFIED"
+    config_metadata: Mapped[Optional[Dict[str, Any]]] = mapped_column(
+        JSON().with_variant(JSONB, "postgresql"),
+        nullable=True,
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        nullable=False,
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        onupdate=lambda: datetime.now(timezone.utc),
+        nullable=False,
+    )
+
+
+class PilotGovernancePolicy(Base):
+    """Database model for organization pilot governance, data handling, and collection kill-switch."""
+
+    __tablename__ = "pilot_governance_policies"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True).with_variant(PG_UUID(as_uuid=True), "postgresql"),
+        primary_key=True,
+        default=uuid.uuid4,
+    )
+    org_id: Mapped[str] = mapped_column(
+        String(64),
+        unique=True,
+        index=True,
+        nullable=False,
+    )
+    onboarding_completed: Mapped[bool] = mapped_column(
+        Boolean,
+        default=False,
+        nullable=False,
+    )
+    current_onboarding_step: Mapped[int] = mapped_column(
+        Integer,
+        default=1,
+        nullable=False,
+    )
+    completed_steps_json: Mapped[Optional[List[str]]] = mapped_column(
+        JSON().with_variant(JSONB, "postgresql"),
+        nullable=True,
+    )
+    collection_enabled: Mapped[bool] = mapped_column(
+        Boolean,
+        default=True,
+        nullable=False,
+    )
+    investigations_paused: Mapped[bool] = mapped_column(
+        Boolean,
+        default=False,
+        nullable=False,
+    )
+    allow_external_llm: Mapped[bool] = mapped_column(
+        Boolean,
+        default=False,
+        nullable=False,
+    )
+    redact_sensitive_fields: Mapped[bool] = mapped_column(
+        Boolean,
+        default=True,
+        nullable=False,
+    )
+    retention_days: Mapped[int] = mapped_column(
+        Integer,
+        default=30,
+        nullable=False,
+    )
+    acknowledged_read_only: Mapped[bool] = mapped_column(
+        Boolean,
+        default=False,
+        nullable=False,
+    )
+    acknowledged_by: Mapped[Optional[str]] = mapped_column(
+        String(128),
+        nullable=True,
+    )
+    acknowledged_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        nullable=False,
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        onupdate=lambda: datetime.now(timezone.utc),
+        nullable=False,
+    )
+
+
+class PilotAuditLog(Base):
+    """Immutable audit trail for all pilot administrative, integration, verification, and data purge actions."""
+
+    __tablename__ = "pilot_audit_logs"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True).with_variant(PG_UUID(as_uuid=True), "postgresql"),
+        primary_key=True,
+        default=uuid.uuid4,
+    )
+    org_id: Mapped[str] = mapped_column(
+        String(64),
+        index=True,
+        nullable=False,
+    )
+    actor_sub: Mapped[str] = mapped_column(
+        String(128),
+        nullable=False,
+    )
+    actor_role: Mapped[Optional[str]] = mapped_column(
+        String(64),
+        nullable=True,
+    )
+    action: Mapped[str] = mapped_column(
+        String(64),
+        index=True,
+        nullable=False,
+    )
+    resource_type: Mapped[str] = mapped_column(
+        String(64),
+        nullable=False,
+    )
+    resource_id: Mapped[Optional[str]] = mapped_column(
+        String(128),
+        nullable=True,
+    )
+    details_json: Mapped[Optional[Dict[str, Any]]] = mapped_column(
+        JSON().with_variant(JSONB, "postgresql"),
+        nullable=True,
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
         nullable=False,
     )

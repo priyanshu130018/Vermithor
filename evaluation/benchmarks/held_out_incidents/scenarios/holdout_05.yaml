@@ -1,0 +1,31 @@
+incident_key: INC-HOLDOUT-105
+service: telemetry-aggregator
+lookback_minutes: 60
+environment: production
+severity: CRITICAL
+metrics:
+- metric_name: jvm_heap_utilization_ratio
+  service: telemetry-aggregator
+  value: 0.97
+  timestamp: '2026-10-20T10:30:00Z'
+- metric_name: jvm_gc_pause_duration_ms
+  service: telemetry-aggregator
+  value: 3200.0
+  timestamp: '2026-10-20T10:30:00Z'
+- metric_name: http_5xx_error_rate_ratio
+  service: telemetry-aggregator
+  value: 0.52
+  timestamp: '2026-10-20T10:35:00Z'
+logs:
+- service: telemetry-aggregator
+  level: ERROR
+  message: 'java.lang.OutOfMemoryError: Java heap space at java.util.concurrent.ConcurrentLinkedQueue.offer()'
+  timestamp: '2026-10-20T10:28:40Z'
+- service: telemetry-aggregator
+  level: WARN
+  message: 'GC overhead limit exceeded: 98% of CPU time spent in full garbage collection
+    releasing < 2% heap'
+  timestamp: '2026-10-20T10:29:10Z'
+deployments: []
+dependencies:
+- clickhouse

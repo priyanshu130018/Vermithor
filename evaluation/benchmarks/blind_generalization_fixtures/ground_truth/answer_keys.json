@@ -1,0 +1,363 @@
+{
+  "INC-BLIND-501": {
+    "case_id": "BLIND-CASE-01",
+    "family": "DNS_AND_SERVICE_DISCOVERY",
+    "scenario_name": "CoreDNS Resolver UDP Packet Drop Causing Cache Discovery Failure",
+    "target_service": "cart-service",
+    "is_negative_control": false,
+    "expected_root_cause_keywords": [
+      "dns",
+      "coredns",
+      "resolver"
+    ],
+    "prohibited_root_cause_keywords": []
+  },
+  "INC-BLIND-502": {
+    "case_id": "BLIND-CASE-02",
+    "family": "DNS_AND_SERVICE_DISCOVERY",
+    "scenario_name": "Stripe Gateway 504 with Healthy 1.4ms DNS Lookup",
+    "target_service": "checkout-gateway",
+    "is_negative_control": true,
+    "expected_root_cause_keywords": [
+      "downstream",
+      "external",
+      "partner",
+      "gateway timeout"
+    ],
+    "prohibited_root_cause_keywords": [
+      "dns",
+      "coredns",
+      "resolver"
+    ]
+  },
+  "INC-BLIND-503": {
+    "case_id": "BLIND-CASE-03",
+    "family": "DNS_AND_SERVICE_DISCOVERY",
+    "scenario_name": "Upstream CoreDNS SERVFAIL Causing Cascading Downstream Gateway Timeout",
+    "target_service": "inventory-api",
+    "is_negative_control": false,
+    "expected_root_cause_keywords": [
+      "dns",
+      "coredns",
+      "resolver",
+      "servfail"
+    ],
+    "prohibited_root_cause_keywords": []
+  },
+  "INC-BLIND-504": {
+    "case_id": "BLIND-CASE-04",
+    "family": "DATABASE_CONNECTION_POOL",
+    "scenario_name": "HikariCP Active Connection Pool Saturation Under Traffic Spike",
+    "target_service": "payment-processor",
+    "is_negative_control": false,
+    "expected_root_cause_keywords": [
+      "database",
+      "pool",
+      "hikaripool",
+      "connection pool"
+    ],
+    "prohibited_root_cause_keywords": []
+  },
+  "INC-BLIND-505": {
+    "case_id": "BLIND-CASE-05",
+    "family": "DATABASE_CONNECTION_POOL",
+    "scenario_name": "HttpClientPool Exhaustion with Database Pool Fully Healthy",
+    "target_service": "shipping-tracker",
+    "is_negative_control": true,
+    "expected_root_cause_keywords": [
+      "downstream",
+      "external",
+      "partner",
+      "httpclient"
+    ],
+    "prohibited_root_cause_keywords": [
+      "database",
+      "db",
+      "postgres",
+      "sql"
+    ]
+  },
+  "INC-BLIND-506": {
+    "case_id": "BLIND-CASE-06",
+    "family": "DATABASE_CONNECTION_POOL",
+    "scenario_name": "Cascading API 500 Caused by Database Pool Leak",
+    "target_service": "order-service",
+    "is_negative_control": false,
+    "expected_root_cause_keywords": [
+      "database",
+      "pool",
+      "connection pool"
+    ],
+    "prohibited_root_cause_keywords": []
+  },
+  "INC-BLIND-507": {
+    "case_id": "BLIND-CASE-07",
+    "family": "DATABASE_DEADLOCKS_OR_LOCK_CONTENTION",
+    "scenario_name": "PostgreSQL Concurrent Transaction Deadlock on Ledger Accounts",
+    "target_service": "ledger-service",
+    "is_negative_control": false,
+    "expected_root_cause_keywords": [
+      "deadlock",
+      "lock",
+      "database"
+    ],
+    "prohibited_root_cause_keywords": []
+  },
+  "INC-BLIND-508": {
+    "case_id": "BLIND-CASE-08",
+    "family": "DATABASE_DEADLOCKS_OR_LOCK_CONTENTION",
+    "scenario_name": "Long-Running Analytical Aggregate Query Without Deadlocks",
+    "target_service": "analytics-service",
+    "is_negative_control": true,
+    "expected_root_cause_keywords": [
+      "database",
+      "degradation",
+      "query"
+    ],
+    "prohibited_root_cause_keywords": [
+      "deadlock",
+      "lock contention",
+      "poison"
+    ]
+  },
+  "INC-BLIND-509": {
+    "case_id": "BLIND-CASE-09",
+    "family": "MEMORY_EXHAUSTION_AND_OOM",
+    "scenario_name": "JVM Metaspace Leak Causing Linux Kernel OOM Kill",
+    "target_service": "catalog-search",
+    "is_negative_control": false,
+    "expected_root_cause_keywords": [
+      "memory",
+      "oom",
+      "metaspace"
+    ],
+    "prohibited_root_cause_keywords": []
+  },
+  "INC-BLIND-510": {
+    "case_id": "BLIND-CASE-10",
+    "family": "MEMORY_EXHAUSTION_AND_OOM",
+    "scenario_name": "Java Heap at 78% During Scheduled Compacting GC Cycle",
+    "target_service": "data-sync-worker",
+    "is_negative_control": true,
+    "expected_root_cause_keywords": [
+      "insufficient",
+      "inconclusive",
+      "nominal"
+    ],
+    "prohibited_root_cause_keywords": [
+      "oom",
+      "out of memory",
+      "leak"
+    ]
+  },
+  "INC-BLIND-511": {
+    "case_id": "BLIND-CASE-11",
+    "family": "MEMORY_EXHAUSTION_AND_OOM",
+    "scenario_name": "HTTP 502 Bad Gateway Caused by Upstream Kernel OOM Kill",
+    "target_service": "auth-service",
+    "is_negative_control": false,
+    "expected_root_cause_keywords": [
+      "memory",
+      "oom"
+    ],
+    "prohibited_root_cause_keywords": []
+  },
+  "INC-BLIND-512": {
+    "case_id": "BLIND-CASE-12",
+    "family": "CPU_SATURATION_AND_THREAD_STARVATION",
+    "scenario_name": "Linux CFS Quota Throttling Causing Thread Starvation",
+    "target_service": "pdf-generator",
+    "is_negative_control": false,
+    "expected_root_cause_keywords": [
+      "cpu",
+      "resource saturation",
+      "thread",
+      "throttling"
+    ],
+    "prohibited_root_cause_keywords": []
+  },
+  "INC-BLIND-513": {
+    "case_id": "BLIND-CASE-13",
+    "family": "CPU_SATURATION_AND_THREAD_STARVATION",
+    "scenario_name": "Scheduled Batch Job Running at 92% CPU Without Dropped Tasks",
+    "target_service": "nightly-batch-runner",
+    "is_negative_control": true,
+    "expected_root_cause_keywords": [
+      "insufficient",
+      "inconclusive",
+      "nominal"
+    ],
+    "prohibited_root_cause_keywords": [
+      "crash",
+      "poison",
+      "deadlock"
+    ]
+  },
+  "INC-BLIND-514": {
+    "case_id": "BLIND-CASE-14",
+    "family": "KAFKA_POISON_PILL",
+    "scenario_name": "Corrupt Protobuf Binary Poison Pill Stalling Kafka Consumer",
+    "target_service": "analytics-stream",
+    "is_negative_control": false,
+    "expected_root_cause_keywords": [
+      "poison pill",
+      "kafka",
+      "deserialization"
+    ],
+    "prohibited_root_cause_keywords": []
+  },
+  "INC-BLIND-515": {
+    "case_id": "BLIND-CASE-15",
+    "family": "KAFKA_POISON_PILL",
+    "scenario_name": "Disk Partition ENOSPC on Broker with Partition Keyword in Path",
+    "target_service": "kafka-broker-node-3",
+    "is_negative_control": true,
+    "expected_root_cause_keywords": [
+      "disk space",
+      "disk",
+      "storage"
+    ],
+    "prohibited_root_cause_keywords": [
+      "poison pill",
+      "deserialization"
+    ]
+  },
+  "INC-BLIND-516": {
+    "case_id": "BLIND-CASE-16",
+    "family": "NORMAL_KAFKA_LAG",
+    "scenario_name": "Consumer Group Rebalance Inducing Transient Partition Lag",
+    "target_service": "billing-stream-worker",
+    "is_negative_control": false,
+    "expected_root_cause_keywords": [
+      "kafka consumer lag backlog",
+      "lag backlog",
+      "queue processing"
+    ],
+    "prohibited_root_cause_keywords": []
+  },
+  "INC-BLIND-517": {
+    "case_id": "BLIND-CASE-17",
+    "family": "NORMAL_KAFKA_LAG",
+    "scenario_name": "Traffic Spike Lag Backlog With Zero Message Deserialization Errors",
+    "target_service": "event-notifier",
+    "is_negative_control": true,
+    "expected_root_cause_keywords": [
+      "kafka consumer lag backlog",
+      "queue processing"
+    ],
+    "prohibited_root_cause_keywords": [
+      "poison pill",
+      "poison_pill",
+      "corrupt message",
+      "deserialization"
+    ]
+  },
+  "INC-BLIND-518": {
+    "case_id": "BLIND-CASE-18",
+    "family": "DEPLOYMENT_OR_CONFIG_REGRESSION",
+    "scenario_name": "Recent Ingress Deployment with Corrupted Dynamic Routing Table",
+    "target_service": "api-router",
+    "is_negative_control": false,
+    "expected_root_cause_keywords": [
+      "deployment",
+      "configuration",
+      "regression"
+    ],
+    "prohibited_root_cause_keywords": []
+  },
+  "INC-BLIND-519": {
+    "case_id": "BLIND-CASE-19",
+    "family": "DEPLOYMENT_OR_CONFIG_REGRESSION",
+    "scenario_name": "Stale Deployment 6 Hours Ago with Active Redis Maxmemory Eviction",
+    "target_service": "session-cache",
+    "is_negative_control": true,
+    "expected_root_cause_keywords": [
+      "redis",
+      "cache"
+    ],
+    "prohibited_root_cause_keywords": [
+      "recent deployment",
+      "v2.1.0"
+    ]
+  },
+  "INC-BLIND-520": {
+    "case_id": "BLIND-CASE-20",
+    "family": "DEPLOYMENT_OR_CONFIG_REGRESSION",
+    "scenario_name": "Environment Variable Misconfiguration Pointing to Wrong Port",
+    "target_service": "vault-agent",
+    "is_negative_control": false,
+    "expected_root_cause_keywords": [
+      "configuration regression",
+      "deployment or configuration",
+      "configuration"
+    ],
+    "prohibited_root_cause_keywords": []
+  },
+  "INC-BLIND-521": {
+    "case_id": "BLIND-CASE-21",
+    "family": "TLS_CERTIFICATE_OR_CONNECTION",
+    "scenario_name": "Expired Wildcard TLS Certificate Causing SSL Handshake Failures",
+    "target_service": "auth-gateway",
+    "is_negative_control": false,
+    "expected_root_cause_keywords": [
+      "tls",
+      "certificate",
+      "ssl",
+      "handshake"
+    ],
+    "prohibited_root_cause_keywords": []
+  },
+  "INC-BLIND-522": {
+    "case_id": "BLIND-CASE-22",
+    "family": "TLS_CERTIFICATE_OR_CONNECTION",
+    "scenario_name": "Plain HTTP Connection Timeout with Completely Valid TLS Certificate",
+    "target_service": "internal-scraper",
+    "is_negative_control": true,
+    "expected_root_cause_keywords": [
+      "downstream",
+      "network",
+      "timeout",
+      "service degradation"
+    ],
+    "prohibited_root_cause_keywords": [
+      "tls",
+      "certificate expired",
+      "certificate failure"
+    ]
+  },
+  "INC-BLIND-523": {
+    "case_id": "BLIND-CASE-23",
+    "family": "BENIGN_TELEMETRY_AND_ABSTENTION",
+    "scenario_name": "Isolated Transient Retry with Zero Anomalies and Healthy Telemetry",
+    "target_service": "recommendation-worker",
+    "is_negative_control": true,
+    "expected_root_cause_keywords": [
+      "insufficient",
+      "inconclusive",
+      "nominal"
+    ],
+    "prohibited_root_cause_keywords": [
+      "database",
+      "kafka",
+      "dns",
+      "oom",
+      "deadlock"
+    ]
+  },
+  "INC-BLIND-524": {
+    "case_id": "BLIND-CASE-24",
+    "family": "BENIGN_TELEMETRY_AND_ABSTENTION",
+    "scenario_name": "Multiple Weak Competing Warnings Without Decisive Root Cause",
+    "target_service": "user-profile-api",
+    "is_negative_control": true,
+    "expected_root_cause_keywords": [
+      "inconclusive",
+      "insufficient"
+    ],
+    "prohibited_root_cause_keywords": [
+      "redis cache failure",
+      "database connection pool",
+      "dns resolution"
+    ]
+  }
+}

@@ -1,0 +1,205 @@
+{
+  "benchmark_name": "Prompt 20 Independent Blind Evaluation Benchmark",
+  "dataset_version": "2.0.0",
+  "creation_timestamp": "2026-10-20T19:38:10.934223+00:00",
+  "total_cases": 24,
+  "total_families": 10,
+  "negative_controls_count": 11,
+  "positive_cases_count": 13,
+  "answer_keys_file": "ground_truth/answer_keys.json",
+  "answer_keys_sha256": "6b01fdcf2c459e44477a18d7d1d8054fd738ee96202a3c5552072f8779fedb3e",
+  "scenarios": [
+    {
+      "case_id": "BLIND-CASE-01",
+      "incident_key": "INC-BLIND-501",
+      "family": "DNS_AND_SERVICE_DISCOVERY",
+      "filename": "blind_case_01.yaml",
+      "is_negative_control": false,
+      "sha256": "5c73ee063287f7844c15b84d6aa07de423090778f17959d46fc883528187bee4"
+    },
+    {
+      "case_id": "BLIND-CASE-02",
+      "incident_key": "INC-BLIND-502",
+      "family": "DNS_AND_SERVICE_DISCOVERY",
+      "filename": "blind_case_02.yaml",
+      "is_negative_control": true,
+      "sha256": "9abf2b67fe9519004a51ec37aba56a54d9423dbd1b850f1c2bfca4f4ea273867"
+    },
+    {
+      "case_id": "BLIND-CASE-03",
+      "incident_key": "INC-BLIND-503",
+      "family": "DNS_AND_SERVICE_DISCOVERY",
+      "filename": "blind_case_03.yaml",
+      "is_negative_control": false,
+      "sha256": "4db75acb9f4c75fb69ec8f94a791a79a918f9374ff664cc352a5ee140665deee"
+    },
+    {
+      "case_id": "BLIND-CASE-04",
+      "incident_key": "INC-BLIND-504",
+      "family": "DATABASE_CONNECTION_POOL",
+      "filename": "blind_case_04.yaml",
+      "is_negative_control": false,
+      "sha256": "7ede59ef2d6a83f6aabf016833a1a2f7d645ad63ac18b3831267493c72a26933"
+    },
+    {
+      "case_id": "BLIND-CASE-05",
+      "incident_key": "INC-BLIND-505",
+      "family": "DATABASE_CONNECTION_POOL",
+      "filename": "blind_case_05.yaml",
+      "is_negative_control": true,
+      "sha256": "7cd5790cf2b605d72c1f23b3b655d52052acbc75bb25f63fff6bab0579578d72"
+    },
+    {
+      "case_id": "BLIND-CASE-06",
+      "incident_key": "INC-BLIND-506",
+      "family": "DATABASE_CONNECTION_POOL",
+      "filename": "blind_case_06.yaml",
+      "is_negative_control": false,
+      "sha256": "cd6981eaf8d108e310229b8d2ce9887c071048c496bc6c4a08ea187f2ea10715"
+    },
+    {
+      "case_id": "BLIND-CASE-07",
+      "incident_key": "INC-BLIND-507",
+      "family": "DATABASE_DEADLOCKS_OR_LOCK_CONTENTION",
+      "filename": "blind_case_07.yaml",
+      "is_negative_control": false,
+      "sha256": "ec09d801f6e0882d462312afb01eecbc0f86f0ae946106ad6fdb5ea87b6d17d4"
+    },
+    {
+      "case_id": "BLIND-CASE-08",
+      "incident_key": "INC-BLIND-508",
+      "family": "DATABASE_DEADLOCKS_OR_LOCK_CONTENTION",
+      "filename": "blind_case_08.yaml",
+      "is_negative_control": true,
+      "sha256": "c27f39b2aa0d711c59722d376bd723511cdd3fb5fbb7bae4783a092809abad74"
+    },
+    {
+      "case_id": "BLIND-CASE-09",
+      "incident_key": "INC-BLIND-509",
+      "family": "MEMORY_EXHAUSTION_AND_OOM",
+      "filename": "blind_case_09.yaml",
+      "is_negative_control": false,
+      "sha256": "88a440edb150dc32705329e007a11218226dfb5651ed00fece28ca0fc0aa771d"
+    },
+    {
+      "case_id": "BLIND-CASE-10",
+      "incident_key": "INC-BLIND-510",
+      "family": "MEMORY_EXHAUSTION_AND_OOM",
+      "filename": "blind_case_10.yaml",
+      "is_negative_control": true,
+      "sha256": "572f2829921cc20d9dae66491f23de3437c351157c95be8442041320509cbb08"
+    },
+    {
+      "case_id": "BLIND-CASE-11",
+      "incident_key": "INC-BLIND-511",
+      "family": "MEMORY_EXHAUSTION_AND_OOM",
+      "filename": "blind_case_11.yaml",
+      "is_negative_control": false,
+      "sha256": "79730420e2bfe8707cd3a8d56c53ee7e6bea58f7b11eaa2389976bf088c2f51e"
+    },
+    {
+      "case_id": "BLIND-CASE-12",
+      "incident_key": "INC-BLIND-512",
+      "family": "CPU_SATURATION_AND_THREAD_STARVATION",
+      "filename": "blind_case_12.yaml",
+      "is_negative_control": false,
+      "sha256": "5396a1347af7a0e39ec5e19ce85736e0add0cf88662ba17bdb5c32c7afdfc756"
+    },
+    {
+      "case_id": "BLIND-CASE-13",
+      "incident_key": "INC-BLIND-513",
+      "family": "CPU_SATURATION_AND_THREAD_STARVATION",
+      "filename": "blind_case_13.yaml",
+      "is_negative_control": true,
+      "sha256": "ca1114e9d672512e4d8a7707eb55e997b655b7d4fc83e18f5d3a1a5e3346b82e"
+    },
+    {
+      "case_id": "BLIND-CASE-14",
+      "incident_key": "INC-BLIND-514",
+      "family": "KAFKA_POISON_PILL",
+      "filename": "blind_case_14.yaml",
+      "is_negative_control": false,
+      "sha256": "85cbc8a272d30ca412f1dfaddb12170d06d52fad428f044888a365588f043229"
+    },
+    {
+      "case_id": "BLIND-CASE-15",
+      "incident_key": "INC-BLIND-515",
+      "family": "KAFKA_POISON_PILL",
+      "filename": "blind_case_15.yaml",
+      "is_negative_control": true,
+      "sha256": "f725ce8e7f5b896e225debb3086c2d031fbc4d2bf0475d6b219b40ed34e2bf36"
+    },
+    {
+      "case_id": "BLIND-CASE-16",
+      "incident_key": "INC-BLIND-516",
+      "family": "NORMAL_KAFKA_LAG",
+      "filename": "blind_case_16.yaml",
+      "is_negative_control": false,
+      "sha256": "7f482f4933b215ebb020d9b8014130d11d6023ed14a1a1bb323cef209e7f7f0f"
+    },
+    {
+      "case_id": "BLIND-CASE-17",
+      "incident_key": "INC-BLIND-517",
+      "family": "NORMAL_KAFKA_LAG",
+      "filename": "blind_case_17.yaml",
+      "is_negative_control": true,
+      "sha256": "0f5c82bca3f1e1e5ca24b4fb7a42d626fc1b7a45e036a51e118433ed9651d062"
+    },
+    {
+      "case_id": "BLIND-CASE-18",
+      "incident_key": "INC-BLIND-518",
+      "family": "DEPLOYMENT_OR_CONFIG_REGRESSION",
+      "filename": "blind_case_18.yaml",
+      "is_negative_control": false,
+      "sha256": "d755528114d8e95af209c1cd66be5efd9cd453a2bb665adaa9b6f914cd1222dd"
+    },
+    {
+      "case_id": "BLIND-CASE-19",
+      "incident_key": "INC-BLIND-519",
+      "family": "DEPLOYMENT_OR_CONFIG_REGRESSION",
+      "filename": "blind_case_19.yaml",
+      "is_negative_control": true,
+      "sha256": "03ce227d3e2fa2466982d8a412847004be89c96efd304d6602d4b8a510472c58"
+    },
+    {
+      "case_id": "BLIND-CASE-20",
+      "incident_key": "INC-BLIND-520",
+      "family": "DEPLOYMENT_OR_CONFIG_REGRESSION",
+      "filename": "blind_case_20.yaml",
+      "is_negative_control": false,
+      "sha256": "559a92a9820238566f6782db1b8b03df8924767dac04a1febff46b79b90894a0"
+    },
+    {
+      "case_id": "BLIND-CASE-21",
+      "incident_key": "INC-BLIND-521",
+      "family": "TLS_CERTIFICATE_OR_CONNECTION",
+      "filename": "blind_case_21.yaml",
+      "is_negative_control": false,
+      "sha256": "984fce56b7eac42bd8eb03cb3e1c05a2818410095470da5391ef29109595bc40"
+    },
+    {
+      "case_id": "BLIND-CASE-22",
+      "incident_key": "INC-BLIND-522",
+      "family": "TLS_CERTIFICATE_OR_CONNECTION",
+      "filename": "blind_case_22.yaml",
+      "is_negative_control": true,
+      "sha256": "96e5303f22e565a46f8fd99006a794aa5a4df1de59eaea12a0658c1b90e3b7eb"
+    },
+    {
+      "case_id": "BLIND-CASE-23",
+      "incident_key": "INC-BLIND-523",
+      "family": "BENIGN_TELEMETRY_AND_ABSTENTION",
+      "filename": "blind_case_23.yaml",
+      "is_negative_control": true,
+      "sha256": "040b845c6ac0dd53ac3c205ad5d4cf610be000c3edbb09c297332d5f35afe5f2"
+    },
+    {
+      "case_id": "BLIND-CASE-24",
+      "incident_key": "INC-BLIND-524",
+      "family": "BENIGN_TELEMETRY_AND_ABSTENTION",
+      "filename": "blind_case_24.yaml",
+      "is_negative_control": true,
+      "sha256": "ea890dfa6bfb7cb61f17bc1471567a68fb3c29df0f921dffde165ff8a4e4bf59"
+    }
+  ]
+}

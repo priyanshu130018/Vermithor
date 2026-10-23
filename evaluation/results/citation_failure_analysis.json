@@ -1,0 +1,92 @@
+{
+  "metadata": {
+    "audit_title": "Prompt 21 Citation Failure Forensic Analysis & Provenance Repair",
+    "evaluation_date": "2026-10-21T02:11:00.000000+00:00",
+    "investigation_scope": "Audit and remediation of the 36 MISSING_OR_UNRESOLVED citations reported in Prompt 20",
+    "total_citations_analyzed": 36,
+    "remediation_status": "FULLY_REMEDIATED"
+  },
+  "root_cause_categorization_of_the_36_failures": {
+    "by_source_type": {
+      "JAEGER": {
+        "count": 34,
+        "percentage": 94.44,
+        "citation_id_prefix": "trace-*",
+        "description": "Distributed tracing span summaries synthesized from error logs or collected from Jaeger telemetry."
+      },
+      "TOPOLOGY": {
+        "count": 2,
+        "percentage": 5.56,
+        "citation_id_prefix": "topo-dep-*",
+        "description": "Architectural dependency edges derived by ServiceTopologyGraph."
+      }
+    },
+    "by_failure_mechanism": {
+      "missing_trace_registration_in_known_sets": {
+        "count": 34,
+        "mechanism": "EvidenceCitationValidator.audit_investigation populated known_telemetry_source_ids solely from raw_telemetry.get('metrics', []). Traces synthesized from logs or provided in telemetry snapshots were never added to known_telemetry_ids."
+      },
+      "inverted_fallback_guard_in_validator": {
+        "count": 34,
+        "mechanism": "EvidenceCitationValidator.validate_single_item guarded trace- prefix matching with `(not has_known_sets and ...)`. Whenever metric signals were present (making has_known_sets=True), valid Jaeger traces were rejected as MISSING_OR_UNRESOLVED."
+      },
+      "topology_prefix_omission_in_derived_analysis": {
+        "count": 2,
+        "mechanism": "EvidenceCitationValidator.validate_single_item checked is_derived_analysis for 'anomaly-', 'corr-', 'rca-', but omitted 'topo-' and source_type == 'TOPOLOGY', rejecting architectural dependency citations."
+      },
+      "silent_import_failure_in_db_audit": {
+        "count": 36,
+        "mechanism": "EvidenceCitationValidator.audit_investigation attempted to import `from backend.app.agent.db.models import Event`. The Event model resides in `backend.app.ingestion.db.models`. The resulting ImportError was caught in a broad try/except block, silently preventing database events from being used for citation verification."
+      }
+    }
+  },
+  "item_level_audit_of_the_36_unresolved_citations": [
+    {"index": 1, "case_id": "BLIND-CASE-01", "evidence_id": "EV-TRACE-3", "source_type": "JAEGER", "source_id": "trace-cache-se-0000", "cause": "Trace ID not registered in known_telemetry_ids; blocked by inverted has_known_sets guard."},
+    {"index": 2, "case_id": "BLIND-CASE-01", "evidence_id": "EV-TRACE-4", "source_type": "JAEGER", "source_id": "trace-cache-se-0001", "cause": "Trace ID not registered in known_telemetry_ids; blocked by inverted has_known_sets guard."},
+    {"index": 3, "case_id": "BLIND-CASE-01", "evidence_id": "EV-TOPO-5", "source_type": "TOPOLOGY", "source_id": "topo-dep-redis", "cause": "'topo-' prefix omitted from is_derived_analysis set."},
+    {"index": 4, "case_id": "BLIND-CASE-02", "evidence_id": "EV-TRACE-3", "source_type": "JAEGER", "source_id": "trace-vermitho-0001", "cause": "Trace ID not registered in known_telemetry_ids; blocked by inverted has_known_sets guard."},
+    {"index": 5, "case_id": "BLIND-CASE-03", "evidence_id": "EV-TRACE-3", "source_type": "JAEGER", "source_id": "trace-vermitho-0000", "cause": "Trace ID not registered in known_telemetry_ids; blocked by inverted has_known_sets guard."},
+    {"index": 6, "case_id": "BLIND-CASE-03", "evidence_id": "EV-TRACE-4", "source_type": "JAEGER", "source_id": "trace-vermitho-0001", "cause": "Trace ID not registered in known_telemetry_ids; blocked by inverted has_known_sets guard."},
+    {"index": 7, "case_id": "BLIND-CASE-04", "evidence_id": "EV-TRACE-3", "source_type": "JAEGER", "source_id": "trace-vermitho-0000", "cause": "Trace ID not registered in known_telemetry_ids; blocked by inverted has_known_sets guard."},
+    {"index": 8, "case_id": "BLIND-CASE-04", "evidence_id": "EV-TRACE-4", "source_type": "JAEGER", "source_id": "trace-vermitho-0001", "cause": "Trace ID not registered in known_telemetry_ids; blocked by inverted has_known_sets guard."},
+    {"index": 9, "case_id": "BLIND-CASE-05", "evidence_id": "EV-TRACE-3", "source_type": "JAEGER", "source_id": "trace-postgres-0001", "cause": "Trace ID not registered in known_telemetry_ids; blocked by inverted has_known_sets guard."},
+    {"index": 10, "case_id": "BLIND-CASE-06", "evidence_id": "EV-TRACE-3", "source_type": "JAEGER", "source_id": "trace-postgres-0000", "cause": "Trace ID not registered in known_telemetry_ids; blocked by inverted has_known_sets guard."},
+    {"index": 11, "case_id": "BLIND-CASE-06", "evidence_id": "EV-TRACE-4", "source_type": "JAEGER", "source_id": "trace-postgres-0001", "cause": "Trace ID not registered in known_telemetry_ids; blocked by inverted has_known_sets guard."},
+    {"index": 12, "case_id": "BLIND-CASE-07", "evidence_id": "EV-TRACE-3", "source_type": "JAEGER", "source_id": "trace-postgres-0000", "cause": "Trace ID not registered in known_telemetry_ids; blocked by inverted has_known_sets guard."},
+    {"index": 13, "case_id": "BLIND-CASE-07", "evidence_id": "EV-TRACE-4", "source_type": "JAEGER", "source_id": "trace-postgres-0001", "cause": "Trace ID not registered in known_telemetry_ids; blocked by inverted has_known_sets guard."},
+    {"index": 14, "case_id": "BLIND-CASE-08", "evidence_id": "EV-TRACE-3", "source_type": "JAEGER", "source_id": "trace-vermitho-0001", "cause": "Trace ID not registered in known_telemetry_ids; blocked by inverted has_known_sets guard."},
+    {"index": 15, "case_id": "BLIND-CASE-09", "evidence_id": "EV-TRACE-3", "source_type": "JAEGER", "source_id": "trace-vermitho-0000", "cause": "Trace ID not registered in known_telemetry_ids; blocked by inverted has_known_sets guard."},
+    {"index": 16, "case_id": "BLIND-CASE-09", "evidence_id": "EV-TRACE-4", "source_type": "JAEGER", "source_id": "trace-vermitho-0001", "cause": "Trace ID not registered in known_telemetry_ids; blocked by inverted has_known_sets guard."},
+    {"index": 17, "case_id": "BLIND-CASE-11", "evidence_id": "EV-TRACE-3", "source_type": "JAEGER", "source_id": "trace-vermitho-0000", "cause": "Trace ID not registered in known_telemetry_ids; blocked by inverted has_known_sets guard."},
+    {"index": 18, "case_id": "BLIND-CASE-11", "evidence_id": "EV-TRACE-4", "source_type": "JAEGER", "source_id": "trace-vermitho-0001", "cause": "Trace ID not registered in known_telemetry_ids; blocked by inverted has_known_sets guard."},
+    {"index": 19, "case_id": "BLIND-CASE-12", "evidence_id": "EV-TRACE-3", "source_type": "JAEGER", "source_id": "trace-vermitho-0000", "cause": "Trace ID not registered in known_telemetry_ids; blocked by inverted has_known_sets guard."},
+    {"index": 20, "case_id": "BLIND-CASE-12", "evidence_id": "EV-TRACE-4", "source_type": "JAEGER", "source_id": "trace-vermitho-0001", "cause": "Trace ID not registered in known_telemetry_ids; blocked by inverted has_known_sets guard."},
+    {"index": 21, "case_id": "BLIND-CASE-14", "evidence_id": "EV-TRACE-3", "source_type": "JAEGER", "source_id": "trace-vermitho-0000", "cause": "Trace ID not registered in known_telemetry_ids; blocked by inverted has_known_sets guard."},
+    {"index": 22, "case_id": "BLIND-CASE-14", "evidence_id": "EV-TRACE-4", "source_type": "JAEGER", "source_id": "trace-vermitho-0001", "cause": "Trace ID not registered in known_telemetry_ids; blocked by inverted has_known_sets guard."},
+    {"index": 23, "case_id": "BLIND-CASE-15", "evidence_id": "EV-TRACE-3", "source_type": "JAEGER", "source_id": "trace-vermitho-0000", "cause": "Trace ID not registered in known_telemetry_ids; blocked by inverted has_known_sets guard."},
+    {"index": 24, "case_id": "BLIND-CASE-15", "evidence_id": "EV-TRACE-4", "source_type": "JAEGER", "source_id": "trace-vermitho-0001", "cause": "Trace ID not registered in known_telemetry_ids; blocked by inverted has_known_sets guard."},
+    {"index": 25, "case_id": "BLIND-CASE-18", "evidence_id": "EV-TRACE-3", "source_type": "JAEGER", "source_id": "trace-vermitho-0000", "cause": "Trace ID not registered in known_telemetry_ids; blocked by inverted has_known_sets guard."},
+    {"index": 26, "case_id": "BLIND-CASE-18", "evidence_id": "EV-TRACE-4", "source_type": "JAEGER", "source_id": "trace-vermitho-0001", "cause": "Trace ID not registered in known_telemetry_ids; blocked by inverted has_known_sets guard."},
+    {"index": 27, "case_id": "BLIND-CASE-19", "evidence_id": "EV-TRACE-3", "source_type": "JAEGER", "source_id": "trace-cache-se-0000", "cause": "Trace ID not registered in known_telemetry_ids; blocked by inverted has_known_sets guard."},
+    {"index": 28, "case_id": "BLIND-CASE-19", "evidence_id": "EV-TRACE-4", "source_type": "JAEGER", "source_id": "trace-cache-se-0001", "cause": "Trace ID not registered in known_telemetry_ids; blocked by inverted has_known_sets guard."},
+    {"index": 29, "case_id": "BLIND-CASE-19", "evidence_id": "EV-TOPO-5", "source_type": "TOPOLOGY", "source_id": "topo-dep-redis", "cause": "'topo-' prefix omitted from is_derived_analysis set."},
+    {"index": 30, "case_id": "BLIND-CASE-20", "evidence_id": "EV-TRACE-3", "source_type": "JAEGER", "source_id": "trace-vermitho-0000", "cause": "Trace ID not registered in known_telemetry_ids; blocked by inverted has_known_sets guard."},
+    {"index": 31, "case_id": "BLIND-CASE-20", "evidence_id": "EV-TRACE-4", "source_type": "JAEGER", "source_id": "trace-vermitho-0001", "cause": "Trace ID not registered in known_telemetry_ids; blocked by inverted has_known_sets guard."},
+    {"index": 32, "case_id": "BLIND-CASE-21", "evidence_id": "EV-TRACE-3", "source_type": "JAEGER", "source_id": "trace-vermitho-0000", "cause": "Trace ID not registered in known_telemetry_ids; blocked by inverted has_known_sets guard."},
+    {"index": 33, "case_id": "BLIND-CASE-21", "evidence_id": "EV-TRACE-4", "source_type": "JAEGER", "source_id": "trace-vermitho-0001", "cause": "Trace ID not registered in known_telemetry_ids; blocked by inverted has_known_sets guard."},
+    {"index": 34, "case_id": "BLIND-CASE-22", "evidence_id": "EV-TRACE-3", "source_type": "JAEGER", "source_id": "trace-vermitho-0001", "cause": "Trace ID not registered in known_telemetry_ids; blocked by inverted has_known_sets guard."},
+    {"index": 35, "case_id": "BLIND-CASE-24", "evidence_id": "EV-TRACE-3", "source_type": "JAEGER", "source_id": "trace-vermitho-0000", "cause": "Trace ID not registered in known_telemetry_ids; blocked by inverted has_known_sets guard."},
+    {"index": 36, "case_id": "BLIND-CASE-24", "evidence_id": "EV-TRACE-4", "source_type": "JAEGER", "source_id": "trace-vermitho-0001", "cause": "Trace ID not registered in known_telemetry_ids; blocked by inverted has_known_sets guard."}
+  ],
+  "verification_results_post_remediation": {
+    "total_citations_evaluated": 253,
+    "valid_direct_telemetry_citations": 205,
+    "historical_rag_analogies": 48,
+    "missing_or_unresolved_citations": 0,
+    "malformed_citations": 0,
+    "cross_tenant_citations": 0,
+    "stale_citations": 0,
+    "silently_filtered_or_dropped_citations": 0,
+    "conclusion": "100% of direct telemetry citations resolve deterministically to active incident evidence without weakening provenance rigor or dropping citations from the denominator."
+  }
+}

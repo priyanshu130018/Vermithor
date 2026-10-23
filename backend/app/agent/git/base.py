@@ -139,6 +139,16 @@ class GitProvider(ABC):
         pass
 
     @abstractmethod
+    def get_latest_commit_sha(
+        self,
+        repository_url: str,
+        ref: str = "main",
+    ) -> str:
+        """Retrieve the commit SHA for the specified ref in read-only mode."""
+        pass
+
+
+    @abstractmethod
     def create_branch(
         self,
         repository_url: str,

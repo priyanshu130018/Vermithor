@@ -5,8 +5,8 @@
 **Severity**: `CRITICAL (SEV1)`  
 **Environment**: `production`  
 **Detection Time**: `2026-10-13 14:04:00 UTC`  
-**Correlation Group**: `GRP-000002`  
-**Report Generated**: `2026-10-18T08:22:35.275018+00:00`
+**Correlation Group**: `GRP-000004`  
+**Report Generated**: `2026-10-21T10:42:47.245078+00:00`
 
 ---
 
@@ -62,15 +62,15 @@ Within 2 minutes of pool saturation:
 ### Ranked Causal Candidates
 
 1. **Database degradation on postgres** (`DATABASE`)
-   - **Composite Score**: `0.667`
+   - **Composite Score**: `0.909`
    - **Temporal Score**: `0.85`
    - **Topology Score**: `0.90`
    - **Metric Anomaly Score**: `0.90`
    - **Log Evidence Score**: `0.85`
    - **Deployment Evidence Score**: `0.80`
 
-2. **Resource saturation on payment-api** (`INFRASTRUCTURE`)
-   - **Composite Score**: `0.643`
+2. **Database connection pool exhaustion on payment-api** (`DATABASE`)
+   - **Composite Score**: `0.845`
    - **Temporal Score**: `0.85`
    - **Topology Score**: `0.90`
    - **Metric Anomaly Score**: `0.90`
@@ -78,7 +78,7 @@ Within 2 minutes of pool saturation:
    - **Deployment Evidence Score**: `0.80`
 
 3. **Service degradation on payment-api** (`SERVICE`)
-   - **Composite Score**: `0.643`
+   - **Composite Score**: `0.804`
    - **Temporal Score**: `0.85`
    - **Topology Score**: `0.90`
    - **Metric Anomaly Score**: `0.90`
@@ -179,8 +179,8 @@ Based on matched operational playbooks (`RB-000006` and `RB-000001`):
 ## 7. Pipeline Execution & Provider Status
 
 - **Log Ingestion & Normalization**: ✅ SUCCESS (Normalized 5 signals)
-- **Statistical Anomaly Detection**: ✅ SUCCESS (Flagged 6 anomalies)
-- **Temporal & Topological Correlation**: ✅ SUCCESS (Score: 0.53, Group: `GRP-000002`)
+- **Statistical Anomaly Detection**: ✅ SUCCESS (Flagged 10 anomalies)
+- **Temporal & Topological Correlation**: ✅ SUCCESS (Score: 0.53, Group: `GRP-000004`)
 - **RCA Candidate Scoring**: ✅ SUCCESS (Top cause: `Database degradation on postgres`)
 - **Vector Retrieval / Runbook Match**: ✅ SUCCESS (Matched 4 runbooks)
 - **Deterministic Grounded Fallback**: ✅ ACTIVE (`is_fallback=true`, Provider: `fallback`). Synthesized schema-compliant output without hallucination.

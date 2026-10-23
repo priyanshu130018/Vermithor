@@ -1,0 +1,32 @@
+id: BLIND-CASE-07
+scenario_name: PostgreSQL Concurrent Transaction Deadlock on Ledger Accounts
+root_cause_family: DATABASE_DEADLOCKS_OR_LOCK_CONTENTION
+target_service: ledger-service
+severity: CRITICAL
+environment: production
+is_negative_control: false
+agent_input:
+  incident_key: INC-BLIND-507
+  service: ledger-service
+  lookback_minutes: 15
+  metrics:
+  - metric_name: db_deadlocks_total
+    value: 48.0
+    service: ledger-service
+    timestamp: '2026-10-21T02:15:00Z'
+  - metric_name: db_lock_wait_seconds
+    value: 22.0
+    service: ledger-service
+    timestamp: '2026-10-21T02:15:15Z'
+  logs:
+  - level: ERROR
+    message: 'ERROR: deadlock detected: Process 9182 waits for ShareLock on transaction
+      81920; Process 8192 waits for ExclusiveLock on tuple (4, 12) of relation ledger_accounts'
+    service: ledger-service
+    timestamp: '2026-10-21T02:15:40Z'
+  - level: ERROR
+    message: 'TransactionAbortException: Deadlock victim chosen; transaction rolled
+      back'
+    service: ledger-service
+    timestamp: '2026-10-21T02:16:00Z'
+  deployments: []

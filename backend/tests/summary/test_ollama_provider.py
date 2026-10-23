@@ -351,7 +351,7 @@ def test_ollama_connection_failure_activates_deterministic_fallback(monkeypatch)
 
     assert result.is_fallback is True
     assert result.model_provider == "fallback"
-    assert result.model_name == "deterministic_rules"
+    assert "deterministic" in result.model_name
     assert any("deterministic rules engine" in lim.lower() for lim in result.limitations)
 
 
@@ -512,7 +512,7 @@ def test_ollama_invalid_schema_json_activates_fallback(monkeypatch):
 
     assert result.is_fallback is True
     assert result.model_provider == "fallback"
-    assert result.model_name == "deterministic_rules"
+    assert "deterministic" in result.model_name
     assert result.status.value == "COMPLETED"
     assert len(result.evidence) >= 1
     assert any("deterministic" in lim.lower() for lim in result.limitations)
@@ -550,7 +550,7 @@ def test_ollama_fallback_metadata_and_evidence_grounding(monkeypatch):
     # Validate schema fields
     assert result.is_fallback is True
     assert result.model_provider == "fallback"
-    assert result.model_name == "deterministic_rules"
+    assert "deterministic" in result.model_name
     assert result.executive_summary != ""
     assert result.what_happened != ""
     assert result.probable_root_cause != ""

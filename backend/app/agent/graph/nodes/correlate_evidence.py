@@ -61,7 +61,7 @@ def correlate_evidence_node(
             )
         )
         ts_str = ev.get("timestamp")
-        ts = datetime.fromisoformat(ts_str) if ts_str else now
+        ts = datetime.fromisoformat(str(ts_str).replace("Z", "+00:00")) if ts_str else now
         if ts.tzinfo is None:
             ts = ts.replace(tzinfo=timezone.utc)
 

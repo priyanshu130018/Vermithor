@@ -10,13 +10,20 @@ from backend.app.agent.schemas.repair import (
     RepairStatus,
 )
 from backend.app.agent.services.repair_service import RepairService
+from backend.app.common.config import get_settings
 from backend.app.common.database import get_db
-from backend.app.common.security import require_jwt_auth
+from backend.app.common.rate_limiter import RateLimiter
+from backend.app.common.security import require_jwt_auth, verify_org_access
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/agent", tags=["agent-repairs"])
 repair_service = RepairService()
+settings = get_settings()
+repair_rate_limiter = RateLimiter(
+    scope="repairs",
+    calls_per_minute=settings.RATE_LIMIT_REPAIRS_PER_MIN,
+)
 
 
 @router.post(
@@ -35,23 +42,27 @@ def create_or_run_repair(
     async_mode: bool = Query(False, description="Whether to dispatch repair task to background Celery queue"),
     db: Session = Depends(get_db),
     auth: Dict[str, Any] = Depends(require_jwt_auth),
+    _rate_limit: None = Depends(repair_rate_limiter),
 ) -> RepairResponse:
     """Initiate an AI-powered code repair workflow for an incident investigation."""
+    user_org = verify_org_access(auth)
     if not payload.investigation_key.strip():
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail="Field 'investigation_key' must not be empty",
         )
-
     if async_mode:
         from backend.workers.tasks import repair_code_task
-        task = repair_code_task.delay(payload.model_dump())
+        task_payload = payload.model_dump()
+        task_payload["org_id"] = user_org
+        task = repair_code_task.delay(task_payload)
         logger.info("Dispatched async Celery repair task: %s", task.id)
         # Return initial pending placeholder
         repair_key = repair_service.generate_repair_key(db)
         from backend.app.agent.db.models import Repair
         db_rep = Repair(
             repair_key=repair_key,
+            org_id=user_org,
             investigation_key=payload.investigation_key,
             incident_key="PENDING",
             status=RepairStatus.PENDING.value,
@@ -73,6 +84,11 @@ def create_or_run_repair(
             user_identity=auth,
         )
         return result
+    except PermissionError as perm_exc:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=str(perm_exc),
+        )
     except Exception as exc:
         logger.error("Repair workflow failed for investigation '%s': %s", payload.investigation_key, exc, exc_info=True)
         raise HTTPException(
@@ -93,7 +109,8 @@ def get_repair_by_id(
     _auth: Dict[str, Any] = Depends(require_jwt_auth),
 ) -> RepairResponse:
     """Retrieve specific repair artifact and validation status."""
-    rep = repair_service.get_repair(db, repair_id)
+    user_org = verify_org_access(_auth)
+    rep = repair_service.get_repair(db, repair_id, org_id=user_org)
     if not rep:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -117,6 +134,7 @@ def list_repairs(
     _auth: Dict[str, Any] = Depends(require_jwt_auth),
 ) -> Dict[str, Any]:
     """List paginated code repair jobs."""
+    user_org = verify_org_access(_auth)
     items, total = repair_service.list_repairs(
         db,
         page=page,
@@ -124,6 +142,7 @@ def list_repairs(
         investigation_key=investigation_key,
         incident_key=incident_key,
         status=status,
+        org_id=user_org,
     )
     return {
         "items": items,
@@ -149,6 +168,7 @@ def approve_or_reject_repair(
     db: Session = Depends(get_db),
     auth: Dict[str, Any] = Depends(require_jwt_auth),
 ) -> RepairResponse:
+    verify_org_access(auth)
     try:
         user_id = auth.get("sub") or auth.get("username") or "human-engineer"
         return repair_service.approve_or_reject_repair(

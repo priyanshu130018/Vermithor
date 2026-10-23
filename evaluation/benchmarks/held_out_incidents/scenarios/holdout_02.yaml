@@ -1,0 +1,31 @@
+incident_key: INC-HOLDOUT-102
+service: identity-service
+lookback_minutes: 60
+environment: production
+severity: CRITICAL
+metrics:
+- metric_name: http_500_internal_server_error_ratio
+  service: identity-service
+  value: 0.92
+  timestamp: '2026-10-20T09:05:00Z'
+- metric_name: user_session_validation_latency_ms
+  service: identity-service
+  value: 180.0
+  timestamp: '2026-10-20T09:05:00Z'
+logs:
+- service: identity-service
+  level: ERROR
+  message: 'NullPointerException: Cannot invoke String.trim() on null subject in JwtClaimsParser.java:84'
+  timestamp: '2026-10-20T09:02:15Z'
+- service: identity-service
+  level: ERROR
+  message: 'Unhandled servlet exception during POST /api/v2/auth/validate: NullPointerException
+    at parseClaims'
+  timestamp: '2026-10-20T09:03:00Z'
+deployments:
+- service: identity-service
+  version: v2.4.0
+  change_summary: Refactored claims deserializer in JWT payload parser for compliance
+  timestamp: '2026-10-20T09:00:00Z'
+dependencies:
+- redis-session

@@ -1,0 +1,27 @@
+incident_key: INC-HOLDOUT-114
+service: inventory-sync
+lookback_minutes: 60
+environment: production
+severity: LOW
+metrics:
+- metric_name: cpu_utilization_ratio
+  service: inventory-sync
+  value: 0.42
+  timestamp: '2026-10-20T15:10:00Z'
+- metric_name: memory_utilization_ratio
+  service: inventory-sync
+  value: 0.51
+  timestamp: '2026-10-20T15:10:00Z'
+- metric_name: http_5xx_error_rate_ratio
+  service: inventory-sync
+  value: 0.002
+  timestamp: '2026-10-20T15:15:00Z'
+logs:
+- service: inventory-sync
+  level: WARN
+  message: 'Scheduled maintenance window active: worker paused for 120s awaiting cloud
+    replica sync'
+  timestamp: '2026-10-20T15:12:00Z'
+deployments: []
+dependencies:
+- warehouse-db

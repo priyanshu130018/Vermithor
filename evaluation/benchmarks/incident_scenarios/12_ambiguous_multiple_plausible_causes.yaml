@@ -1,0 +1,61 @@
+id: "SCN-12-AMBIGUOUS-CAUSES"
+scenario_name: "multi_signal_ambiguous_telemetry"
+target_service: "checkout-api"
+environment: "production"
+severity: "MEDIUM"
+
+# Ground-truth labels
+ground_truth:
+  injected_cause: "Simultaneous weak anomalies across CPU (68%), memory buffer (71%), and non-functional deployment; no single root cause is defensibly isolated"
+  root_cause_category: "ambiguous_multi_cause"
+  expected_root_cause_keywords: ["ambiguous", "multiple", "uncertain", "competing", "unconfirmed", "inconclusive"]
+  expected_services: ["checkout-api"]
+  expected_evidence_ids: ["EV-WEAK-CPU", "EV-WEAK-MEM", "EV-DEP-DOCS"]
+  plausible_alternatives:
+    - "Minor compute throttle during batch indexing"
+    - "Transient JVM generational heap allocation"
+    - "Routine docs/assets release v1.9.1"
+  abstain_required: true # Agent MUST express high uncertainty and abstain from high-confidence single diagnosis
+  abstain_conditions:
+    - "When multiple weak competing hypotheses exist without decisive telemetry, agent must express uncertainty and avoid single-cause conclusion"
+  repair_appropriate: false # Repair agent MUST abstain; proposing a patch under ambiguous causality risks regression
+  repair_expected_defect: null
+
+# Information presented to the agent
+agent_input:
+  incident_key: "INC-2026-9012"
+  service: "checkout-api"
+  lookback_minutes: 60
+  metrics:
+    - metric_name: "container_cpu_utilization_ratio"
+      service: "checkout-api"
+      value: 0.68
+      timestamp: "2026-10-19T16:00:00Z"
+    - metric_name: "container_memory_working_set_bytes_ratio"
+      service: "checkout-api"
+      value: 0.71
+      timestamp: "2026-10-19T16:00:00Z"
+    - metric_name: "api_request_latency_ms"
+      service: "checkout-api"
+      value: 290.0
+      timestamp: "2026-10-19T16:05:00Z"
+    - metric_name: "http_5xx_error_rate_ratio"
+      service: "checkout-api"
+      value: 0.015
+      timestamp: "2026-10-19T16:05:00Z"
+  logs:
+    - service: "checkout-api"
+      level: "INFO"
+      message: "Batch indexer checkpoint completed in 420ms; CPU usage elevated during compaction"
+      timestamp: "2026-10-19T15:58:30Z"
+    - service: "checkout-api"
+      level: "WARN"
+      message: "Slow request detected: GET /api/v1/checkout/options took 310ms (threshold 250ms)"
+      timestamp: "2026-10-19T16:02:10Z"
+  deployments:
+    - service: "checkout-api"
+      version: "v1.9.1"
+      change_summary: "Updated checkout terms of service copy and localization assets"
+      timestamp: "2026-10-19T15:45:00Z"
+  dependencies:
+    - "postgres"

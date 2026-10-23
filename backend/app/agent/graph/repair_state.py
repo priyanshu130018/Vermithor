@@ -17,8 +17,12 @@ class RepairState(TypedDict, total=False):
     repository_url: Optional[str]
     target_branch: str
     repair_branch: Optional[str]
+    base_commit: Optional[str]
+    is_read_only_pilot: bool
+    pilot_audit_notice: Optional[str]
     is_authorized: bool
     authorization_error: Optional[str]
+
 
     # Investigation Input & Evidence
     investigation_report: Optional[Dict[str, Any]]

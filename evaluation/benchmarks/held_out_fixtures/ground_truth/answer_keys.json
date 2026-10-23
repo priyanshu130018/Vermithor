@@ -1,0 +1,54 @@
+{
+  "INC-HELDOUT-301": {
+    "case_id": "HELDOUT-CASE-01",
+    "scenario_name": "billing_worker_coredns_udp_timeout",
+    "service": "billing-worker",
+    "is_negative_control": false,
+    "provenance": "SYNTHETIC_HELD_OUT_FIXTURE",
+    "postmortem_source": "Held-out Postmortem PM-2026-301 (CoreDNS UDP packet drop to internal database causing billing worker connection timeouts)",
+    "injected_cause": "CoreDNS timeout causing billing database connection stall",
+    "expected_root_cause_keywords": ["dns", "coredns", "udp", "resolver"],
+    "prohibited_root_cause_keywords": [],
+    "expected_evidence_ids": ["EV-METRIC-01", "EV-LOG-01"],
+    "abstain_required": false
+  },
+  "INC-HELDOUT-302": {
+    "case_id": "HELDOUT-CASE-02",
+    "scenario_name": "checkout_gateway_downstream_partner_timeout_healthy_dns",
+    "service": "checkout-gateway",
+    "is_negative_control": true,
+    "provenance": "SYNTHETIC_HELD_OUT_FIXTURE",
+    "postmortem_source": "Held-out Postmortem PM-2026-302 (Negative Control: Third-party payment gateway 504 outage with nominal 1.8ms DNS resolution)",
+    "injected_cause": "Downstream partner gateway timeout (DNS is healthy and must NOT be diagnosed)",
+    "expected_root_cause_keywords": ["downstream", "partner", "external", "gateway", "504", "timeout"],
+    "prohibited_root_cause_keywords": ["dns", "coredns", "resolver"],
+    "expected_evidence_ids": ["EV-METRIC-01", "EV-LOG-01"],
+    "abstain_required": false
+  },
+  "INC-HELDOUT-303": {
+    "case_id": "HELDOUT-CASE-03",
+    "scenario_name": "event_ingest_kafka_poison_pill_stall",
+    "service": "event-ingest-stream",
+    "is_negative_control": false,
+    "provenance": "SYNTHETIC_HELD_OUT_FIXTURE",
+    "postmortem_source": "Held-out Postmortem PM-2026-303 (Malformed protobuf payload poison pill causing Kafka consumer partition 2 stall)",
+    "injected_cause": "Kafka consumer stall caused by poison pill message",
+    "expected_root_cause_keywords": ["kafka", "queue", "lag", "consumer", "poison", "deserialization"],
+    "prohibited_root_cause_keywords": [],
+    "expected_evidence_ids": ["EV-METRIC-01", "EV-LOG-01"],
+    "abstain_required": false
+  },
+  "INC-HELDOUT-304": {
+    "case_id": "HELDOUT-CASE-04",
+    "scenario_name": "notification_worker_kafka_consumer_rebalance_nominal",
+    "service": "notification-worker",
+    "is_negative_control": true,
+    "provenance": "SYNTHETIC_HELD_OUT_FIXTURE",
+    "postmortem_source": "Held-out Postmortem PM-2026-304 (Negative Control: Pod scale-out consumer rebalance backlog with zero errors; poison pill must NOT be diagnosed)",
+    "injected_cause": "Transient Kafka consumer lag backlog from rebalance (Poison pill must NOT be diagnosed)",
+    "expected_root_cause_keywords": ["kafka", "queue", "lag", "backlog", "consumer", "rebalance"],
+    "prohibited_root_cause_keywords": ["poison", "poison_pill", "poison pill", "malformed", "deserialization"],
+    "expected_evidence_ids": ["EV-METRIC-01"],
+    "abstain_required": false
+  }
+}

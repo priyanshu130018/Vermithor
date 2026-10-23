@@ -21,12 +21,15 @@ def generate_dev_jwt(
     audience: str = "vermithor-api",
     subject: str = "synthetic-generator-bot",
     expires_in: int = 3600,
+    org_id: str = "vermithor",
 ) -> str:
     header = {"alg": "HS256", "typ": "JWT"}
     now = int(time.time())
     payload = {
         "sub": subject,
         "name": "Synthetic Incident Engine",
+        "org_id": org_id,
+        "role": "admin",
         "iss": issuer,
         "aud": audience,
         "iat": now,
@@ -73,13 +76,13 @@ class VermithorClient:
 
     def post_event(self, event_data: Dict[str, Any]) -> Dict[str, Any]:
         trace_id = event_data.get("trace_id")
-        with httpx.Client(base_url=self.base_url, timeout=10.0) as client:
+        with httpx.Client(base_url=self.base_url, timeout=30.0) as client:
             resp = client.post("/api/v1/events", json=event_data, headers=self._headers(trace_id))
             resp.raise_for_status()
             return resp.json()
 
     def post_metric(self, observation_data: Dict[str, Any]) -> Dict[str, Any]:
-        with httpx.Client(base_url=self.base_url, timeout=10.0) as client:
+        with httpx.Client(base_url=self.base_url, timeout=30.0) as client:
             resp = client.post("/api/v1/observations", json=observation_data, headers=self._headers())
             resp.raise_for_status()
             return resp.json()
@@ -115,5 +118,95 @@ class VermithorClient:
             resp.raise_for_status()
             return resp.json()
 
+    def trigger_investigation(
+        self,
+        incident_key: str,
+        lookback_minutes: int = 30,
+        force_refresh: bool = False,
+    ) -> Dict[str, Any]:
+        with httpx.Client(base_url=self.base_url, timeout=60.0) as client:
+            resp = client.post(
+                "/api/v1/agent/investigations",
+                json={
+                    "incident_key": incident_key,
+                    "lookback_minutes": lookback_minutes,
+                    "force_refresh": force_refresh,
+                },
+                headers=self._headers(),
+            )
+            resp.raise_for_status()
+            return resp.json()
+
+    def get_investigation(self, investigation_key: str) -> Dict[str, Any]:
+        with httpx.Client(base_url=self.base_url, timeout=15.0) as client:
+            resp = client.get(
+                f"/api/v1/agent/investigations/{investigation_key}",
+                headers=self._headers(),
+            )
+            resp.raise_for_status()
+            return resp.json()
+
+    def trigger_repair(
+        self,
+        investigation_key: str,
+        repository_url: str = "local",
+        branch: str = "main",
+        custom_test_command: Optional[str] = None,
+        force_refresh: bool = False,
+    ) -> Dict[str, Any]:
+        payload: Dict[str, Any] = {
+            "investigation_key": investigation_key,
+            "repository_url": repository_url,
+            "branch": branch,
+            "force_refresh": force_refresh,
+        }
+        if custom_test_command:
+            payload["custom_test_command"] = custom_test_command
+
+        with httpx.Client(base_url=self.base_url, timeout=90.0) as client:
+            resp = client.post(
+                "/api/v1/agent/repairs",
+                json=payload,
+                headers=self._headers(),
+            )
+            resp.raise_for_status()
+            return resp.json()
+
+    def get_repair(self, repair_key: str) -> Dict[str, Any]:
+        with httpx.Client(base_url=self.base_url, timeout=15.0) as client:
+            resp = client.get(
+                f"/api/v1/agent/repairs/{repair_key}",
+                headers=self._headers(),
+            )
+            resp.raise_for_status()
+            return resp.json()
+
+    def approve_repair(
+        self,
+        repair_key: str,
+        action: str = "APPROVE",
+        notes: str = "Approved by on-call engineer",
+        reviewer: Optional[str] = None,
+        expected_patch_hash: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        payload: Dict[str, Any] = {
+            "action": action,
+            "notes": notes,
+        }
+        if reviewer:
+            payload["reviewer"] = reviewer
+        if expected_patch_hash:
+            payload["expected_patch_hash"] = expected_patch_hash
+
+        with httpx.Client(base_url=self.base_url, timeout=30.0) as client:
+            resp = client.post(
+                f"/api/v1/agent/repairs/{repair_key}/approve",
+                json=payload,
+                headers=self._headers(),
+            )
+            resp.raise_for_status()
+            return resp.json()
+
 
 VermithorClient = VermithorClient
+

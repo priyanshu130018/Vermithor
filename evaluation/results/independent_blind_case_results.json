@@ -1,0 +1,780 @@
+{
+  "metadata": {
+    "benchmark_title": "Prompt 20 Independent Blind Evaluation & Root-Cause Generalization",
+    "execution_timestamp": "2026-10-21T07:10:51.304277+00:00",
+    "baseline_git_commit": "e659059cd42b5ba69a8e77c6b16f905b1a075291",
+    "tenant_id": "blind_eval_tenant",
+    "dataset_version": "2.0.0",
+    "ground_truth_sha256": "6b01fdcf2c459e44477a18d7d1d8054fd738ee96202a3c5552072f8779fedb3e",
+    "total_cases": 24
+  },
+  "summary_metrics": {
+    "candidate_coverage_rate": 0.7917,
+    "top_1_accuracy": 0.7083,
+    "top_3_recall": 0.7917,
+    "mean_reciprocal_rank": 0.7431,
+    "negative_control_discrimination_rate": 0.5455,
+    "unsupported_claims_count": 0,
+    "failed_or_timed_out_cases": 0,
+    "latency_ms": {
+      "min": 5352.4,
+      "p50_median": 5531.38,
+      "p90": 5651.34,
+      "max": 9889.77,
+      "average": 5696.96
+    }
+  },
+  "cases": [
+    {
+      "case_id": "BLIND-CASE-01",
+      "incident_key": "INC-BLIND-501",
+      "root_cause_family": "DNS_AND_SERVICE_DISCOVERY",
+      "scenario_name": "CoreDNS Resolver UDP Packet Drop Causing Cache Discovery Failure",
+      "target_service": "cart-service",
+      "is_negative_control": false,
+      "leading_hypothesis": "CoreDNS resolution failure on cart-service",
+      "confidence": 0.98,
+      "candidate_count": 2,
+      "ranked_candidates": [
+        "CoreDNS resolution failure on cart-service",
+        "Service degradation on cart-service"
+      ],
+      "correct_candidate_rank": 1,
+      "candidate_coverage": true,
+      "top_1_hit": true,
+      "top_3_hit": true,
+      "mrr": 1.0,
+      "latency_ms": 9889.77,
+      "citation_audit": {
+        "total_citations": 11,
+        "valid_direct_telemetry": 9,
+        "historical_rag_references": 2,
+        "missing_or_unresolved": 0,
+        "malformed": 0,
+        "cross_tenant": 0,
+        "stale": 0,
+        "uncited_telemetry_count": 4
+      }
+    },
+    {
+      "case_id": "BLIND-CASE-02",
+      "incident_key": "INC-BLIND-502",
+      "root_cause_family": "DNS_AND_SERVICE_DISCOVERY",
+      "scenario_name": "Stripe Gateway 504 with Healthy 1.4ms DNS Lookup",
+      "target_service": "checkout-gateway",
+      "is_negative_control": true,
+      "leading_hypothesis": "Downstream dependency timeout on checkout-gateway",
+      "confidence": 0.7961,
+      "candidate_count": 3,
+      "ranked_candidates": [
+        "Downstream dependency timeout on checkout-gateway",
+        "Service degradation on checkout-gateway",
+        "DNS resolution failure on checkout-gateway"
+      ],
+      "correct_candidate_rank": 1,
+      "candidate_coverage": true,
+      "top_1_hit": true,
+      "top_3_hit": true,
+      "mrr": 1.0,
+      "latency_ms": 5651.34,
+      "citation_audit": {
+        "total_citations": 11,
+        "valid_direct_telemetry": 9,
+        "historical_rag_references": 2,
+        "missing_or_unresolved": 0,
+        "malformed": 0,
+        "cross_tenant": 0,
+        "stale": 0,
+        "uncited_telemetry_count": 5
+      }
+    },
+    {
+      "case_id": "BLIND-CASE-03",
+      "incident_key": "INC-BLIND-503",
+      "root_cause_family": "DNS_AND_SERVICE_DISCOVERY",
+      "scenario_name": "Upstream CoreDNS SERVFAIL Causing Cascading Downstream Gateway Timeout",
+      "target_service": "inventory-api",
+      "is_negative_control": false,
+      "leading_hypothesis": "CoreDNS resolution failure on inventory-api",
+      "confidence": 0.98,
+      "candidate_count": 2,
+      "ranked_candidates": [
+        "CoreDNS resolution failure on inventory-api",
+        "Service degradation on inventory-api"
+      ],
+      "correct_candidate_rank": 1,
+      "candidate_coverage": true,
+      "top_1_hit": true,
+      "top_3_hit": true,
+      "mrr": 1.0,
+      "latency_ms": 5375.39,
+      "citation_audit": {
+        "total_citations": 11,
+        "valid_direct_telemetry": 9,
+        "historical_rag_references": 2,
+        "missing_or_unresolved": 0,
+        "malformed": 0,
+        "cross_tenant": 0,
+        "stale": 0,
+        "uncited_telemetry_count": 6
+      }
+    },
+    {
+      "case_id": "BLIND-CASE-04",
+      "incident_key": "INC-BLIND-504",
+      "root_cause_family": "DATABASE_CONNECTION_POOL",
+      "scenario_name": "HikariCP Active Connection Pool Saturation Under Traffic Spike",
+      "target_service": "payment-processor",
+      "is_negative_control": false,
+      "leading_hypothesis": "Database connection pool exhaustion on payment-processor",
+      "confidence": 0.98,
+      "candidate_count": 3,
+      "ranked_candidates": [
+        "Database connection pool exhaustion on payment-processor",
+        "Database degradation on payment-processor",
+        "Service degradation on payment-processor"
+      ],
+      "correct_candidate_rank": 1,
+      "candidate_coverage": true,
+      "top_1_hit": true,
+      "top_3_hit": true,
+      "mrr": 1.0,
+      "latency_ms": 5508.15,
+      "citation_audit": {
+        "total_citations": 12,
+        "valid_direct_telemetry": 10,
+        "historical_rag_references": 2,
+        "missing_or_unresolved": 0,
+        "malformed": 0,
+        "cross_tenant": 0,
+        "stale": 0,
+        "uncited_telemetry_count": 5
+      }
+    },
+    {
+      "case_id": "BLIND-CASE-05",
+      "incident_key": "INC-BLIND-505",
+      "root_cause_family": "DATABASE_CONNECTION_POOL",
+      "scenario_name": "HttpClientPool Exhaustion with Database Pool Fully Healthy",
+      "target_service": "shipping-tracker",
+      "is_negative_control": true,
+      "leading_hypothesis": "Downstream dependency timeout on shipping-tracker",
+      "confidence": 0.7961,
+      "candidate_count": 3,
+      "ranked_candidates": [
+        "Downstream dependency timeout on shipping-tracker",
+        "Service degradation on shipping-tracker",
+        "Database connection pool exhaustion on shipping-tracker"
+      ],
+      "correct_candidate_rank": 1,
+      "candidate_coverage": true,
+      "top_1_hit": true,
+      "top_3_hit": true,
+      "mrr": 1.0,
+      "latency_ms": 5368.35,
+      "citation_audit": {
+        "total_citations": 11,
+        "valid_direct_telemetry": 9,
+        "historical_rag_references": 2,
+        "missing_or_unresolved": 0,
+        "malformed": 0,
+        "cross_tenant": 0,
+        "stale": 0,
+        "uncited_telemetry_count": 5
+      }
+    },
+    {
+      "case_id": "BLIND-CASE-06",
+      "incident_key": "INC-BLIND-506",
+      "root_cause_family": "DATABASE_CONNECTION_POOL",
+      "scenario_name": "Cascading API 500 Caused by Database Pool Leak",
+      "target_service": "order-service",
+      "is_negative_control": false,
+      "leading_hypothesis": "Database connection pool exhaustion on order-service",
+      "confidence": 0.98,
+      "candidate_count": 3,
+      "ranked_candidates": [
+        "Database connection pool exhaustion on order-service",
+        "Service degradation on order-service",
+        "Memory exhaustion on order-service"
+      ],
+      "correct_candidate_rank": 1,
+      "candidate_coverage": true,
+      "top_1_hit": true,
+      "top_3_hit": true,
+      "mrr": 1.0,
+      "latency_ms": 5521.38,
+      "citation_audit": {
+        "total_citations": 12,
+        "valid_direct_telemetry": 10,
+        "historical_rag_references": 2,
+        "missing_or_unresolved": 0,
+        "malformed": 0,
+        "cross_tenant": 0,
+        "stale": 0,
+        "uncited_telemetry_count": 4
+      }
+    },
+    {
+      "case_id": "BLIND-CASE-07",
+      "incident_key": "INC-BLIND-507",
+      "root_cause_family": "DATABASE_DEADLOCKS_OR_LOCK_CONTENTION",
+      "scenario_name": "PostgreSQL Concurrent Transaction Deadlock on Ledger Accounts",
+      "target_service": "ledger-service",
+      "is_negative_control": false,
+      "leading_hypothesis": "Database deadlock or lock contention on ledger-service",
+      "confidence": 0.8437,
+      "candidate_count": 3,
+      "ranked_candidates": [
+        "Database deadlock or lock contention on ledger-service",
+        "Service degradation on ledger-service",
+        "Database degradation on ledger-service"
+      ],
+      "correct_candidate_rank": 1,
+      "candidate_coverage": true,
+      "top_1_hit": true,
+      "top_3_hit": true,
+      "mrr": 1.0,
+      "latency_ms": 5393.08,
+      "citation_audit": {
+        "total_citations": 12,
+        "valid_direct_telemetry": 10,
+        "historical_rag_references": 2,
+        "missing_or_unresolved": 0,
+        "malformed": 0,
+        "cross_tenant": 0,
+        "stale": 0,
+        "uncited_telemetry_count": 4
+      }
+    },
+    {
+      "case_id": "BLIND-CASE-08",
+      "incident_key": "INC-BLIND-508",
+      "root_cause_family": "DATABASE_DEADLOCKS_OR_LOCK_CONTENTION",
+      "scenario_name": "Long-Running Analytical Aggregate Query Without Deadlocks",
+      "target_service": "analytics-service",
+      "is_negative_control": true,
+      "leading_hypothesis": "Database degradation on analytics-service",
+      "confidence": 0.98,
+      "candidate_count": 3,
+      "ranked_candidates": [
+        "Database degradation on analytics-service",
+        "Service degradation on analytics-service",
+        "Database deadlock or lock contention on analytics-service"
+      ],
+      "correct_candidate_rank": 1,
+      "candidate_coverage": true,
+      "top_1_hit": true,
+      "top_3_hit": true,
+      "mrr": 1.0,
+      "latency_ms": 5638.05,
+      "citation_audit": {
+        "total_citations": 11,
+        "valid_direct_telemetry": 9,
+        "historical_rag_references": 2,
+        "missing_or_unresolved": 0,
+        "malformed": 0,
+        "cross_tenant": 0,
+        "stale": 0,
+        "uncited_telemetry_count": 4
+      }
+    },
+    {
+      "case_id": "BLIND-CASE-09",
+      "incident_key": "INC-BLIND-509",
+      "root_cause_family": "MEMORY_EXHAUSTION_AND_OOM",
+      "scenario_name": "JVM Metaspace Leak Causing Linux Kernel OOM Kill",
+      "target_service": "catalog-search",
+      "is_negative_control": false,
+      "leading_hypothesis": "Service degradation on catalog-search",
+      "confidence": 0.7261,
+      "candidate_count": 3,
+      "ranked_candidates": [
+        "Service degradation on catalog-search",
+        "TLS certificate or connection failure on catalog-search",
+        "Memory exhaustion on catalog-search"
+      ],
+      "correct_candidate_rank": 3,
+      "candidate_coverage": true,
+      "top_1_hit": false,
+      "top_3_hit": true,
+      "mrr": 0.3333,
+      "latency_ms": 5369.23,
+      "citation_audit": {
+        "total_citations": 12,
+        "valid_direct_telemetry": 10,
+        "historical_rag_references": 2,
+        "missing_or_unresolved": 0,
+        "malformed": 0,
+        "cross_tenant": 0,
+        "stale": 0,
+        "uncited_telemetry_count": 6
+      }
+    },
+    {
+      "case_id": "BLIND-CASE-10",
+      "incident_key": "INC-BLIND-510",
+      "root_cause_family": "MEMORY_EXHAUSTION_AND_OOM",
+      "scenario_name": "Java Heap at 78% During Scheduled Compacting GC Cycle",
+      "target_service": "data-sync-worker",
+      "is_negative_control": true,
+      "leading_hypothesis": "Service degradation on data-sync-worker",
+      "confidence": 0.5954,
+      "candidate_count": 1,
+      "ranked_candidates": [
+        "Service degradation on data-sync-worker"
+      ],
+      "correct_candidate_rank": null,
+      "candidate_coverage": false,
+      "top_1_hit": false,
+      "top_3_hit": false,
+      "mrr": 0.0,
+      "latency_ms": 5436.41,
+      "citation_audit": {
+        "total_citations": 8,
+        "valid_direct_telemetry": 6,
+        "historical_rag_references": 2,
+        "missing_or_unresolved": 0,
+        "malformed": 0,
+        "cross_tenant": 0,
+        "stale": 0,
+        "uncited_telemetry_count": 4
+      }
+    },
+    {
+      "case_id": "BLIND-CASE-11",
+      "incident_key": "INC-BLIND-511",
+      "root_cause_family": "MEMORY_EXHAUSTION_AND_OOM",
+      "scenario_name": "HTTP 502 Bad Gateway Caused by Upstream Kernel OOM Kill",
+      "target_service": "auth-service",
+      "is_negative_control": false,
+      "leading_hypothesis": "Service degradation on auth-service",
+      "confidence": 0.7261,
+      "candidate_count": 2,
+      "ranked_candidates": [
+        "Service degradation on auth-service",
+        "Memory exhaustion on auth-service"
+      ],
+      "correct_candidate_rank": 2,
+      "candidate_coverage": true,
+      "top_1_hit": false,
+      "top_3_hit": true,
+      "mrr": 0.5,
+      "latency_ms": 5649.64,
+      "citation_audit": {
+        "total_citations": 13,
+        "valid_direct_telemetry": 11,
+        "historical_rag_references": 2,
+        "missing_or_unresolved": 0,
+        "malformed": 0,
+        "cross_tenant": 0,
+        "stale": 0,
+        "uncited_telemetry_count": 3
+      }
+    },
+    {
+      "case_id": "BLIND-CASE-12",
+      "incident_key": "INC-BLIND-512",
+      "root_cause_family": "CPU_SATURATION_AND_THREAD_STARVATION",
+      "scenario_name": "Linux CFS Quota Throttling Causing Thread Starvation",
+      "target_service": "pdf-generator",
+      "is_negative_control": false,
+      "leading_hypothesis": "Resource saturation on pdf-generator",
+      "confidence": 0.98,
+      "candidate_count": 2,
+      "ranked_candidates": [
+        "Resource saturation on pdf-generator",
+        "Service degradation on pdf-generator"
+      ],
+      "correct_candidate_rank": 1,
+      "candidate_coverage": true,
+      "top_1_hit": true,
+      "top_3_hit": true,
+      "mrr": 1.0,
+      "latency_ms": 5352.4,
+      "citation_audit": {
+        "total_citations": 11,
+        "valid_direct_telemetry": 9,
+        "historical_rag_references": 2,
+        "missing_or_unresolved": 0,
+        "malformed": 0,
+        "cross_tenant": 0,
+        "stale": 0,
+        "uncited_telemetry_count": 6
+      }
+    },
+    {
+      "case_id": "BLIND-CASE-13",
+      "incident_key": "INC-BLIND-513",
+      "root_cause_family": "CPU_SATURATION_AND_THREAD_STARVATION",
+      "scenario_name": "Scheduled Batch Job Running at 92% CPU Without Dropped Tasks",
+      "target_service": "nightly-batch-runner",
+      "is_negative_control": true,
+      "leading_hypothesis": "Resource saturation on nightly-batch-runner",
+      "confidence": 0.9344,
+      "candidate_count": 3,
+      "ranked_candidates": [
+        "Resource saturation on nightly-batch-runner",
+        "Service degradation on nightly-batch-runner",
+        "Configuration regression on nightly-batch-runner"
+      ],
+      "correct_candidate_rank": null,
+      "candidate_coverage": false,
+      "top_1_hit": false,
+      "top_3_hit": false,
+      "mrr": 0.0,
+      "latency_ms": 5604.49,
+      "citation_audit": {
+        "total_citations": 9,
+        "valid_direct_telemetry": 7,
+        "historical_rag_references": 2,
+        "missing_or_unresolved": 0,
+        "malformed": 0,
+        "cross_tenant": 0,
+        "stale": 0,
+        "uncited_telemetry_count": 3
+      }
+    },
+    {
+      "case_id": "BLIND-CASE-14",
+      "incident_key": "INC-BLIND-514",
+      "root_cause_family": "KAFKA_POISON_PILL",
+      "scenario_name": "Corrupt Protobuf Binary Poison Pill Stalling Kafka Consumer",
+      "target_service": "analytics-stream",
+      "is_negative_control": false,
+      "leading_hypothesis": "Queue processing stall caused by poison pill on analytics-stream",
+      "confidence": 0.98,
+      "candidate_count": 2,
+      "ranked_candidates": [
+        "Queue processing stall caused by poison pill on analytics-stream",
+        "Service degradation on analytics-stream"
+      ],
+      "correct_candidate_rank": 1,
+      "candidate_coverage": true,
+      "top_1_hit": true,
+      "top_3_hit": true,
+      "mrr": 1.0,
+      "latency_ms": 5392.85,
+      "citation_audit": {
+        "total_citations": 10,
+        "valid_direct_telemetry": 8,
+        "historical_rag_references": 2,
+        "missing_or_unresolved": 0,
+        "malformed": 0,
+        "cross_tenant": 0,
+        "stale": 0,
+        "uncited_telemetry_count": 5
+      }
+    },
+    {
+      "case_id": "BLIND-CASE-15",
+      "incident_key": "INC-BLIND-515",
+      "root_cause_family": "KAFKA_POISON_PILL",
+      "scenario_name": "Disk Partition ENOSPC on Broker with Partition Keyword in Path",
+      "target_service": "kafka-broker-node-3",
+      "is_negative_control": true,
+      "leading_hypothesis": "Kafka consumer lag backlog on kafka-broker-node-3",
+      "confidence": 0.98,
+      "candidate_count": 1,
+      "ranked_candidates": [
+        "Kafka consumer lag backlog on kafka-broker-node-3"
+      ],
+      "correct_candidate_rank": null,
+      "candidate_coverage": false,
+      "top_1_hit": false,
+      "top_3_hit": false,
+      "mrr": 0.0,
+      "latency_ms": 5613.31,
+      "citation_audit": {
+        "total_citations": 9,
+        "valid_direct_telemetry": 7,
+        "historical_rag_references": 2,
+        "missing_or_unresolved": 0,
+        "malformed": 0,
+        "cross_tenant": 0,
+        "stale": 0,
+        "uncited_telemetry_count": 5
+      }
+    },
+    {
+      "case_id": "BLIND-CASE-16",
+      "incident_key": "INC-BLIND-516",
+      "root_cause_family": "NORMAL_KAFKA_LAG",
+      "scenario_name": "Consumer Group Rebalance Inducing Transient Partition Lag",
+      "target_service": "billing-stream-worker",
+      "is_negative_control": false,
+      "leading_hypothesis": "Kafka consumer lag backlog on billing-stream-worker",
+      "confidence": 0.8012,
+      "candidate_count": 1,
+      "ranked_candidates": [
+        "Kafka consumer lag backlog on billing-stream-worker"
+      ],
+      "correct_candidate_rank": 1,
+      "candidate_coverage": true,
+      "top_1_hit": true,
+      "top_3_hit": true,
+      "mrr": 1.0,
+      "latency_ms": 5486.14,
+      "citation_audit": {
+        "total_citations": 7,
+        "valid_direct_telemetry": 5,
+        "historical_rag_references": 2,
+        "missing_or_unresolved": 0,
+        "malformed": 0,
+        "cross_tenant": 0,
+        "stale": 0,
+        "uncited_telemetry_count": 3
+      }
+    },
+    {
+      "case_id": "BLIND-CASE-17",
+      "incident_key": "INC-BLIND-517",
+      "root_cause_family": "NORMAL_KAFKA_LAG",
+      "scenario_name": "Traffic Spike Lag Backlog With Zero Message Deserialization Errors",
+      "target_service": "event-notifier",
+      "is_negative_control": true,
+      "leading_hypothesis": "Kafka consumer lag backlog on event-notifier",
+      "confidence": 0.962,
+      "candidate_count": 1,
+      "ranked_candidates": [
+        "Kafka consumer lag backlog on event-notifier"
+      ],
+      "correct_candidate_rank": 1,
+      "candidate_coverage": true,
+      "top_1_hit": true,
+      "top_3_hit": true,
+      "mrr": 1.0,
+      "latency_ms": 5754.04,
+      "citation_audit": {
+        "total_citations": 7,
+        "valid_direct_telemetry": 5,
+        "historical_rag_references": 2,
+        "missing_or_unresolved": 0,
+        "malformed": 0,
+        "cross_tenant": 0,
+        "stale": 0,
+        "uncited_telemetry_count": 3
+      }
+    },
+    {
+      "case_id": "BLIND-CASE-18",
+      "incident_key": "INC-BLIND-518",
+      "root_cause_family": "DEPLOYMENT_OR_CONFIG_REGRESSION",
+      "scenario_name": "Recent Ingress Deployment with Corrupted Dynamic Routing Table",
+      "target_service": "api-router",
+      "is_negative_control": false,
+      "leading_hypothesis": "Configuration regression on api-router",
+      "confidence": 0.98,
+      "candidate_count": 2,
+      "ranked_candidates": [
+        "Configuration regression on api-router",
+        "Service degradation on api-router"
+      ],
+      "correct_candidate_rank": 1,
+      "candidate_coverage": true,
+      "top_1_hit": true,
+      "top_3_hit": true,
+      "mrr": 1.0,
+      "latency_ms": 5607.39,
+      "citation_audit": {
+        "total_citations": 11,
+        "valid_direct_telemetry": 9,
+        "historical_rag_references": 2,
+        "missing_or_unresolved": 0,
+        "malformed": 0,
+        "cross_tenant": 0,
+        "stale": 0,
+        "uncited_telemetry_count": 5
+      }
+    },
+    {
+      "case_id": "BLIND-CASE-19",
+      "incident_key": "INC-BLIND-519",
+      "root_cause_family": "DEPLOYMENT_OR_CONFIG_REGRESSION",
+      "scenario_name": "Stale Deployment 6 Hours Ago with Active Redis Maxmemory Eviction",
+      "target_service": "session-cache",
+      "is_negative_control": true,
+      "leading_hypothesis": "Redis cache failure on session-cache",
+      "confidence": 0.8401,
+      "candidate_count": 2,
+      "ranked_candidates": [
+        "Redis cache failure on session-cache",
+        "Recent deployment on session-cache"
+      ],
+      "correct_candidate_rank": 1,
+      "candidate_coverage": true,
+      "top_1_hit": true,
+      "top_3_hit": true,
+      "mrr": 1.0,
+      "latency_ms": 5531.38,
+      "citation_audit": {
+        "total_citations": 12,
+        "valid_direct_telemetry": 10,
+        "historical_rag_references": 2,
+        "missing_or_unresolved": 0,
+        "malformed": 0,
+        "cross_tenant": 0,
+        "stale": 0,
+        "uncited_telemetry_count": 7
+      }
+    },
+    {
+      "case_id": "BLIND-CASE-20",
+      "incident_key": "INC-BLIND-520",
+      "root_cause_family": "DEPLOYMENT_OR_CONFIG_REGRESSION",
+      "scenario_name": "Environment Variable Misconfiguration Pointing to Wrong Port",
+      "target_service": "vault-agent",
+      "is_negative_control": false,
+      "leading_hypothesis": "Configuration regression on vault-agent",
+      "confidence": 0.8796,
+      "candidate_count": 2,
+      "ranked_candidates": [
+        "Configuration regression on vault-agent",
+        "Service degradation on vault-agent"
+      ],
+      "correct_candidate_rank": 1,
+      "candidate_coverage": true,
+      "top_1_hit": true,
+      "top_3_hit": true,
+      "mrr": 1.0,
+      "latency_ms": 5631.53,
+      "citation_audit": {
+        "total_citations": 10,
+        "valid_direct_telemetry": 8,
+        "historical_rag_references": 2,
+        "missing_or_unresolved": 0,
+        "malformed": 0,
+        "cross_tenant": 0,
+        "stale": 0,
+        "uncited_telemetry_count": 5
+      }
+    },
+    {
+      "case_id": "BLIND-CASE-21",
+      "incident_key": "INC-BLIND-521",
+      "root_cause_family": "TLS_CERTIFICATE_OR_CONNECTION",
+      "scenario_name": "Expired Wildcard TLS Certificate Causing SSL Handshake Failures",
+      "target_service": "auth-gateway",
+      "is_negative_control": false,
+      "leading_hypothesis": "TLS certificate or connection failure on auth-gateway",
+      "confidence": 0.98,
+      "candidate_count": 2,
+      "ranked_candidates": [
+        "TLS certificate or connection failure on auth-gateway",
+        "Service degradation on auth-gateway"
+      ],
+      "correct_candidate_rank": 1,
+      "candidate_coverage": true,
+      "top_1_hit": true,
+      "top_3_hit": true,
+      "mrr": 1.0,
+      "latency_ms": 5387.95,
+      "citation_audit": {
+        "total_citations": 10,
+        "valid_direct_telemetry": 8,
+        "historical_rag_references": 2,
+        "missing_or_unresolved": 0,
+        "malformed": 0,
+        "cross_tenant": 0,
+        "stale": 0,
+        "uncited_telemetry_count": 5
+      }
+    },
+    {
+      "case_id": "BLIND-CASE-22",
+      "incident_key": "INC-BLIND-522",
+      "root_cause_family": "TLS_CERTIFICATE_OR_CONNECTION",
+      "scenario_name": "Plain HTTP Connection Timeout with Completely Valid TLS Certificate",
+      "target_service": "internal-scraper",
+      "is_negative_control": true,
+      "leading_hypothesis": "Service degradation on internal-scraper",
+      "confidence": 0.7261,
+      "candidate_count": 3,
+      "ranked_candidates": [
+        "Service degradation on internal-scraper",
+        "Downstream dependency timeout on internal-scraper",
+        "TLS certificate or connection failure on internal-scraper"
+      ],
+      "correct_candidate_rank": 1,
+      "candidate_coverage": true,
+      "top_1_hit": true,
+      "top_3_hit": true,
+      "mrr": 1.0,
+      "latency_ms": 5573.72,
+      "citation_audit": {
+        "total_citations": 10,
+        "valid_direct_telemetry": 8,
+        "historical_rag_references": 2,
+        "missing_or_unresolved": 0,
+        "malformed": 0,
+        "cross_tenant": 0,
+        "stale": 0,
+        "uncited_telemetry_count": 4
+      }
+    },
+    {
+      "case_id": "BLIND-CASE-23",
+      "incident_key": "INC-BLIND-523",
+      "root_cause_family": "BENIGN_TELEMETRY_AND_ABSTENTION",
+      "scenario_name": "Isolated Transient Retry with Zero Anomalies and Healthy Telemetry",
+      "target_service": "recommendation-worker",
+      "is_negative_control": true,
+      "leading_hypothesis": "Service degradation on recommendation-worker",
+      "confidence": 0.741,
+      "candidate_count": 3,
+      "ranked_candidates": [
+        "Service degradation on recommendation-worker",
+        "Resource saturation on recommendation-worker",
+        "Database connection pool exhaustion on recommendation-worker"
+      ],
+      "correct_candidate_rank": null,
+      "candidate_coverage": false,
+      "top_1_hit": false,
+      "top_3_hit": false,
+      "mrr": 0.0,
+      "latency_ms": 5632.14,
+      "citation_audit": {
+        "total_citations": 10,
+        "valid_direct_telemetry": 8,
+        "historical_rag_references": 2,
+        "missing_or_unresolved": 0,
+        "malformed": 0,
+        "cross_tenant": 0,
+        "stale": 0,
+        "uncited_telemetry_count": 4
+      }
+    },
+    {
+      "case_id": "BLIND-CASE-24",
+      "incident_key": "INC-BLIND-524",
+      "root_cause_family": "BENIGN_TELEMETRY_AND_ABSTENTION",
+      "scenario_name": "Multiple Weak Competing Warnings Without Decisive Root Cause",
+      "target_service": "user-profile-api",
+      "is_negative_control": true,
+      "leading_hypothesis": "Redis cache failure on user-profile-api",
+      "confidence": 0.98,
+      "candidate_count": 3,
+      "ranked_candidates": [
+        "Redis cache failure on user-profile-api",
+        "Service degradation on user-profile-api",
+        "DNS resolution failure on user-profile-api"
+      ],
+      "correct_candidate_rank": null,
+      "candidate_coverage": false,
+      "top_1_hit": false,
+      "top_3_hit": false,
+      "mrr": 0.0,
+      "latency_ms": 5358.83,
+      "citation_audit": {
+        "total_citations": 12,
+        "valid_direct_telemetry": 10,
+        "historical_rag_references": 2,
+        "missing_or_unresolved": 0,
+        "malformed": 0,
+        "cross_tenant": 0,
+        "stale": 0,
+        "uncited_telemetry_count": 6
+      }
+    }
+  ]
+}

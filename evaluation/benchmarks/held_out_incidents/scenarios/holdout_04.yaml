@@ -1,0 +1,32 @@
+incident_key: INC-HOLDOUT-104
+service: email-dispatcher
+lookback_minutes: 60
+environment: production
+severity: HIGH
+metrics:
+- metric_name: node_cpu_utilization_ratio
+  service: email-dispatcher
+  value: 0.99
+  timestamp: '2026-10-20T10:00:00Z'
+- metric_name: active_worker_threads_count
+  service: email-dispatcher
+  value: 64.0
+  timestamp: '2026-10-20T10:00:00Z'
+- metric_name: dispatch_task_latency_ms
+  service: email-dispatcher
+  value: 8500.0
+  timestamp: '2026-10-20T10:05:00Z'
+logs:
+- service: email-dispatcher
+  level: WARN
+  message: 'Thread starvation detected: 32 worker threads in RUNNABLE state blocked
+    in java.util.regex.Pattern.matcher()'
+  timestamp: '2026-10-20T09:58:30Z'
+- service: email-dispatcher
+  level: WARN
+  message: 'CFS quota throttling: process email-dispatcher throttled for 78% of runtime
+    period'
+  timestamp: '2026-10-20T09:59:45Z'
+deployments: []
+dependencies:
+- smtp-relay

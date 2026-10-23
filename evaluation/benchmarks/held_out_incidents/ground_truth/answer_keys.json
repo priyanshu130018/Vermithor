@@ -1,0 +1,475 @@
+{
+  "INC-HOLDOUT-101": {
+    "scenario_id": "HELD-OUT-01",
+    "scenario_name": "billing_database_connection_pool_starvation",
+    "category": "database_pool_exhaustion",
+    "injected_cause": "Database connection pool exhaustion on billing-core under sustained invoice settlement load",
+    "expected_root_cause_keywords": [
+      "database",
+      "pool",
+      "connection",
+      "hikari"
+    ],
+    "target_services": [
+      "billing-core",
+      "postgres-billing"
+    ],
+    "abstain_required": false,
+    "repair_appropriate": true,
+    "repair_expected_defect": "max_pool_size"
+  },
+  "INC-HOLDOUT-102": {
+    "scenario_id": "HELD-OUT-02",
+    "scenario_name": "identity_jwt_claims_parser_nullpointer_regression",
+    "category": "faulty_deployment",
+    "injected_cause": "Faulty application release v2.4.0 introducing NullPointerException during JWT claims parsing",
+    "expected_root_cause_keywords": [
+      "deployment",
+      "release",
+      "nullpointer",
+      "npe",
+      "parser"
+    ],
+    "target_services": [
+      "identity-service"
+    ],
+    "abstain_required": false,
+    "repair_appropriate": true,
+    "repair_expected_defect": "null_check"
+  },
+  "INC-HOLDOUT-103": {
+    "scenario_id": "HELD-OUT-03",
+    "scenario_name": "catalog_redis_maxmemory_eviction_oom",
+    "category": "cache_failure",
+    "injected_cause": "Redis memory saturation and key eviction storm violating maxmemory constraint",
+    "expected_root_cause_keywords": [
+      "redis",
+      "cache",
+      "eviction",
+      "oom",
+      "memory"
+    ],
+    "target_services": [
+      "catalog-query-service",
+      "redis-cluster"
+    ],
+    "abstain_required": false,
+    "repair_appropriate": false,
+    "repair_expected_defect": null
+  },
+  "INC-HOLDOUT-104": {
+    "scenario_id": "HELD-OUT-04",
+    "scenario_name": "email_dispatcher_regex_cpu_starvation",
+    "category": "cpu_saturation",
+    "injected_cause": "High CPU utilization and thread starvation triggered by catastrophic regex backtracking",
+    "expected_root_cause_keywords": [
+      "cpu",
+      "thread",
+      "starvation",
+      "utilization",
+      "worker"
+    ],
+    "target_services": [
+      "email-dispatcher"
+    ],
+    "abstain_required": false,
+    "repair_appropriate": true,
+    "repair_expected_defect": "regex_optimization"
+  },
+  "INC-HOLDOUT-105": {
+    "scenario_id": "HELD-OUT-05",
+    "scenario_name": "telemetry_aggregator_unbounded_queue_heap_exhaustion",
+    "category": "memory_leak",
+    "injected_cause": "Unbounded queue accumulation causing JVM heap exhaustion and OutOfMemoryError",
+    "expected_root_cause_keywords": [
+      "memory",
+      "heap",
+      "oom",
+      "leak",
+      "gc"
+    ],
+    "target_services": [
+      "telemetry-aggregator"
+    ],
+    "abstain_required": false,
+    "repair_appropriate": true,
+    "repair_expected_defect": "queue_bounding"
+  },
+  "INC-HOLDOUT-106": {
+    "scenario_id": "HELD-OUT-06",
+    "scenario_name": "checkout_external_partner_pay_504_timeout",
+    "category": "downstream_timeout",
+    "injected_cause": "External partner payment gateway outage resulting in persistent HTTP 504 timeouts",
+    "expected_root_cause_keywords": [
+      "downstream",
+      "partner",
+      "gateway timeout",
+      "timeout",
+      "504"
+    ],
+    "target_services": [
+      "checkout-orchestrator",
+      "partner-pay-gateway"
+    ],
+    "abstain_required": false,
+    "repair_appropriate": false,
+    "repair_expected_defect": null
+  },
+  "INC-HOLDOUT-107": {
+    "scenario_id": "HELD-OUT-07",
+    "scenario_name": "fulfillment_vpc_network_packet_loss",
+    "category": "network_degradation",
+    "injected_cause": "Cloud VPC peering network degradation causing 16% packet loss and elevated TCP retransmissions",
+    "expected_root_cause_keywords": [
+      "network",
+      "packet",
+      "latency",
+      "loss",
+      "retransmit",
+      "vpc"
+    ],
+    "target_services": [
+      "fulfillment-worker"
+    ],
+    "abstain_required": false,
+    "repair_appropriate": false,
+    "repair_expected_defect": null
+  },
+  "INC-HOLDOUT-108": {
+    "scenario_id": "HELD-OUT-08",
+    "scenario_name": "order_fulfillment_kafka_consumer_lag_stall",
+    "category": "queue_backlog",
+    "injected_cause": "Kafka consumer group rebalance loop causing consumer stall and message backlog accumulation",
+    "expected_root_cause_keywords": [
+      "queue",
+      "kafka",
+      "backlog",
+      "consumer",
+      "broker",
+      "lag"
+    ],
+    "target_services": [
+      "order-fulfillment-consumer"
+    ],
+    "abstain_required": false,
+    "repair_appropriate": false,
+    "repair_expected_defect": null
+  },
+  "INC-HOLDOUT-109": {
+    "scenario_id": "HELD-OUT-09",
+    "scenario_name": "document_renderer_disk_inode_exhaustion",
+    "category": "disk_exhaustion",
+    "injected_cause": "Filesystem inode table exhaustion on /tmp partition preventing temporary file creation",
+    "expected_root_cause_keywords": [
+      "disk",
+      "inode",
+      "storage",
+      "filesystem",
+      "enospc"
+    ],
+    "target_services": [
+      "document-renderer"
+    ],
+    "abstain_required": false,
+    "repair_appropriate": false,
+    "repair_expected_defect": null
+  },
+  "INC-HOLDOUT-110": {
+    "scenario_id": "HELD-OUT-10",
+    "scenario_name": "customer_portal_jwt_idp_cert_expiry",
+    "category": "authentication_failure",
+    "injected_cause": "Upstream Identity Provider signing certificate expiration triggering systemic JWT verification failure",
+    "expected_root_cause_keywords": [
+      "auth",
+      "unauthorized",
+      "jwt",
+      "token",
+      "signature",
+      "certificate",
+      "idp"
+    ],
+    "target_services": [
+      "customer-portal-gateway",
+      "auth0-idp"
+    ],
+    "abstain_required": false,
+    "repair_appropriate": false,
+    "repair_expected_defect": null
+  },
+  "INC-HOLDOUT-111": {
+    "scenario_id": "HELD-OUT-11",
+    "scenario_name": "pricing_redis_eviction_cascading_to_db_pool",
+    "category": "multi_cause_cascading",
+    "injected_cause": "Redis cache eviction storm cascading into database connection pool exhaustion",
+    "expected_root_cause_keywords": [
+      "redis",
+      "cache",
+      "database",
+      "pool",
+      "cascade"
+    ],
+    "target_services": [
+      "pricing-calculator"
+    ],
+    "abstain_required": false,
+    "repair_appropriate": false,
+    "repair_expected_defect": null
+  },
+  "INC-HOLDOUT-112": {
+    "scenario_id": "HELD-OUT-12",
+    "scenario_name": "subscription_db_deadlock_with_coincidental_docs_release",
+    "category": "database_deadlock",
+    "injected_cause": "PostgreSQL transaction deadlock contention on subscription_leases (deployment was docs-only and unplausible)",
+    "expected_root_cause_keywords": [
+      "database",
+      "deadlock",
+      "postgres",
+      "sql",
+      "pool"
+    ],
+    "target_services": [
+      "subscription-api",
+      "postgres-sub"
+    ],
+    "abstain_required": false,
+    "repair_appropriate": true,
+    "repair_expected_defect": "transaction_ordering"
+  },
+  "INC-HOLDOUT-113": {
+    "scenario_id": "HELD-OUT-13",
+    "scenario_name": "invoice_stale_telemetry_abstention",
+    "category": "stale_telemetry_abstention",
+    "injected_cause": "Telemetry metrics are 14 days stale; agent must recognize missing current telemetry and abstain",
+    "expected_root_cause_keywords": [
+      "insufficient",
+      "stale",
+      "missing",
+      "inconclusive",
+      "unknown"
+    ],
+    "target_services": [
+      "invoice-generator"
+    ],
+    "abstain_required": true,
+    "repair_appropriate": false,
+    "repair_expected_defect": null
+  },
+  "INC-HOLDOUT-114": {
+    "scenario_id": "HELD-OUT-14",
+    "scenario_name": "inventory_sync_nominal_maintenance_abstention",
+    "category": "nominal_maintenance_abstention",
+    "injected_cause": "Scheduled maintenance window with transient non-error pause; metrics nominal; must abstain",
+    "expected_root_cause_keywords": [
+      "insufficient",
+      "nominal",
+      "healthy",
+      "maintenance",
+      "inconclusive",
+      "unknown"
+    ],
+    "target_services": [
+      "inventory-sync"
+    ],
+    "abstain_required": true,
+    "repair_appropriate": false,
+    "repair_expected_defect": null
+  },
+  "INC-HOLDOUT-115": {
+    "scenario_id": "HELD-OUT-15",
+    "scenario_name": "search_federator_ambiguous_weak_telemetry",
+    "category": "ambiguous_multi_cause",
+    "injected_cause": "Simultaneous weak non-anomalous signals across CPU (64%) and memory (69%); must abstain",
+    "expected_root_cause_keywords": [
+      "ambiguous",
+      "multiple",
+      "uncertain",
+      "competing",
+      "inconclusive",
+      "insufficient"
+    ],
+    "target_services": [
+      "search-federator"
+    ],
+    "abstain_required": true,
+    "repair_appropriate": false,
+    "repair_expected_defect": null
+  },
+  "INC-HOLDOUT-116": {
+    "scenario_id": "HELD-OUT-16",
+    "scenario_name": "recommendation_sparse_telemetry_abstention",
+    "category": "sparse_telemetry_abstention",
+    "injected_cause": "Sparse telemetry with zero metrics and single client disconnect warning; must abstain",
+    "expected_root_cause_keywords": [
+      "insufficient",
+      "sparse",
+      "missing",
+      "inconclusive",
+      "unknown"
+    ],
+    "target_services": [
+      "recommendation-engine"
+    ],
+    "abstain_required": true,
+    "repair_appropriate": false,
+    "repair_expected_defect": null
+  },
+  "INC-HOLDOUT-117": {
+    "scenario_id": "HELD-OUT-17",
+    "scenario_name": "user_profiles_postgres_txid_wraparound",
+    "category": "database_wraparound",
+    "injected_cause": "PostgreSQL database transaction ID wraparound failure threat requiring immediate table vacuum",
+    "expected_root_cause_keywords": [
+      "database",
+      "postgres",
+      "vacuum",
+      "wraparound",
+      "sql"
+    ],
+    "target_services": [
+      "user-profiles",
+      "postgres-profiles"
+    ],
+    "abstain_required": false,
+    "repair_appropriate": false,
+    "repair_expected_defect": null
+  },
+  "INC-HOLDOUT-118": {
+    "scenario_id": "HELD-OUT-18",
+    "scenario_name": "notification_broken_migration_release",
+    "category": "faulty_deployment",
+    "injected_cause": "Release v3.2.0 contained broken Alembic SQL migration syntax blocking service startup",
+    "expected_root_cause_keywords": [
+      "deployment",
+      "release",
+      "migration",
+      "schema",
+      "alembic",
+      "sql"
+    ],
+    "target_services": [
+      "notification-service"
+    ],
+    "abstain_required": false,
+    "repair_appropriate": true,
+    "repair_expected_defect": "sql_migration_syntax"
+  },
+  "INC-HOLDOUT-119": {
+    "scenario_id": "HELD-OUT-19",
+    "scenario_name": "report_worker_celery_task_timeout_stall",
+    "category": "queue_stall",
+    "injected_cause": "Celery worker concurrency saturation and task timeout stall causing queue backlog accumulation",
+    "expected_root_cause_keywords": [
+      "queue",
+      "celery",
+      "rabbitmq",
+      "worker",
+      "backlog",
+      "stall"
+    ],
+    "target_services": [
+      "report-worker"
+    ],
+    "abstain_required": false,
+    "repair_appropriate": false,
+    "repair_expected_defect": null
+  },
+  "INC-HOLDOUT-120": {
+    "scenario_id": "HELD-OUT-20",
+    "scenario_name": "audit_logger_disk_partition_saturation",
+    "category": "disk_exhaustion",
+    "injected_cause": "Local disk partition capacity exhaustion on /var/log preventing application write operations",
+    "expected_root_cause_keywords": [
+      "disk",
+      "storage",
+      "filesystem",
+      "enospc",
+      "partition",
+      "volume"
+    ],
+    "target_services": [
+      "audit-logger"
+    ],
+    "abstain_required": false,
+    "repair_appropriate": false,
+    "repair_expected_defect": null
+  },
+  "INC-HOLDOUT-121": {
+    "scenario_id": "HELD-OUT-21",
+    "scenario_name": "crypto_signer_native_memory_leak_oom",
+    "category": "memory_leak",
+    "injected_cause": "Process resident memory leak leading to Linux kernel OOM killer termination",
+    "expected_root_cause_keywords": [
+      "memory",
+      "oom",
+      "heap",
+      "leak",
+      "resident"
+    ],
+    "target_services": [
+      "crypto-signer"
+    ],
+    "abstain_required": false,
+    "repair_appropriate": true,
+    "repair_expected_defect": "buffer_free"
+  },
+  "INC-HOLDOUT-122": {
+    "scenario_id": "HELD-OUT-22",
+    "scenario_name": "b2b_gateway_okta_token_revocation_mismatch",
+    "category": "authentication_failure",
+    "injected_cause": "Partner Okta Identity Provider credentials revocation causing systemic Bearer token validation failure",
+    "expected_root_cause_keywords": [
+      "auth",
+      "unauthorized",
+      "token",
+      "bearer",
+      "jwks",
+      "jwt",
+      "idp"
+    ],
+    "target_services": [
+      "b2b-gateway",
+      "okta-idp"
+    ],
+    "abstain_required": false,
+    "repair_appropriate": false,
+    "repair_expected_defect": null
+  },
+  "INC-HOLDOUT-123": {
+    "scenario_id": "HELD-OUT-23",
+    "scenario_name": "shipping_dns_resolver_failure_downstream_timeout",
+    "category": "network_downstream",
+    "injected_cause": "Upstream DNS resolver failure blocking domain resolution and triggering cascading downstream timeouts",
+    "expected_root_cause_keywords": [
+      "network",
+      "dns",
+      "downstream",
+      "timeout",
+      "external"
+    ],
+    "target_services": [
+      "shipping-tracker"
+    ],
+    "abstain_required": false,
+    "repair_appropriate": false,
+    "repair_expected_defect": null
+  },
+  "INC-HOLDOUT-124": {
+    "scenario_id": "HELD-OUT-24",
+    "scenario_name": "analytics_subthreshold_latency_nominal_abstention",
+    "category": "nominal_subthreshold_abstention",
+    "injected_cause": "Sub-threshold latency creep (210ms vs 1000ms SLA) with 99.5% success; nominal operation; must abstain",
+    "expected_root_cause_keywords": [
+      "insufficient",
+      "nominal",
+      "healthy",
+      "inconclusive",
+      "unknown"
+    ],
+    "target_services": [
+      "analytics-collector"
+    ],
+    "abstain_required": true,
+    "repair_appropriate": false,
+    "repair_expected_defect": null
+  }
+}

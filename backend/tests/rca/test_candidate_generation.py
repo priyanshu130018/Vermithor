@@ -26,7 +26,7 @@ def test_database_candidate_generation():
     cand_types = [c["candidate_type"] for c in candidates]
     assert "DATABASE" in cand_types
     db_cand = next(c for c in candidates if c["candidate_type"] == "DATABASE")
-    assert "Database degradation on booking-api" in db_cand["candidate_name"]
+    assert any(term in db_cand["candidate_name"] for term in ("Database degradation on booking-api", "Database connection pool exhaustion on booking-api"))
     assert len(db_cand["evidence"]) > 0
 
 

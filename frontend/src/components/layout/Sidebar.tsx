@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, AlertCircle, Search, BookOpen, Activity } from 'lucide-react';
+import { LayoutDashboard, AlertCircle, Search, BookOpen, Activity, ShieldCheck } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
 export const Sidebar: React.FC = () => {
@@ -9,6 +9,7 @@ export const Sidebar: React.FC = () => {
     { label: 'Incidents', path: '/incidents', icon: AlertCircle },
     { label: 'Log Search', path: '/logs', icon: Search },
     { label: 'Runbooks', path: '/runbooks', icon: BookOpen },
+    { label: 'Pilot Readiness', path: '/pilot', icon: ShieldCheck },
   ];
 
   return (

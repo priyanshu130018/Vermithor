@@ -23,13 +23,20 @@ def prepare_repair_artifact_node(
     target_branch = state.get("target_branch") or "main"
     auto_create_pr = state.get("auto_create_pr", False)
 
-    branch_name = f"repair/{incident_key.lower()}-{repair_key.lower()}"
+    is_read_only = getattr(git_provider, "read_only", False) or state.get("is_read_only_pilot", False)
+    branch_name: Optional[str] = None
     pr_url: Optional[str] = None
     pr_number: Optional[int] = None
 
-    # Git operations if provider is available
-    if git_provider and state.get("is_authorized", False):
+
+    if is_read_only:
+        logger.info(
+            "Read-Only Pilot Mode active: branch creation and pull request opening suppressed for repair %s",
+            repair_key,
+        )
+    elif git_provider and state.get("is_authorized", False):
         try:
+            branch_name = f"repair/{incident_key.lower()}-{repair_key.lower()}"
             # Create branch record
             git_provider.create_branch(repo_url, branch_name, base_ref=target_branch)
 
@@ -78,6 +85,10 @@ Status: {state.get("validation_status", "PENDING")}
     report = RepairReport(
         incident_key=incident_key,
         investigation_key=investigation_key,
+        repository_url=repo_url,
+        base_commit=state.get("base_commit"),
+        is_read_only_pilot=is_read_only,
+        pilot_audit_notice="No repository changes have been published (Read-Only Pilot Mode)" if is_read_only else "",
         suspected_defect=state.get("suspected_defect") or "Defect undetermined",
         evidence_citations=state.get("evidence_citations") or [],
         inspected_files=state.get("inspected_file_paths") or list((state.get("inspected_files") or {}).keys()),
@@ -105,5 +116,10 @@ Status: {state.get("validation_status", "PENDING")}
         "pull_request_url": pr_url,
         "pull_request_number": pr_number,
         "requires_human_approval": requires_approval,
+        "base_commit": state.get("base_commit"),
+        "is_read_only_pilot": is_read_only,
+        "pilot_audit_notice": "No repository changes have been published (Read-Only Pilot Mode)" if is_read_only else None,
         "report": report.model_dump(),
     }
+
+

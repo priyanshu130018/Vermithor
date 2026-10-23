@@ -1,0 +1,31 @@
+id: BLIND-CASE-05
+scenario_name: HttpClientPool Exhaustion with Database Pool Fully Healthy
+root_cause_family: DATABASE_CONNECTION_POOL
+target_service: shipping-tracker
+severity: HIGH
+environment: production
+is_negative_control: true
+agent_input:
+  incident_key: INC-BLIND-505
+  service: shipping-tracker
+  lookback_minutes: 15
+  metrics:
+  - metric_name: db_connection_pool_utilization
+    value: 0.1
+    service: shipping-tracker
+    timestamp: '2026-10-21T02:10:00Z'
+  - metric_name: http_client_pool_pending_requests
+    value: 85.0
+    service: shipping-tracker
+    timestamp: '2026-10-21T02:10:10Z'
+  logs:
+  - level: INFO
+    message: 'HikariPool healthy: active=5/50 connections'
+    service: shipping-tracker
+    timestamp: '2026-10-21T02:10:30Z'
+  - level: ERROR
+    message: 'HttpClientConnectionPool: Connection pool exhausted while waiting for
+      free route connection to thirdparty-dhl-api.com'
+    service: shipping-tracker
+    timestamp: '2026-10-21T02:11:00Z'
+  deployments: []

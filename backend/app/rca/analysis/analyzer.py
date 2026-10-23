@@ -61,8 +61,8 @@ class RCAAnalyzer:
             if ranked_candidates:
                 top = ranked_candidates[0]
                 if top.get("candidate_type") == "UNKNOWN":
-                    primary_root_cause = "Insufficient evidence"
-                    primary_confidence = top.get("confidence", 0.10)
+                    primary_root_cause = top.get("candidate_name", "Insufficient evidence")
+                    primary_confidence = float(top.get("confidence", 0.15))
                     RCA_UNKNOWN_TOTAL.inc()
                 else:
                     primary_root_cause = top.get("candidate_name", "Unknown Root Cause")

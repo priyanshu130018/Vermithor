@@ -90,6 +90,11 @@ class RepairReport(BaseModel):
     model_provider: str = "unknown"
     model_name: Optional[str] = None
     is_fallback: bool = False
+    repository_url: Optional[str] = None
+    base_commit: Optional[str] = None
+    is_read_only_pilot: bool = True
+    pilot_audit_notice: str = "No repository changes have been published (Read-Only Pilot Mode)"
+
 
 
 class RepairRequest(BaseModel):
@@ -99,6 +104,7 @@ class RepairRequest(BaseModel):
     target_branch: str = Field("main", description="Target repository branch for repair inspection")
     custom_test_command: Optional[str] = Field(None, description="Optional restricted test command to run")
     auto_create_pr: bool = Field(False, description="Whether to open a draft PR if Git provider credentials are configured")
+    force_refresh: bool = Field(False, description="Whether to generate a fresh repair proposal instead of returning an existing repair")
 
 
 class ApprovalRequest(BaseModel):
@@ -141,8 +147,11 @@ class RepairResponse(BaseModel):
     model_provider: str
     model_name: Optional[str] = None
     is_fallback: bool
+    is_read_only_pilot: bool = True
+    pilot_audit_notice: Optional[str] = "No repository changes have been published (Read-Only Pilot Mode)"
     iteration_count: int
     error_message: Optional[str] = None
     report_json: Optional[Dict[str, Any]] = None
     created_at: datetime
     updated_at: datetime
+

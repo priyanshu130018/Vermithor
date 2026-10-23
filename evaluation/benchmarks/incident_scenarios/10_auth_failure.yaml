@@ -1,0 +1,48 @@
+id: "SCN-10-AUTH-FAILURE"
+scenario_name: "jwt_signing_key_rotation_mismatch"
+target_service: "api-gateway"
+environment: "production"
+severity: "CRITICAL"
+
+# Ground-truth labels
+ground_truth:
+  injected_cause: "JWKS public key rotation out of sync between Identity Provider and API Gateway causing widespread signature verification failures"
+  root_cause_category: "auth_failure"
+  expected_root_cause_keywords: ["auth", "unauthorized", "jwt", "token", "signature", "jwks", "rotation"]
+  expected_services: ["api-gateway", "auth-service"]
+  expected_evidence_ids: ["EV-METRIC-401-SPIKE", "EV-LOG-JWT-SIGNATURE-FAIL"]
+  plausible_alternatives:
+    - "Mass client-side token expiration without refresh"
+    - "Credential stuffing / distributed authentication brute force"
+  abstain_required: false
+  abstain_conditions:
+    - "If HTTP 401 rate is below 5%, do not classify as systemic authentication failure"
+  repair_appropriate: false # Key rotation / operational secret sync required, not code change
+  repair_expected_defect: null
+
+# Information presented to the agent
+agent_input:
+  incident_key: "INC-2026-9010"
+  service: "api-gateway"
+  lookback_minutes: 60
+  metrics:
+    - metric_name: "http_401_unauthorized_rate_ratio"
+      service: "api-gateway"
+      value: 0.94
+      timestamp: "2026-10-19T15:00:00Z"
+    - metric_name: "valid_jwt_validation_ratio"
+      service: "api-gateway"
+      value: 0.06
+      timestamp: "2026-10-19T15:00:00Z"
+  logs:
+    - service: "api-gateway"
+      level: "ERROR"
+      message: "JWTVerificationError: Signature verification failed for token with kid 'key-2026-10-b'. Key ID not found in cached JWKS."
+      timestamp: "2026-10-19T14:58:30Z"
+    - service: "api-gateway"
+      level: "WARN"
+      message: "Failed to resolve public key from https://auth.internal/.well-known/jwks.json: cached keyset stale"
+      timestamp: "2026-10-19T14:59:10Z"
+  deployments: []
+  dependencies:
+    - "auth-service"

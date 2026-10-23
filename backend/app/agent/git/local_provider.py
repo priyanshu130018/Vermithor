@@ -19,12 +19,19 @@ class LocalGitProvider(GitProvider):
     and test fixtures. Enforces strict boundary protection and read-only inspection.
     """
 
-    def __init__(self, root_dir: Optional[Path] = None, allowed_orgs: Optional[List[str]] = None):
+    def __init__(
+        self,
+        root_dir: Optional[Path] = None,
+        allowed_orgs: Optional[List[str]] = None,
+        read_only: bool = False,
+    ):
         self.root_dir = (root_dir or Path.cwd()).resolve()
         self.allowed_orgs = allowed_orgs or ["vermithor", "internal", "local", "default"]
+        self.read_only = read_only
         self.branches: Dict[str, Dict[str, Any]] = {}
         self.pull_requests: Dict[int, Dict[str, Any]] = {}
         self._pr_counter = 1
+
 
     def _resolve_repo_root(self, repository_url: str) -> Path:
         """Resolve the local path corresponding to a repository identifier or path."""
@@ -125,6 +132,28 @@ class LocalGitProvider(GitProvider):
 
         return sorted(results)
 
+    def get_latest_commit_sha(
+        self,
+        repository_url: str,
+        ref: str = "main",
+    ) -> str:
+        """Retrieve commit SHA from local git repo or deterministic mock SHA."""
+        repo_root = self._resolve_repo_root(repository_url)
+        git_dir = repo_root / ".git"
+        if git_dir.exists():
+            try:
+                import subprocess
+                cmd = ["git", "rev-parse", ref]
+                res = subprocess.run(cmd, cwd=repo_root, capture_output=True, text=True, timeout=5)
+                if res.returncode == 0 and res.stdout.strip():
+                    return res.stdout.strip()
+            except Exception as exc:
+                logger.debug("Failed running git rev-parse: %s", exc)
+
+        import hashlib
+        slug = f"{repo_root.name}:{ref}".encode("utf-8")
+        return hashlib.sha256(slug).hexdigest()[:40]
+
     _PROTECTED_BRANCHES = {"main", "master", "production", "prod", "release", "stable"}
 
     def create_branch(
@@ -134,8 +163,12 @@ class LocalGitProvider(GitProvider):
         base_ref: str = "main",
     ) -> bool:
         """Record branch creation for a proposed patch, enforcing protected branch boundaries."""
+        if self.read_only:
+            raise PermissionError("Repository is connected in read-only pilot mode; write operations ('create_branch') are strictly disabled.")
+
         if new_branch.lower() in self._PROTECTED_BRANCHES:
             raise ValueError(f"Protected branch boundary violation: cannot create or overwrite protected branch '{new_branch}'")
+
 
         repo_key = str(self._resolve_repo_root(repository_url))
         if repo_key not in self.branches:
@@ -159,7 +192,11 @@ class LocalGitProvider(GitProvider):
         Record a reviewable draft pull request record for local repos.
         Does not fabricate fictitious remote URLs.
         """
+        if self.read_only:
+            raise PermissionError("Repository is connected in read-only pilot mode; write operations ('create_pull_request') are strictly disabled.")
+
         if head_branch.lower() in self._PROTECTED_BRANCHES:
+
             raise ValueError(f"Protected branch boundary violation: head branch cannot be protected branch '{head_branch}'")
 
         pr_number = self._pr_counter

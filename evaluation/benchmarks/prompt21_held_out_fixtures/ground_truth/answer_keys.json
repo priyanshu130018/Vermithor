@@ -1,0 +1,140 @@
+{
+  "INC-P21-01": {
+    "case_id": "HELD-P21-01",
+    "family": "MEMORY_EXHAUSTION_AND_OOM",
+    "scenario_name": "Go Microservice Off-Heap Leak Resulting in cgroup OOMKilled",
+    "target_service": "media-transcoder",
+    "is_negative_control": false,
+    "expected_root_cause_keywords": [
+      "memory",
+      "oom",
+      "cgroup"
+    ],
+    "prohibited_root_cause_keywords": [
+      "dns",
+      "kafka",
+      "database"
+    ]
+  },
+  "INC-P21-02": {
+    "case_id": "HELD-P21-02",
+    "family": "MEMORY_EXHAUSTION_AND_OOM",
+    "scenario_name": "Routine Garbage Collection with Stable Heap Memory",
+    "target_service": "payment-sync",
+    "is_negative_control": true,
+    "expected_root_cause_keywords": [
+      "insufficient evidence",
+      "nominal",
+      "service degradation"
+    ],
+    "prohibited_root_cause_keywords": [
+      "oom",
+      "out of memory",
+      "leak"
+    ]
+  },
+  "INC-P21-03": {
+    "case_id": "HELD-P21-03",
+    "family": "DEPLOYMENT_OR_CONFIG_REGRESSION",
+    "scenario_name": "Canary Ingress Deployment with Broken Upstream Route Rule",
+    "target_service": "edge-proxy",
+    "is_negative_control": false,
+    "expected_root_cause_keywords": [
+      "deployment",
+      "configuration",
+      "regression",
+      "route"
+    ],
+    "prohibited_root_cause_keywords": [
+      "dns",
+      "database"
+    ]
+  },
+  "INC-P21-04": {
+    "case_id": "HELD-P21-04",
+    "family": "DEPLOYMENT_OR_CONFIG_REGRESSION",
+    "scenario_name": "External Partner Gateway HTTP 504 During Steady Deployment State",
+    "target_service": "webhook-dispatch",
+    "is_negative_control": true,
+    "expected_root_cause_keywords": [
+      "downstream",
+      "partner",
+      "timeout",
+      "504"
+    ],
+    "prohibited_root_cause_keywords": [
+      "recent deployment",
+      "v1.8.0",
+      "deployment or configuration"
+    ]
+  },
+  "INC-P21-05": {
+    "case_id": "HELD-P21-05",
+    "family": "STORAGE_EXHAUSTION",
+    "scenario_name": "Root Storage Filesystem ENOSPC Capacity Exhaustion",
+    "target_service": "logging-aggregator",
+    "is_negative_control": false,
+    "expected_root_cause_keywords": [
+      "disk",
+      "storage",
+      "filesystem",
+      "space"
+    ],
+    "prohibited_root_cause_keywords": [
+      "dns",
+      "kafka"
+    ]
+  },
+  "INC-P21-06": {
+    "case_id": "HELD-P21-06",
+    "family": "KAFKA_POISON_PILL",
+    "scenario_name": "Malformed JSON Poison Pill in Order Event Stream",
+    "target_service": "order-fulfillment",
+    "is_negative_control": false,
+    "expected_root_cause_keywords": [
+      "poison pill",
+      "poison",
+      "deserialization",
+      "kafka"
+    ],
+    "prohibited_root_cause_keywords": [
+      "database",
+      "dns"
+    ]
+  },
+  "INC-P21-07": {
+    "case_id": "HELD-P21-07",
+    "family": "DNS_AND_SERVICE_DISCOVERY",
+    "scenario_name": "Cluster DNS Upstream Forwarder SERVFAIL Under Heavy Lookup Load",
+    "target_service": "billing-engine",
+    "is_negative_control": false,
+    "expected_root_cause_keywords": [
+      "dns",
+      "coredns",
+      "resolver",
+      "lookup"
+    ],
+    "prohibited_root_cause_keywords": [
+      "kafka",
+      "deadlock"
+    ]
+  },
+  "INC-P21-08": {
+    "case_id": "HELD-P21-08",
+    "family": "BENIGN_TELEMETRY_AND_ABSTENTION",
+    "scenario_name": "Prometheus Compaction Cycle with Healthy Network Connectivity",
+    "target_service": "metric-store",
+    "is_negative_control": true,
+    "expected_root_cause_keywords": [
+      "insufficient evidence",
+      "nominal",
+      "service degradation"
+    ],
+    "prohibited_root_cause_keywords": [
+      "dns",
+      "network",
+      "packet loss",
+      "oom"
+    ]
+  }
+}

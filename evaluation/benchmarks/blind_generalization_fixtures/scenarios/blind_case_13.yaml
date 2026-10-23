@@ -1,0 +1,26 @@
+id: BLIND-CASE-13
+scenario_name: Scheduled Batch Job Running at 92% CPU Without Dropped Tasks
+root_cause_family: CPU_SATURATION_AND_THREAD_STARVATION
+target_service: nightly-batch-runner
+severity: LOW
+environment: production
+is_negative_control: true
+agent_input:
+  incident_key: INC-BLIND-513
+  service: nightly-batch-runner
+  lookback_minutes: 15
+  metrics:
+  - metric_name: cpu_utilization_ratio
+    value: 0.92
+    service: nightly-batch-runner
+    timestamp: '2026-10-21T02:25:00Z'
+  logs:
+  - level: INFO
+    message: Scheduled compression job running as configured at 92% CPU usage
+    service: nightly-batch-runner
+    timestamp: '2026-10-21T02:25:30Z'
+  - level: INFO
+    message: Batch compression chunk 45/50 completed successfully; 0 dropped tasks
+    service: nightly-batch-runner
+    timestamp: '2026-10-21T02:26:00Z'
+  deployments: []

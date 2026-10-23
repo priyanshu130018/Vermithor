@@ -1,0 +1,28 @@
+incident_key: INC-HOLDOUT-110
+service: customer-portal-gateway
+lookback_minutes: 60
+environment: production
+severity: CRITICAL
+metrics:
+- metric_name: http_401_unauthorized_rate_ratio
+  service: customer-portal-gateway
+  value: 0.96
+  timestamp: '2026-10-20T13:00:00Z'
+- metric_name: jwt_token_validation_failure_ratio
+  service: customer-portal-gateway
+  value: 0.98
+  timestamp: '2026-10-20T13:00:00Z'
+logs:
+- service: customer-portal-gateway
+  level: ERROR
+  message: 'SignatureVerificationException: JWT signature rejected: IdP signing certificate
+    expired on 2026-10-19T23:59:59Z'
+  timestamp: '2026-10-20T12:58:30Z'
+- service: customer-portal-gateway
+  level: WARN
+  message: 'JwksClient: public key kid ''cert-2024-oct'' revoked or expired by upstream
+    authorization server'
+  timestamp: '2026-10-20T12:59:15Z'
+deployments: []
+dependencies:
+- auth0-idp

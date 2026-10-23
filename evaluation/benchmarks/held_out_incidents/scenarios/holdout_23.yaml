@@ -1,0 +1,29 @@
+incident_key: INC-HOLDOUT-123
+service: shipping-tracker
+lookback_minutes: 60
+environment: production
+severity: HIGH
+metrics:
+- metric_name: dns_resolution_failure_ratio
+  service: shipping-tracker
+  value: 0.95
+  timestamp: '2026-10-20T19:30:00Z'
+- metric_name: downstream_timeout_ratio
+  service: shipping-tracker
+  value: 0.88
+  timestamp: '2026-10-20T19:30:00Z'
+logs:
+- service: shipping-tracker
+  level: ERROR
+  message: 'UnknownHostException: Could not resolve address ''api.shipping-partner.external''
+    through upstream DNS resolver 10.0.0.2'
+  timestamp: '2026-10-20T19:28:15Z'
+- service: shipping-tracker
+  level: ERROR
+  message: 'ConnectTimeoutException: 30000ms connecting to downstream tracking webhook
+    target'
+  timestamp: '2026-10-20T19:29:10Z'
+deployments: []
+dependencies:
+- fedex-api
+- ups-api

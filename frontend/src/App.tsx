@@ -7,6 +7,7 @@ import { Incidents } from './pages/Incidents';
 import { IncidentDetails } from './pages/IncidentDetails';
 import { Logs } from './pages/Logs';
 import { Runbooks } from './pages/Runbooks';
+import { PilotReadiness } from './pages/PilotReadiness';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -28,6 +29,7 @@ export const App: React.FC = () => {
             <Route path="incidents/:incidentKey" element={<IncidentDetails />} />
             <Route path="logs" element={<Logs />} />
             <Route path="runbooks" element={<Runbooks />} />
+            <Route path="pilot" element={<PilotReadiness />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Route>
         </Routes>

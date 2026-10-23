@@ -1,0 +1,37 @@
+id: PILOT-CASE-04
+scenario_name: checkout_api_coredns_udp_timeout
+target_service: checkout-api
+environment: production
+severity: CRITICAL
+agent_input:
+  incident_key: INC-PILOT-204
+  service: checkout-api
+  lookback_minutes: 30
+  metrics:
+  - metric_name: http_client_request_timeout_ratio
+    service: checkout-api
+    value: 0.4
+    timestamp: '2026-10-20T11:10:00Z'
+  - metric_name: dns_resolution_latency_ms
+    service: checkout-api
+    value: 2800.0
+    timestamp: '2026-10-20T11:10:00Z'
+  - metric_name: checkout_latency_p99_ms
+    service: checkout-api
+    value: 6500.0
+    timestamp: '2026-10-20T11:15:00Z'
+  logs:
+  - service: checkout-api
+    level: WARN
+    message: 'CoreDNS: Resolving partner-pay.external.net via upstream UDP 10.96.0.10:53
+      timed out'
+    timestamp: '2026-10-20T11:11:00Z'
+  - service: checkout-api
+    level: ERROR
+    message: 'ConnectTimeoutException: Timeout resolving partner-pay.external.net
+      (CoreDNS drop)'
+    timestamp: '2026-10-20T11:12:00Z'
+  deployments: []
+  dependencies:
+  - partner-pay
+  - coredns

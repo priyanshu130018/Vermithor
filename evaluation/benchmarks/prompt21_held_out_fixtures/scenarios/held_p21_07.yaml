@@ -1,0 +1,31 @@
+id: HELD-P21-07
+scenario_name: Cluster DNS Upstream Forwarder SERVFAIL Under Heavy Lookup Load
+root_cause_family: DNS_AND_SERVICE_DISCOVERY
+target_service: billing-engine
+severity: CRITICAL
+environment: production
+is_negative_control: false
+agent_input:
+  incident_key: INC-P21-07
+  service: billing-engine
+  lookback_minutes: 15
+  metrics:
+  - metric_name: dns_lookup_latency_ms
+    value: 3400.0
+    service: billing-engine
+    timestamp: '2026-10-21T03:30:00Z'
+  - metric_name: dns_resolution_failure_rate
+    value: 0.88
+    service: billing-engine
+    timestamp: '2026-10-21T03:30:10Z'
+  logs:
+  - level: ERROR
+    message: 'CoreDNS SERVFAIL resolving ''postgres.internal.svc.cluster.local'':
+      upstream 10.96.0.10:53 timed out'
+    service: billing-engine
+    timestamp: '2026-10-21T03:30:20Z'
+  - level: FATAL
+    message: 'Nameserver lookup failed: CoreDNS resolution failure'
+    service: billing-engine
+    timestamp: '2026-10-21T03:30:40Z'
+  deployments: []

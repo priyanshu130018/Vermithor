@@ -1,0 +1,26 @@
+{
+  "metadata": {
+    "audit_title": "Comprehensive Citation Provenance & Denominator Accounting",
+    "evaluation_date": "2026-10-21T07:10:51.309233+00:00",
+    "tenant_id": "blind_eval_tenant",
+    "total_cases_audited": 24
+  },
+  "denominator_accounting": {
+    "total_citations_evaluated": 252,
+    "direct_telemetry_valid_count": 204,
+    "direct_telemetry_validity_rate": 0.8095,
+    "historical_reference_count": 48,
+    "historical_reference_rate": 0.1905,
+    "missing_or_unresolved_count": 0,
+    "malformed_count": 0,
+    "cross_tenant_count": 0,
+    "stale_count": 0,
+    "silently_filtered_citations": 0,
+    "uncited_telemetry_signals_count": 111
+  },
+  "status_interpretation": {
+    "direct_telemetry_valid": "Citations resolve to confirmed active telemetry for the current incident (emerald badge in UI).",
+    "historical_reference": "Citations resolve to prior historical incidents via RAG retrieval (amber badge in UI).",
+    "missing_or_unresolved": "Citations that cannot be grounded in incident records."
+  }
+}

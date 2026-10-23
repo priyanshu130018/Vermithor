@@ -44,6 +44,8 @@ class InvestigationEvidenceItem(BaseModel):
     timestamp: Optional[str] = Field(None, description="ISO timestamp of observation or event")
     claim: str = Field(..., description="Observable factual claim backed by this evidence")
     data: Dict[str, Any] = Field(default_factory=dict, description="Raw or normalized telemetry attributes")
+    is_verified: bool = Field(default=True, description="Whether this citation is verified against tenant and incident data")
+    verification_status: str = Field(default="VALID", description="Verification classification: VALID, MISSING_OR_UNRESOLVED, MALFORMED, CROSS_TENANT, CROSS_INCIDENT, STALE")
 
 
 class HypothesisEvaluation(BaseModel):
@@ -88,8 +90,10 @@ class InvestigationReport(BaseModel):
     runbook_references: List[Dict[str, Any]] = Field(default_factory=list, description="Retrieved operational runbooks with excerpts")
     evidence_items: List[InvestigationEvidenceItem] = Field(default_factory=list, description="Catalog of evidence citations")
     model_provider: str = Field(..., description="LLM provider name or 'fallback'")
-    model_name: Optional[str] = Field(None, description="LLM model identifier or 'deterministic-rules'")
+    model_name: Optional[str] = Field(None, description="LLM model identifier or 'deterministic-rules (non-LLM)'")
     is_fallback: bool = Field(default=False, description="True if deterministic fallback was activated")
+    model_call_records: List[Dict[str, Any]] = Field(default_factory=list, description="Audit trace of individual model invocations")
+    review_assessment: Optional[Dict[str, Any]] = Field(default=None, description="Report review evaluation result")
 
 
 class InvestigationResponse(BaseModel):
@@ -106,6 +110,8 @@ class InvestigationResponse(BaseModel):
     model_provider: str = "unknown"
     model_name: Optional[str] = None
     report: Optional[InvestigationReport] = None
+    model_call_records: List[Dict[str, Any]] = Field(default_factory=list, description="Audit trace of individual model invocations")
+    review_assessment: Optional[Dict[str, Any]] = Field(default=None, description="Report review evaluation result")
     created_at: datetime
     completed_at: Optional[datetime] = None
 

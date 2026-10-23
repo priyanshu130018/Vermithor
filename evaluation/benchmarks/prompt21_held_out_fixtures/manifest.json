@@ -1,0 +1,77 @@
+{
+  "benchmark_name": "Prompt 21 Frozen Held-Out Generalization Benchmark",
+  "dataset_version": "1.0.0",
+  "creation_timestamp": "2026-10-21T02:15:00.000000+00:00",
+  "total_cases": 8,
+  "total_families": 6,
+  "negative_controls_count": 3,
+  "positive_cases_count": 5,
+  "answer_keys_file": "ground_truth/answer_keys.json",
+  "answer_keys_sha256": "3d004b4cf55f21ea2b9903878f4d3cf48a01bc63a1197df93c9bac4e3f96fd32",
+  "scenarios": [
+    {
+      "case_id": "HELD-P21-01",
+      "incident_key": "INC-P21-01",
+      "family": "MEMORY_EXHAUSTION_AND_OOM",
+      "filename": "held_p21_01.yaml",
+      "is_negative_control": false,
+      "sha256": "f73fbf13aa33b1e189daaae43bea1f504c49265712d38e18e27c317c3b37b927"
+    },
+    {
+      "case_id": "HELD-P21-02",
+      "incident_key": "INC-P21-02",
+      "family": "MEMORY_EXHAUSTION_AND_OOM",
+      "filename": "held_p21_02.yaml",
+      "is_negative_control": true,
+      "sha256": "772b40678ca4448e0b2d54bd2b9152c03ea4b7cfab87c2d7a8d9b58a85446db8"
+    },
+    {
+      "case_id": "HELD-P21-03",
+      "incident_key": "INC-P21-03",
+      "family": "DEPLOYMENT_OR_CONFIG_REGRESSION",
+      "filename": "held_p21_03.yaml",
+      "is_negative_control": false,
+      "sha256": "3114ca54a8ec9061d067ca58538f81d654060cbe48a5d54861c1756552ee76cd"
+    },
+    {
+      "case_id": "HELD-P21-04",
+      "incident_key": "INC-P21-04",
+      "family": "DEPLOYMENT_OR_CONFIG_REGRESSION",
+      "filename": "held_p21_04.yaml",
+      "is_negative_control": true,
+      "sha256": "f6279d9025e5d6059955002f564daec70cd549038c103f686134b66ad0370920"
+    },
+    {
+      "case_id": "HELD-P21-05",
+      "incident_key": "INC-P21-05",
+      "family": "STORAGE_EXHAUSTION",
+      "filename": "held_p21_05.yaml",
+      "is_negative_control": false,
+      "sha256": "e80e20f2f8006d8937d06b176d4fa9b8baba6d51a0df6fb7d7a164f6216431ec"
+    },
+    {
+      "case_id": "HELD-P21-06",
+      "incident_key": "INC-P21-06",
+      "family": "KAFKA_POISON_PILL",
+      "filename": "held_p21_06.yaml",
+      "is_negative_control": false,
+      "sha256": "83d52caa004527a92ad9329ae280a1ff7bfac888d81015e05e8234fa60e1105b"
+    },
+    {
+      "case_id": "HELD-P21-07",
+      "incident_key": "INC-P21-07",
+      "family": "DNS_AND_SERVICE_DISCOVERY",
+      "filename": "held_p21_07.yaml",
+      "is_negative_control": false,
+      "sha256": "bd7f1f2fa21405b9d597031096d707be388df235dd1d5cc32740b34536bcc229"
+    },
+    {
+      "case_id": "HELD-P21-08",
+      "incident_key": "INC-P21-08",
+      "family": "BENIGN_TELEMETRY_AND_ABSTENTION",
+      "filename": "held_p21_08.yaml",
+      "is_negative_control": true,
+      "sha256": "1782e6e52fa6f9de742fbd0d2f279e43f0141e0ff0e54713c09ff13209294edc"
+    }
+  ]
+}
